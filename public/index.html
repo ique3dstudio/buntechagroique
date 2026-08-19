@@ -3,141 +3,371 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Painel de Vendas — Buntech</title>
+<meta name="theme-color" content="#0B6FB0" />
+<title>Buntech Agro — Painel de Vendas</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2314A098'/%3E%3Cstop offset='1' stop-color='%234CAF50'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M50 8C22 24 14 58 50 92 86 58 78 24 50 8Z' fill='url(%23g)'/%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <style>
-  :root { color-scheme: light dark; }
+  :root {
+    --blue-light: #29ABE2;
+    --blue-dark: #0B6FB0;
+    --teal: #14A098;
+    --green: #4CAF50;
+    --ink: #142420;
+    --muted: #64766f;
+    --bg: #f3f7f6;
+    --card: #ffffff;
+    --border: #e3eae8;
+    --radius: 14px;
+    --shadow: 0 1px 2px rgba(20, 36, 32, 0.04), 0 8px 24px -12px rgba(20, 36, 32, 0.12);
+  }
+
+  * { box-sizing: border-box; }
+
   body {
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     margin: 0;
-    padding: 1rem;
-    background: #f5f5f5;
-    color: #1a1a1a;
+    background: var(--bg);
+    color: var(--ink);
+    scroll-behavior: smooth;
   }
-  h1 { font-size: 1.4rem; margin-bottom: 0.25rem; }
-  h2 { font-size: 1.1rem; margin: 0 0 0.75rem; }
-  .card {
-    background: #fff;
+
+  h1, h2 { font-family: 'Poppins', 'Inter', sans-serif; }
+
+  /* --- Header --- */
+  header.top {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    padding: 0.85rem 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .logo { display: flex; align-items: center; gap: 0.5rem; }
+  .logo svg { width: 26px; height: 26px; flex-shrink: 0; }
+  .logo .marca {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 800;
+    font-size: 1.3rem;
+    letter-spacing: -0.02em;
+  }
+  .logo .bun { background: linear-gradient(90deg, var(--blue-light), var(--blue-dark)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .logo .agro { background: linear-gradient(90deg, var(--teal), var(--green)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .logo .subtitulo { font-size: 0.7rem; color: var(--muted); font-weight: 500; margin-top: -2px; }
+
+  nav.secoes { display: flex; gap: 0.25rem; flex-wrap: wrap; }
+  nav.secoes a {
+    text-decoration: none;
+    color: var(--muted);
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 0.4rem 0.7rem;
+    border-radius: 999px;
+    transition: background 0.15s, color 0.15s;
+  }
+  nav.secoes a:hover { background: #eef6f5; color: var(--teal); }
+
+  main { max-width: 1080px; margin: 0 auto; padding: 1.25rem; }
+
+  /* --- Hero / resumo --- */
+  .hero {
+    background: linear-gradient(120deg, var(--blue-dark), var(--teal) 60%, var(--green));
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    color: #fff;
+    margin-bottom: 1.5rem;
+    box-shadow: var(--shadow);
+  }
+  .hero h2 { color: #fff; margin: 0 0 0.2rem; font-size: 1.2rem; }
+  .hero .legenda { color: rgba(255,255,255,0.85); font-size: 0.85rem; margin: 0 0 1rem; }
+  .resumo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.9rem; }
+  .stat {
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.22);
     border-radius: 10px;
-    padding: 1rem;
-    margin-bottom: 1rem;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    padding: 0.85rem;
+    text-align: center;
   }
-  .resumo-grid {
+  .stat .valor { font-family: 'Poppins', sans-serif; font-size: 1.5rem; font-weight: 700; }
+  .stat .label { font-size: 0.75rem; color: rgba(255,255,255,0.85); margin-top: 0.15rem; }
+  .hero button {
+    margin-top: 1.1rem;
+    background: #fff;
+    color: var(--blue-dark);
+    font-weight: 700;
+  }
+
+  /* --- Cards de secao --- */
+  section.card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    margin-bottom: 1.25rem;
+    box-shadow: var(--shadow);
+    scroll-margin-top: 5rem;
+  }
+  section.card h2 {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    font-size: 1.05rem;
+    margin: 0 0 1rem;
+  }
+  section.card h2 svg { width: 20px; height: 20px; color: var(--teal); flex-shrink: 0; }
+
+  /* --- Formularios --- */
+  .form-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
     gap: 0.75rem;
+    align-items: end;
+    margin-bottom: 1.1rem;
   }
-  .stat { text-align: center; }
-  .stat .valor { font-size: 1.5rem; font-weight: 700; }
-  .stat .label { font-size: 0.8rem; color: #666; }
-  form { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
-  input, select, button { padding: 0.5rem; border-radius: 6px; border: 1px solid #ccc; font-size: 0.9rem; }
-  button { background: #2563eb; color: #fff; border: none; cursor: pointer; }
-  button.secundario { background: #e5e7eb; color: #1a1a1a; }
-  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-  th, td { text-align: left; padding: 0.5rem; border-bottom: 1px solid #eee; }
-  .etapa-ganha { color: #16a34a; font-weight: 600; }
-  .etapa-perdida { color: #dc2626; }
-  .temp-quente { color: #dc2626; }
-  .temp-morno { color: #d97706; }
-  .temp-frio { color: #2563eb; }
-  .vazio { color: #666; font-size: 0.9rem; }
+  .field { display: flex; flex-direction: column; gap: 0.3rem; }
+  .field label { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); }
+  input, select {
+    padding: 0.55rem 0.65rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    font-size: 0.9rem;
+    font-family: inherit;
+    background: #fff;
+    color: var(--ink);
+  }
+  input:focus, select:focus, button:focus {
+    outline: 2px solid var(--teal);
+    outline-offset: 1px;
+  }
+  button {
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    border: none;
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    background: linear-gradient(90deg, var(--blue-dark), var(--teal));
+    color: #fff;
+    transition: filter 0.15s;
+  }
+  button:hover { filter: brightness(1.06); }
+  button.secundario { background: #eef1f0; color: var(--ink); }
+
+  /* --- Tabelas --- */
+  .tabela-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  th {
+    text-align: left;
+    padding: 0.5rem 0.6rem;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--muted);
+    border-bottom: 2px solid var(--border);
+  }
+  td { padding: 0.6rem; border-bottom: 1px solid var(--border); }
+  tbody tr:hover { background: #f7fbfa; }
+  .vazio { color: var(--muted); font-size: 0.85rem; padding: 0.75rem 0.25rem; }
+
+  /* --- Badges / pills --- */
+  .badge {
+    display: inline-block;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border: none;
+  }
+  select.badge { cursor: pointer; }
+  .etapa-novo_lead { background: #eef1f0; color: #4b5563; }
+  .etapa-qualificacao { background: #e6f4fb; color: var(--blue-dark); }
+  .etapa-reuniao_agendada { background: #e6f4fb; color: var(--blue-dark); }
+  .etapa-proposta_enviada { background: #e3f5f3; color: #0f766e; }
+  .etapa-negociacao { background: #fff4e0; color: #b45309; }
+  .etapa-ganha { background: #e7f7ea; color: #1e7e34; }
+  .etapa-perdida { background: #fdecec; color: #b91c1c; }
+  .temp-quente { background: #fdecec; color: #c0392b; }
+  .temp-morno { background: #fff4e0; color: #b45309; }
+  .temp-frio { background: #e6f4fb; color: var(--blue-dark); }
+  .status-lead { background: #eef1f0; color: #4b5563; }
+  .status-ativo { background: #e7f7ea; color: #1e7e34; }
+  .status-inativo { background: #f1f1f1; color: #9ca3af; }
+
+  footer { text-align: center; color: var(--muted); font-size: 0.78rem; padding: 1.5rem 1rem 2rem; }
+
+  @media (max-width: 640px) {
+    header.top { padding: 0.7rem 1rem; }
+    main { padding: 1rem 0.85rem; }
+    nav.secoes { width: 100%; overflow-x: auto; flex-wrap: nowrap; }
+  }
 </style>
 </head>
 <body>
-  <h1>Painel de Vendas — Buntech</h1>
-  <p class="vazio">Empresas, contatos, negociações e atividades.</p>
+  <header class="top">
+    <div class="logo">
+      <svg viewBox="0 0 100 100" fill="none"><defs><linearGradient id="folha" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#14A098"/><stop offset="1" stop-color="#4CAF50"/></linearGradient></defs><path d="M50 8C22 24 14 58 50 92 86 58 78 24 50 8Z" fill="url(#folha)"/></svg>
+      <div>
+        <div class="marca"><span class="bun">buntech</span><span class="agro">agro</span></div>
+        <div class="subtitulo">Painel de Vendas</div>
+      </div>
+    </div>
+    <nav class="secoes">
+      <a href="#resumo">Resumo</a>
+      <a href="#empresas">Empresas</a>
+      <a href="#contatos">Contatos</a>
+      <a href="#produtos">Produtos</a>
+      <a href="#negociacoes">Negociações</a>
+      <a href="#atividades">Atividades</a>
+    </nav>
+  </header>
 
-  <div class="card">
-    <h2>Resumo do mês</h2>
-    <div class="resumo-grid" id="resumo">Carregando...</div>
-    <button class="secundario" id="btn-meta" style="margin-top: 0.75rem">Definir meta do mês</button>
-  </div>
+  <main>
+    <section class="hero" id="resumo">
+      <h2>Resumo do mês</h2>
+      <p class="legenda">Seu desempenho de vendas em tempo real.</p>
+      <div class="resumo-grid" id="resumo-stats">Carregando...</div>
+      <button class="secundario" id="btn-meta">Definir meta do mês</button>
+    </section>
 
-  <div class="card">
-    <h2>Empresas</h2>
-    <form id="form-empresa">
-      <input name="nome" placeholder="Nome da empresa" required />
-      <input name="segmento" placeholder="Segmento" />
-      <input name="site" placeholder="Site" />
-      <input name="telefone" placeholder="Telefone" />
-      <input name="cidade" placeholder="Cidade" />
-      <button type="submit">Adicionar empresa</button>
-    </form>
-    <table id="tabela-empresas"><tbody></tbody></table>
-  </div>
+    <section class="card" id="empresas">
+      <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h1M14 9h1M9 13h1M14 13h1M9 17h1M14 17h1"/></svg>Empresas</h2>
+      <form id="form-empresa">
+        <div class="form-grid">
+          <div class="field"><label>Nome da empresa</label><input name="nome" placeholder="Ex: Fazenda Boa Vista" required /></div>
+          <div class="field"><label>Segmento</label><input name="segmento" placeholder="Ex: Grãos" /></div>
+          <div class="field"><label>Site</label><input name="site" placeholder="www.exemplo.com" /></div>
+          <div class="field"><label>Telefone</label><input name="telefone" placeholder="(00) 00000-0000" /></div>
+          <div class="field"><label>Cidade</label><input name="cidade" placeholder="Cidade / UF" /></div>
+          <button type="submit">Adicionar empresa</button>
+        </div>
+      </form>
+      <div class="tabela-wrap">
+        <table>
+          <thead><tr><th>Nome</th><th>Segmento</th><th>Cidade</th></tr></thead>
+          <tbody id="tabela-empresas"></tbody>
+        </table>
+      </div>
+    </section>
 
-  <div class="card">
-    <h2>Contatos</h2>
-    <form id="form-contato">
-      <input name="nome" placeholder="Nome" required />
-      <select name="empresa_id" id="select-empresa-contato"><option value="">Sem empresa</option></select>
-      <input name="cargo" placeholder="Cargo" />
-      <input name="telefone" placeholder="Telefone" />
-      <input name="email" placeholder="E-mail" type="email" />
-      <select name="origem">
-        <option value="">Origem</option>
-        <option value="indicacao">Indicação</option>
-        <option value="site">Site</option>
-        <option value="evento">Evento</option>
-        <option value="ligacao_fria">Ligação fria</option>
-        <option value="outro">Outro</option>
-      </select>
-      <select name="status">
-        <option value="lead">Lead</option>
-        <option value="ativo">Ativo</option>
-        <option value="inativo">Inativo</option>
-      </select>
-      <button type="submit">Adicionar contato</button>
-    </form>
-    <table id="tabela-contatos"><tbody></tbody></table>
-  </div>
+    <section class="card" id="contatos">
+      <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>Contatos</h2>
+      <form id="form-contato">
+        <div class="form-grid">
+          <div class="field"><label>Nome</label><input name="nome" placeholder="Nome completo" required /></div>
+          <div class="field"><label>Empresa</label><select name="empresa_id" id="select-empresa-contato"><option value="">Sem empresa</option></select></div>
+          <div class="field"><label>Cargo</label><input name="cargo" placeholder="Ex: Comprador" /></div>
+          <div class="field"><label>Telefone</label><input name="telefone" placeholder="(00) 00000-0000" /></div>
+          <div class="field"><label>E-mail</label><input name="email" placeholder="nome@empresa.com" type="email" /></div>
+          <div class="field"><label>Origem</label>
+            <select name="origem">
+              <option value="">Selecionar</option>
+              <option value="indicacao">Indicação</option>
+              <option value="site">Site</option>
+              <option value="evento">Evento</option>
+              <option value="ligacao_fria">Ligação fria</option>
+              <option value="outro">Outro</option>
+            </select>
+          </div>
+          <div class="field"><label>Status</label>
+            <select name="status">
+              <option value="lead">Lead</option>
+              <option value="ativo">Ativo</option>
+              <option value="inativo">Inativo</option>
+            </select>
+          </div>
+          <button type="submit">Adicionar contato</button>
+        </div>
+      </form>
+      <div class="tabela-wrap">
+        <table>
+          <thead><tr><th>Nome</th><th>Empresa</th><th>Telefone</th><th>Status</th></tr></thead>
+          <tbody id="tabela-contatos"></tbody>
+        </table>
+      </div>
+    </section>
 
-  <div class="card">
-    <h2>Produtos</h2>
-    <form id="form-produto">
-      <input name="nome" placeholder="Nome do produto" required />
-      <input name="preco" placeholder="Preço (R$)" type="number" step="0.01" min="0" />
-      <button type="submit">Adicionar produto</button>
-    </form>
-    <table id="tabela-produtos"><tbody></tbody></table>
-  </div>
+    <section class="card" id="produtos">
+      <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>Produtos</h2>
+      <form id="form-produto">
+        <div class="form-grid">
+          <div class="field"><label>Nome do produto</label><input name="nome" placeholder="Ex: Fertilizante NPK" required /></div>
+          <div class="field"><label>Preço (R$)</label><input name="preco" placeholder="0,00" type="number" step="0.01" min="0" /></div>
+          <button type="submit">Adicionar produto</button>
+        </div>
+      </form>
+      <div class="tabela-wrap">
+        <table>
+          <thead><tr><th>Nome</th><th>Preço</th></tr></thead>
+          <tbody id="tabela-produtos"></tbody>
+        </table>
+      </div>
+    </section>
 
-  <div class="card">
-    <h2>Negociações</h2>
-    <form id="form-negociacao">
-      <select name="contato_id" id="select-contato-negociacao" required></select>
-      <select name="produto_id" id="select-produto-negociacao"><option value="">Sem produto</option></select>
-      <input name="titulo" placeholder="Título / descrição" required />
-      <input name="valor" placeholder="Valor (R$)" type="number" step="0.01" min="0" />
-      <select name="temperatura">
-        <option value="morno">Morno</option>
-        <option value="quente">Quente</option>
-        <option value="frio">Frio</option>
-      </select>
-      <input name="data_prevista" type="date" />
-      <button type="submit">Adicionar negociação</button>
-    </form>
-    <table id="tabela-negociacoes"><tbody></tbody></table>
-  </div>
+    <section class="card" id="negociacoes">
+      <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17 9 11 13 15 21 7"/><path d="M15 7h6v6"/></svg>Negociações</h2>
+      <form id="form-negociacao">
+        <div class="form-grid">
+          <div class="field"><label>Contato</label><select name="contato_id" id="select-contato-negociacao" required></select></div>
+          <div class="field"><label>Produto</label><select name="produto_id" id="select-produto-negociacao"><option value="">Sem produto</option></select></div>
+          <div class="field"><label>Título</label><input name="titulo" placeholder="Descrição da negociação" required /></div>
+          <div class="field"><label>Valor (R$)</label><input name="valor" placeholder="0,00" type="number" step="0.01" min="0" /></div>
+          <div class="field"><label>Temperatura</label>
+            <select name="temperatura">
+              <option value="morno">Morno</option>
+              <option value="quente">Quente</option>
+              <option value="frio">Frio</option>
+            </select>
+          </div>
+          <div class="field"><label>Previsão de fechamento</label><input name="data_prevista" type="date" /></div>
+          <button type="submit">Adicionar negociação</button>
+        </div>
+      </form>
+      <div class="tabela-wrap">
+        <table>
+          <thead><tr><th>Contato</th><th>Negociação</th><th>Valor</th><th>Temperatura</th><th>Etapa</th></tr></thead>
+          <tbody id="tabela-negociacoes"></tbody>
+        </table>
+      </div>
+    </section>
 
-  <div class="card">
-    <h2>Atividades pendentes</h2>
-    <form id="form-atividade">
-      <select name="contato_id" id="select-contato-atividade" required></select>
-      <select name="tipo">
-        <option value="tarefa">Tarefa</option>
-        <option value="ligacao">Ligação</option>
-        <option value="email">E-mail</option>
-        <option value="reuniao">Reunião</option>
-        <option value="whatsapp">WhatsApp</option>
-      </select>
-      <input name="descricao" placeholder="O que fazer" required />
-      <input name="data" type="date" required />
-      <button type="submit">Adicionar atividade</button>
-    </form>
-    <table id="tabela-atividades"><tbody></tbody></table>
-  </div>
+    <section class="card" id="atividades">
+      <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/><path d="m8 15 2 2 4-4"/></svg>Atividades pendentes</h2>
+      <form id="form-atividade">
+        <div class="form-grid">
+          <div class="field"><label>Contato</label><select name="contato_id" id="select-contato-atividade" required></select></div>
+          <div class="field"><label>Tipo</label>
+            <select name="tipo">
+              <option value="tarefa">Tarefa</option>
+              <option value="ligacao">Ligação</option>
+              <option value="email">E-mail</option>
+              <option value="reuniao">Reunião</option>
+              <option value="whatsapp">WhatsApp</option>
+            </select>
+          </div>
+          <div class="field"><label>O que fazer</label><input name="descricao" placeholder="Ex: Retornar ligação" required /></div>
+          <div class="field"><label>Data</label><input name="data" type="date" required /></div>
+          <button type="submit">Adicionar atividade</button>
+        </div>
+      </form>
+      <div class="tabela-wrap">
+        <table>
+          <thead><tr><th>Contato</th><th>Tipo</th><th>Descrição</th><th>Data</th><th></th></tr></thead>
+          <tbody id="tabela-atividades"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <footer>Buntech Agro — painel interno de vendas</footer>
 
 <script>
 const ETAPAS = [
@@ -149,6 +379,14 @@ const ETAPAS = [
   ['ganha', 'Ganha'],
   ['perdida', 'Perdida'],
 ];
+
+const ROTULOS_TIPO = {
+  tarefa: 'Tarefa',
+  ligacao: 'Ligação',
+  email: 'E-mail',
+  reuniao: 'Reunião',
+  whatsapp: 'WhatsApp',
+};
 
 async function api(path, options) {
   const res = await fetch('/api' + path, {
@@ -168,7 +406,7 @@ function fmtMoeda(valor) {
 
 async function carregarResumo() {
   const r = await api('/resumo');
-  document.getElementById('resumo').innerHTML = `
+  document.getElementById('resumo-stats').innerHTML = `
     <div class="stat"><div class="valor">${fmtMoeda(r.valor_realizado)}</div><div class="label">Realizado no mês</div></div>
     <div class="stat"><div class="valor">${r.valor_meta != null ? fmtMoeda(r.valor_meta) : '—'}</div><div class="label">Meta do mês</div></div>
     <div class="stat"><div class="valor">${r.negociacoes_em_aberto}</div><div class="label">Negociações em aberto</div></div>
@@ -178,10 +416,10 @@ async function carregarResumo() {
 
 async function carregarEmpresas() {
   const empresas = await api('/empresas');
-  const tbody = document.querySelector('#tabela-empresas tbody');
+  const tbody = document.getElementById('tabela-empresas');
   tbody.innerHTML = empresas.length
-    ? empresas.map((e) => `<tr><td>${e.nome}</td><td>${e.segmento ?? ''}</td><td>${e.cidade ?? ''}</td></tr>`).join('')
-    : '<tr><td class="vazio">Nenhuma empresa ainda.</td></tr>';
+    ? empresas.map((e) => `<tr><td>${e.nome}</td><td>${e.segmento ?? '—'}</td><td>${e.cidade ?? '—'}</td></tr>`).join('')
+    : '<tr><td class="vazio" colspan="3">Nenhuma empresa ainda.</td></tr>';
 
   document.getElementById('select-empresa-contato').innerHTML =
     '<option value="">Sem empresa</option>' + empresas.map((e) => `<option value="${e.id}">${e.nome}</option>`).join('');
@@ -189,10 +427,10 @@ async function carregarEmpresas() {
 
 async function carregarProdutos() {
   const produtos = await api('/produtos');
-  const tbody = document.querySelector('#tabela-produtos tbody');
+  const tbody = document.getElementById('tabela-produtos');
   tbody.innerHTML = produtos.length
     ? produtos.map((p) => `<tr><td>${p.nome}</td><td>${fmtMoeda(p.preco)}</td></tr>`).join('')
-    : '<tr><td class="vazio">Nenhum produto ainda.</td></tr>';
+    : '<tr><td class="vazio" colspan="2">Nenhum produto ainda.</td></tr>';
 
   document.getElementById('select-produto-negociacao').innerHTML =
     '<option value="">Sem produto</option>' + produtos.map((p) => `<option value="${p.id}">${p.nome}</option>`).join('');
@@ -200,10 +438,17 @@ async function carregarProdutos() {
 
 async function carregarContatos() {
   const contatos = await api('/contatos');
-  const tbody = document.querySelector('#tabela-contatos tbody');
+  const tbody = document.getElementById('tabela-contatos');
   tbody.innerHTML = contatos.length
-    ? contatos.map((c) => `<tr><td>${c.nome}</td><td>${c.empresas?.nome ?? ''}</td><td>${c.telefone ?? ''}</td><td>${c.status}</td></tr>`).join('')
-    : '<tr><td class="vazio">Nenhum contato ainda.</td></tr>';
+    ? contatos.map((c) => `
+        <tr>
+          <td>${c.nome}</td>
+          <td>${c.empresas?.nome ?? '—'}</td>
+          <td>${c.telefone ?? '—'}</td>
+          <td><span class="badge status-${c.status}">${c.status}</span></td>
+        </tr>
+      `).join('')
+    : '<tr><td class="vazio" colspan="4">Nenhum contato ainda.</td></tr>';
 
   const opcoes = contatos.map((c) => `<option value="${c.id}">${c.nome}</option>`).join('');
   document.getElementById('select-contato-negociacao').innerHTML = opcoes;
@@ -215,20 +460,18 @@ async function carregarNegociacoes() {
   const opcoesEtapa = (etapaAtual) =>
     ETAPAS.map(([valor, rotulo]) => `<option value="${valor}" ${valor === etapaAtual ? 'selected' : ''}>${rotulo}</option>`).join('');
 
-  const tbody = document.querySelector('#tabela-negociacoes tbody');
+  const tbody = document.getElementById('tabela-negociacoes');
   tbody.innerHTML = negociacoes.length
     ? negociacoes.map((n) => `
         <tr>
           <td>${n.contatos?.nome ?? '—'}</td>
-          <td>${n.titulo}${n.produtos?.nome ? ' (' + n.produtos.nome + ')' : ''}</td>
+          <td>${n.titulo}${n.produtos?.nome ? ' <span class="vazio">(' + n.produtos.nome + ')</span>' : ''}</td>
           <td>${fmtMoeda(n.valor)}</td>
-          <td class="temp-${n.temperatura}">${n.temperatura}</td>
-          <td>
-            <select class="etapa-${n.etapa}" data-id="${n.id}">${opcoesEtapa(n.etapa)}</select>
-          </td>
+          <td><span class="badge temp-${n.temperatura}">${n.temperatura}</span></td>
+          <td><select class="badge etapa-${n.etapa}" data-id="${n.id}">${opcoesEtapa(n.etapa)}</select></td>
         </tr>
       `).join('')
-    : '<tr><td class="vazio">Nenhuma negociação ainda.</td></tr>';
+    : '<tr><td class="vazio" colspan="5">Nenhuma negociação ainda.</td></tr>';
 
   tbody.querySelectorAll('select[data-id]').forEach((select) => {
     select.addEventListener('change', async () => {
@@ -249,18 +492,18 @@ async function carregarNegociacoes() {
 
 async function carregarAtividades() {
   const atividades = await api('/atividades');
-  const tbody = document.querySelector('#tabela-atividades tbody');
+  const tbody = document.getElementById('tabela-atividades');
   tbody.innerHTML = atividades.length
     ? atividades.map((a) => `
         <tr>
           <td>${a.contatos?.nome ?? '—'}</td>
-          <td>${a.tipo}</td>
+          <td>${ROTULOS_TIPO[a.tipo] ?? a.tipo}</td>
           <td>${a.descricao}</td>
           <td>${new Date(a.data + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
           <td><button class="secundario" data-id="${a.id}">Concluir</button></td>
         </tr>
       `).join('')
-    : '<tr><td class="vazio">Nenhuma atividade pendente.</td></tr>';
+    : '<tr><td class="vazio" colspan="5">Nenhuma atividade pendente.</td></tr>';
 
   tbody.querySelectorAll('button[data-id]').forEach((btn) => {
     btn.addEventListener('click', async () => {
