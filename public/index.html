@@ -36,15 +36,17 @@
   button.secundario { background: #e5e7eb; color: #1a1a1a; }
   table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
   th, td { text-align: left; padding: 0.5rem; border-bottom: 1px solid #eee; }
-  .status-ganha { color: #16a34a; font-weight: 600; }
-  .status-perdida { color: #dc2626; }
-  .status-em_andamento { color: #d97706; }
+  .etapa-ganha { color: #16a34a; font-weight: 600; }
+  .etapa-perdida { color: #dc2626; }
+  .temp-quente { color: #dc2626; }
+  .temp-morno { color: #d97706; }
+  .temp-frio { color: #2563eb; }
   .vazio { color: #666; font-size: 0.9rem; }
 </style>
 </head>
 <body>
   <h1>Painel de Vendas — Buntech</h1>
-  <p class="vazio">Clientes, propostas, follow-ups e meta do mês.</p>
+  <p class="vazio">Empresas, contatos, negociações e atividades.</p>
 
   <div class="card">
     <h2>Resumo do mês</h2>
@@ -53,46 +55,101 @@
   </div>
 
   <div class="card">
-    <h2>Clientes</h2>
-    <form id="form-cliente">
+    <h2>Empresas</h2>
+    <form id="form-empresa">
+      <input name="nome" placeholder="Nome da empresa" required />
+      <input name="segmento" placeholder="Segmento" />
+      <input name="site" placeholder="Site" />
+      <input name="telefone" placeholder="Telefone" />
+      <input name="cidade" placeholder="Cidade" />
+      <button type="submit">Adicionar empresa</button>
+    </form>
+    <table id="tabela-empresas"><tbody></tbody></table>
+  </div>
+
+  <div class="card">
+    <h2>Contatos</h2>
+    <form id="form-contato">
       <input name="nome" placeholder="Nome" required />
-      <input name="empresa" placeholder="Empresa" />
+      <select name="empresa_id" id="select-empresa-contato"><option value="">Sem empresa</option></select>
+      <input name="cargo" placeholder="Cargo" />
       <input name="telefone" placeholder="Telefone" />
       <input name="email" placeholder="E-mail" type="email" />
+      <select name="origem">
+        <option value="">Origem</option>
+        <option value="indicacao">Indicação</option>
+        <option value="site">Site</option>
+        <option value="evento">Evento</option>
+        <option value="ligacao_fria">Ligação fria</option>
+        <option value="outro">Outro</option>
+      </select>
       <select name="status">
         <option value="lead">Lead</option>
         <option value="ativo">Ativo</option>
         <option value="inativo">Inativo</option>
       </select>
-      <button type="submit">Adicionar cliente</button>
+      <button type="submit">Adicionar contato</button>
     </form>
-    <table id="tabela-clientes"><tbody></tbody></table>
+    <table id="tabela-contatos"><tbody></tbody></table>
   </div>
 
   <div class="card">
-    <h2>Propostas</h2>
-    <form id="form-proposta">
-      <select name="cliente_id" id="select-cliente-proposta" required></select>
+    <h2>Produtos</h2>
+    <form id="form-produto">
+      <input name="nome" placeholder="Nome do produto" required />
+      <input name="preco" placeholder="Preço (R$)" type="number" step="0.01" min="0" />
+      <button type="submit">Adicionar produto</button>
+    </form>
+    <table id="tabela-produtos"><tbody></tbody></table>
+  </div>
+
+  <div class="card">
+    <h2>Negociações</h2>
+    <form id="form-negociacao">
+      <select name="contato_id" id="select-contato-negociacao" required></select>
+      <select name="produto_id" id="select-produto-negociacao"><option value="">Sem produto</option></select>
       <input name="titulo" placeholder="Título / descrição" required />
       <input name="valor" placeholder="Valor (R$)" type="number" step="0.01" min="0" />
+      <select name="temperatura">
+        <option value="morno">Morno</option>
+        <option value="quente">Quente</option>
+        <option value="frio">Frio</option>
+      </select>
       <input name="data_prevista" type="date" />
-      <button type="submit">Adicionar proposta</button>
+      <button type="submit">Adicionar negociação</button>
     </form>
-    <table id="tabela-propostas"><tbody></tbody></table>
+    <table id="tabela-negociacoes"><tbody></tbody></table>
   </div>
 
   <div class="card">
-    <h2>Follow-ups pendentes</h2>
-    <form id="form-followup">
-      <select name="cliente_id" id="select-cliente-followup" required></select>
+    <h2>Atividades pendentes</h2>
+    <form id="form-atividade">
+      <select name="contato_id" id="select-contato-atividade" required></select>
+      <select name="tipo">
+        <option value="tarefa">Tarefa</option>
+        <option value="ligacao">Ligação</option>
+        <option value="email">E-mail</option>
+        <option value="reuniao">Reunião</option>
+        <option value="whatsapp">WhatsApp</option>
+      </select>
       <input name="descricao" placeholder="O que fazer" required />
       <input name="data" type="date" required />
-      <button type="submit">Adicionar follow-up</button>
+      <button type="submit">Adicionar atividade</button>
     </form>
-    <table id="tabela-followups"><tbody></tbody></table>
+    <table id="tabela-atividades"><tbody></tbody></table>
   </div>
 
 <script>
+const ETAPAS = [
+  ['novo_lead', 'Novo lead'],
+  ['qualificacao', 'Qualificação'],
+  ['reuniao_agendada', 'Reunião agendada'],
+  ['proposta_enviada', 'Proposta enviada'],
+  ['negociacao', 'Negociação'],
+  ['ganha', 'Ganha'],
+  ['perdida', 'Perdida'],
+];
+
 async function api(path, options) {
   const res = await fetch('/api' + path, {
     headers: { 'Content-Type': 'application/json' },
@@ -114,48 +171,75 @@ async function carregarResumo() {
   document.getElementById('resumo').innerHTML = `
     <div class="stat"><div class="valor">${fmtMoeda(r.valor_realizado)}</div><div class="label">Realizado no mês</div></div>
     <div class="stat"><div class="valor">${r.valor_meta != null ? fmtMoeda(r.valor_meta) : '—'}</div><div class="label">Meta do mês</div></div>
-    <div class="stat"><div class="valor">${r.propostas_em_andamento}</div><div class="label">Propostas em andamento</div></div>
-    <div class="stat"><div class="valor">${r.follow_ups_pendentes}</div><div class="label">Follow-ups pendentes</div></div>
+    <div class="stat"><div class="valor">${r.negociacoes_em_aberto}</div><div class="label">Negociações em aberto</div></div>
+    <div class="stat"><div class="valor">${r.atividades_pendentes}</div><div class="label">Atividades pendentes</div></div>
   `;
 }
 
-async function carregarClientes() {
-  const clientes = await api('/clientes');
-  const tbody = document.querySelector('#tabela-clientes tbody');
-  tbody.innerHTML = clientes.length
-    ? clientes.map((c) => `<tr><td>${c.nome}</td><td>${c.empresa ?? ''}</td><td>${c.telefone ?? ''}</td><td>${c.status}</td></tr>`).join('')
-    : '<tr><td class="vazio">Nenhum cliente ainda.</td></tr>';
+async function carregarEmpresas() {
+  const empresas = await api('/empresas');
+  const tbody = document.querySelector('#tabela-empresas tbody');
+  tbody.innerHTML = empresas.length
+    ? empresas.map((e) => `<tr><td>${e.nome}</td><td>${e.segmento ?? ''}</td><td>${e.cidade ?? ''}</td></tr>`).join('')
+    : '<tr><td class="vazio">Nenhuma empresa ainda.</td></tr>';
 
-  const opcoes = clientes.map((c) => `<option value="${c.id}">${c.nome}</option>`).join('');
-  document.getElementById('select-cliente-proposta').innerHTML = opcoes;
-  document.getElementById('select-cliente-followup').innerHTML = opcoes;
+  document.getElementById('select-empresa-contato').innerHTML =
+    '<option value="">Sem empresa</option>' + empresas.map((e) => `<option value="${e.id}">${e.nome}</option>`).join('');
 }
 
-async function carregarPropostas() {
-  const propostas = await api('/propostas');
-  const tbody = document.querySelector('#tabela-propostas tbody');
-  tbody.innerHTML = propostas.length
-    ? propostas.map((p) => `
+async function carregarProdutos() {
+  const produtos = await api('/produtos');
+  const tbody = document.querySelector('#tabela-produtos tbody');
+  tbody.innerHTML = produtos.length
+    ? produtos.map((p) => `<tr><td>${p.nome}</td><td>${fmtMoeda(p.preco)}</td></tr>`).join('')
+    : '<tr><td class="vazio">Nenhum produto ainda.</td></tr>';
+
+  document.getElementById('select-produto-negociacao').innerHTML =
+    '<option value="">Sem produto</option>' + produtos.map((p) => `<option value="${p.id}">${p.nome}</option>`).join('');
+}
+
+async function carregarContatos() {
+  const contatos = await api('/contatos');
+  const tbody = document.querySelector('#tabela-contatos tbody');
+  tbody.innerHTML = contatos.length
+    ? contatos.map((c) => `<tr><td>${c.nome}</td><td>${c.empresas?.nome ?? ''}</td><td>${c.telefone ?? ''}</td><td>${c.status}</td></tr>`).join('')
+    : '<tr><td class="vazio">Nenhum contato ainda.</td></tr>';
+
+  const opcoes = contatos.map((c) => `<option value="${c.id}">${c.nome}</option>`).join('');
+  document.getElementById('select-contato-negociacao').innerHTML = opcoes;
+  document.getElementById('select-contato-atividade').innerHTML = opcoes;
+}
+
+async function carregarNegociacoes() {
+  const negociacoes = await api('/negociacoes');
+  const opcoesEtapa = (etapaAtual) =>
+    ETAPAS.map(([valor, rotulo]) => `<option value="${valor}" ${valor === etapaAtual ? 'selected' : ''}>${rotulo}</option>`).join('');
+
+  const tbody = document.querySelector('#tabela-negociacoes tbody');
+  tbody.innerHTML = negociacoes.length
+    ? negociacoes.map((n) => `
         <tr>
-          <td>${p.clientes?.nome ?? '—'}</td>
-          <td>${p.titulo}</td>
-          <td>${fmtMoeda(p.valor)}</td>
-          <td class="status-${p.status}">${p.status}</td>
+          <td>${n.contatos?.nome ?? '—'}</td>
+          <td>${n.titulo}${n.produtos?.nome ? ' (' + n.produtos.nome + ')' : ''}</td>
+          <td>${fmtMoeda(n.valor)}</td>
+          <td class="temp-${n.temperatura}">${n.temperatura}</td>
           <td>
-            ${p.status === 'em_andamento' ? `
-              <button class="secundario" data-acao="ganha" data-id="${p.id}">Ganha</button>
-              <button class="secundario" data-acao="perdida" data-id="${p.id}">Perdida</button>
-            ` : ''}
+            <select class="etapa-${n.etapa}" data-id="${n.id}">${opcoesEtapa(n.etapa)}</select>
           </td>
         </tr>
       `).join('')
-    : '<tr><td class="vazio">Nenhuma proposta ainda.</td></tr>';
+    : '<tr><td class="vazio">Nenhuma negociação ainda.</td></tr>';
 
-  tbody.querySelectorAll('button[data-acao]').forEach((btn) => {
-    btn.addEventListener('click', async () => {
+  tbody.querySelectorAll('select[data-id]').forEach((select) => {
+    select.addEventListener('change', async () => {
+      const etapa = select.value;
+      let motivo_perda;
+      if (etapa === 'perdida') {
+        motivo_perda = prompt('Motivo da perda:') || '';
+      }
       try {
-        await api(`/propostas/${btn.dataset.id}`, { method: 'PATCH', body: JSON.stringify({ status: btn.dataset.acao }) });
-        await Promise.all([carregarPropostas(), carregarResumo()]);
+        await api(`/negociacoes/${select.dataset.id}`, { method: 'PATCH', body: JSON.stringify({ etapa, motivo_perda }) });
+        await Promise.all([carregarNegociacoes(), carregarResumo()]);
       } catch (err) {
         alert(err.message);
       }
@@ -163,25 +247,26 @@ async function carregarPropostas() {
   });
 }
 
-async function carregarFollowUps() {
-  const followUps = await api('/follow-ups');
-  const tbody = document.querySelector('#tabela-followups tbody');
-  tbody.innerHTML = followUps.length
-    ? followUps.map((f) => `
+async function carregarAtividades() {
+  const atividades = await api('/atividades');
+  const tbody = document.querySelector('#tabela-atividades tbody');
+  tbody.innerHTML = atividades.length
+    ? atividades.map((a) => `
         <tr>
-          <td>${f.clientes?.nome ?? '—'}</td>
-          <td>${f.descricao}</td>
-          <td>${new Date(f.data + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
-          <td><button class="secundario" data-id="${f.id}">Concluir</button></td>
+          <td>${a.contatos?.nome ?? '—'}</td>
+          <td>${a.tipo}</td>
+          <td>${a.descricao}</td>
+          <td>${new Date(a.data + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
+          <td><button class="secundario" data-id="${a.id}">Concluir</button></td>
         </tr>
       `).join('')
-    : '<tr><td class="vazio">Nenhum follow-up pendente.</td></tr>';
+    : '<tr><td class="vazio">Nenhuma atividade pendente.</td></tr>';
 
   tbody.querySelectorAll('button[data-id]').forEach((btn) => {
     btn.addEventListener('click', async () => {
       try {
-        await api(`/follow-ups/${btn.dataset.id}/concluir`, { method: 'PATCH' });
-        await Promise.all([carregarFollowUps(), carregarResumo()]);
+        await api(`/atividades/${btn.dataset.id}/concluir`, { method: 'PATCH' });
+        await Promise.all([carregarAtividades(), carregarResumo()]);
       } catch (err) {
         alert(err.message);
       }
@@ -189,38 +274,24 @@ async function carregarFollowUps() {
   });
 }
 
-document.getElementById('form-cliente').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  try {
-    await api('/clientes', { method: 'POST', body: JSON.stringify(Object.fromEntries(new FormData(e.target))) });
-    e.target.reset();
-    await carregarClientes();
-  } catch (err) {
-    alert(err.message);
-  }
-});
+function formHandler(formId, path, aoTerminar) {
+  document.getElementById(formId).addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      await api(path, { method: 'POST', body: JSON.stringify(Object.fromEntries(new FormData(e.target))) });
+      e.target.reset();
+      await aoTerminar();
+    } catch (err) {
+      alert(err.message);
+    }
+  });
+}
 
-document.getElementById('form-proposta').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  try {
-    await api('/propostas', { method: 'POST', body: JSON.stringify(Object.fromEntries(new FormData(e.target))) });
-    e.target.reset();
-    await Promise.all([carregarPropostas(), carregarResumo()]);
-  } catch (err) {
-    alert(err.message);
-  }
-});
-
-document.getElementById('form-followup').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  try {
-    await api('/follow-ups', { method: 'POST', body: JSON.stringify(Object.fromEntries(new FormData(e.target))) });
-    e.target.reset();
-    await Promise.all([carregarFollowUps(), carregarResumo()]);
-  } catch (err) {
-    alert(err.message);
-  }
-});
+formHandler('form-empresa', '/empresas', carregarEmpresas);
+formHandler('form-produto', '/produtos', carregarProdutos);
+formHandler('form-contato', '/contatos', carregarContatos);
+formHandler('form-negociacao', '/negociacoes', () => Promise.all([carregarNegociacoes(), carregarResumo()]));
+formHandler('form-atividade', '/atividades', () => Promise.all([carregarAtividades(), carregarResumo()]));
 
 document.getElementById('btn-meta').addEventListener('click', async () => {
   const valor = prompt('Meta do mês (R$):');
@@ -236,8 +307,9 @@ document.getElementById('btn-meta').addEventListener('click', async () => {
 });
 
 (async function iniciar() {
-  await carregarClientes();
-  await Promise.all([carregarResumo(), carregarPropostas(), carregarFollowUps()]);
+  await Promise.all([carregarEmpresas(), carregarProdutos()]);
+  await carregarContatos();
+  await Promise.all([carregarResumo(), carregarNegociacoes(), carregarAtividades()]);
 })();
 </script>
 </body>
