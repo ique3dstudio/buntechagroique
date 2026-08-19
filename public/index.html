@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Painel de Vendas — Buntech</title>
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    margin: 0;
+    padding: 1rem;
+    background: #f5f5f5;
+    color: #1a1a1a;
+  }
+  h1 { font-size: 1.4rem; margin-bottom: 0.25rem; }
+  h2 { font-size: 1.1rem; margin: 0 0 0.75rem; }
+  .card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+  .resumo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.75rem;
+  }
+  .stat { text-align: center; }
+  .stat .valor { font-size: 1.5rem; font-weight: 700; }
+  .stat .label { font-size: 0.8rem; color: #666; }
+  form { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
+  input, select, button { padding: 0.5rem; border-radius: 6px; border: 1px solid #ccc; font-size: 0.9rem; }
+  button { background: #2563eb; color: #fff; border: none; cursor: pointer; }
+  button.secundario { background: #e5e7eb; color: #1a1a1a; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  th, td { text-align: left; padding: 0.5rem; border-bottom: 1px solid #eee; }
+  .status-ganha { color: #16a34a; font-weight: 600; }
+  .status-perdida { color: #dc2626; }
+  .status-em_andamento { color: #d97706; }
+  .vazio { color: #666; font-size: 0.9rem; }
+</style>
+</head>
+<body>
+  <h1>Painel de Vendas — Buntech</h1>
+  <p class="vazio">Clientes, propostas, follow-ups e meta do mês.</p>
+
+  <div class="card">
+    <h2>Resumo do mês</h2>
+    <div class="resumo-grid" id="resumo">Carregando...</div>
+    <button class="secundario" id="btn-meta" style="margin-top: 0.75rem">Definir meta do mês</button>
+  </div>
+
+  <div class="card">
+    <h2>Clientes</h2>
+    <form id="form-cliente">
+      <input name="nome" placeholder="Nome" required />
+      <input name="empresa" placeholder="Empresa" />
+      <input name="telefone" placeholder="Telefone" />
+      <input name="email" placeholder="E-mail" type="email" />
+      <select name="status">
+        <option value="lead">Lead</option>
+        <option value="ativo">Ativo</option>
+        <option value="inativo">Inativo</option>
+      </select>
+      <button type="submit">Adicionar cliente</button>
+    </form>
+    <table id="tabela-clientes"><tbody></tbody></table>
+  </div>
+
+  <div class="card">
+    <h2>Propostas</h2>
+    <form id="form-proposta">
+      <select name="cliente_id" id="select-cliente-proposta" required></select>
+      <input name="titulo" placeholder="Título / descrição" required />
+      <input name="valor" placeholder="Valor (R$)" type="number" step="0.01" min="0" />
+      <input name="data_prevista" type="date" />
+      <button type="submit">Adicionar proposta</button>
+    </form>
+    <table id="tabela-propostas"><tbody></tbody></table>
+  </div>
+
+  <div class="card">
+    <h2>Follow-ups pendentes</h2>
+    <form id="form-followup">
+      <select name="cliente_id" id="select-cliente-followup" required></select>
+      <input name="descricao" placeholder="O que fazer" required />
+      <input name="data" type="date" required />
+      <button type="submit">Adicionar follow-up</button>
+    </form>
+    <table id="tabela-followups"><tbody></tbody></table>
+  </div>
+
+<script>
+async function api(path, options) {
+  const res = await fetch('/api' + path, {
+    headers: { 'Content-Type': 'application/json' },
+    ...options,
+  });
+  if (!res.ok) {
+    const erro = await res.json().catch(() => ({}));
+    throw new Error(erro.error || 'Erro na requisição');
+  }
+  return res.status === 204 ? null : res.json();
+}
+
+function fmtMoeda(valor) {
+  return (valor ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+async function carregarResumo() {
+  const r = await api('/resumo');
+  document.getElementById('resumo').innerHTML = `
+    <div class="stat"><div class="valor">${fmtMoeda(r.valor_realizado)}</div><div class="label">Realizado no mês</div></div>
+    <div class="stat"><div class="valor">${r.valor_meta != null ? fmtMoeda(r.valor_meta) : '—'}</div><div class="label">Meta do mês</div></div>
+    <div class="stat"><div class="valor">${r.propostas_em_andamento}</div><div class="label">Propostas em andamento</div></div>
+    <div class="stat"><div class="valor">${r.follow_ups_pendentes}</div><div class="label">Follow-ups pendentes</div></div>
+  `;
+}
+
+async function carregarClientes() {
+  const clientes = await api('/clientes');
+  const tbody = document.querySelector('#tabela-clientes tbody');
+  tbody.innerHTML = clientes.length
+    ? clientes.map((c) => `<tr><td>${c.nome}</td><td>${c.empresa ?? ''}</td><td>${c.telefone ?? ''}</td><td>${c.status}</td></tr>`).join('')
+    : '<tr><td class="vazio">Nenhum cliente ainda.</td></tr>';
+
+  const opcoes = clientes.map((c) => `<option value="${c.id}">${c.nome}</option>`).join('');
+  document.getElementById('select-cliente-proposta').innerHTML = opcoes;
+  document.getElementById('select-cliente-followup').innerHTML = opcoes;
+}
+
+async function carregarPropostas() {
+  const propostas = await api('/propostas');
+  const tbody = document.querySelector('#tabela-propostas tbody');
+  tbody.innerHTML = propostas.length
+    ? propostas.map((p) => `
+        <tr>
+          <td>${p.clientes?.nome ?? '—'}</td>
+          <td>${p.titulo}</td>
+          <td>${fmtMoeda(p.valor)}</td>
+          <td class="status-${p.status}">${p.status}</td>
+          <td>
+            ${p.status === 'em_andamento' ? `
+              <button class="secundario" data-acao="ganha" data-id="${p.id}">Ganha</button>
+              <button class="secundario" data-acao="perdida" data-id="${p.id}">Perdida</button>
+            ` : ''}
+          </td>
+        </tr>
+      `).join('')
+    : '<tr><td class="vazio">Nenhuma proposta ainda.</td></tr>';
+
+  tbody.querySelectorAll('button[data-acao]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      try {
+        await api(`/propostas/${btn.dataset.id}`, { method: 'PATCH', body: JSON.stringify({ status: btn.dataset.acao }) });
+        await Promise.all([carregarPropostas(), carregarResumo()]);
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+  });
+}
+
+async function carregarFollowUps() {
+  const followUps = await api('/follow-ups');
+  const tbody = document.querySelector('#tabela-followups tbody');
+  tbody.innerHTML = followUps.length
+    ? followUps.map((f) => `
+        <tr>
+          <td>${f.clientes?.nome ?? '—'}</td>
+          <td>${f.descricao}</td>
+          <td>${new Date(f.data + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
+          <td><button class="secundario" data-id="${f.id}">Concluir</button></td>
+        </tr>
+      `).join('')
+    : '<tr><td class="vazio">Nenhum follow-up pendente.</td></tr>';
+
+  tbody.querySelectorAll('button[data-id]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      try {
+        await api(`/follow-ups/${btn.dataset.id}/concluir`, { method: 'PATCH' });
+        await Promise.all([carregarFollowUps(), carregarResumo()]);
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+  });
+}
+
+document.getElementById('form-cliente').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  try {
+    await api('/clientes', { method: 'POST', body: JSON.stringify(Object.fromEntries(new FormData(e.target))) });
+    e.target.reset();
+    await carregarClientes();
+  } catch (err) {
+    alert(err.message);
+  }
+});
+
+document.getElementById('form-proposta').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  try {
+    await api('/propostas', { method: 'POST', body: JSON.stringify(Object.fromEntries(new FormData(e.target))) });
+    e.target.reset();
+    await Promise.all([carregarPropostas(), carregarResumo()]);
+  } catch (err) {
+    alert(err.message);
+  }
+});
+
+document.getElementById('form-followup').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  try {
+    await api('/follow-ups', { method: 'POST', body: JSON.stringify(Object.fromEntries(new FormData(e.target))) });
+    e.target.reset();
+    await Promise.all([carregarFollowUps(), carregarResumo()]);
+  } catch (err) {
+    alert(err.message);
+  }
+});
+
+document.getElementById('btn-meta').addEventListener('click', async () => {
+  const valor = prompt('Meta do mês (R$):');
+  if (!valor) return;
+  const hoje = new Date();
+  const mes = `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-01`;
+  try {
+    await api('/metas', { method: 'POST', body: JSON.stringify({ mes, valor_meta: Number(valor) }) });
+    await carregarResumo();
+  } catch (err) {
+    alert(err.message);
+  }
+});
+
+(async function iniciar() {
+  await carregarClientes();
+  await Promise.all([carregarResumo(), carregarPropostas(), carregarFollowUps()]);
+})();
+</script>
+</body>
+</html>
