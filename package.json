@@ -1,0 +1,27 @@
+{
+  "name": "buntechagroique",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Aplicativo para auxiliar nas vendas",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "node --watch src/server.js",
+    "start": "node src/server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ique3dstudio/buntechagroique.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ique3dstudio/buntechagroique/issues"
+  },
+  "homepage": "https://github.com/ique3dstudio/buntechagroique#readme",
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1"
+  }
+}
