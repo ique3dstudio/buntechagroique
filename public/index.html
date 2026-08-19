@@ -9,6 +9,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <style>
   :root {
     --blue-light: #29ABE2;
@@ -242,6 +244,7 @@
     <nav class="abas">
       <button class="ativa" data-aba="inicio">Início</button>
       <button data-aba="crm">CRM</button>
+      <button data-aba="mapa">Mapa</button>
     </nav>
   </header>
 
@@ -294,6 +297,8 @@
             <div class="field"><label>Site</label><input name="site" placeholder="www.exemplo.com" /></div>
             <div class="field"><label>Telefone</label><input name="telefone" placeholder="(00) 00000-0000" /></div>
             <div class="field"><label>Cidade</label><input name="cidade" placeholder="Cidade / UF" /></div>
+            <div class="field"><label>CNPJ</label><input name="cnpj" placeholder="00.000.000/0000-00" /></div>
+            <div class="field" style="grid-column: 1 / -1"><label>Endereço (para o mapa)</label><input name="endereco" placeholder="Rua, número, bairro" /></div>
             <button type="submit">Adicionar empresa</button>
           </div>
         </form>
@@ -414,6 +419,28 @@
         </div>
       </section>
     </div>
+
+    <!-- ===== ABA MAPA ===== -->
+    <div class="painel" id="painel-mapa" hidden>
+      <section class="card">
+        <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20 3 17V4l6 3m0 13 6-3m-6 3V7m6 10 6 3V7l-6-3m0 13V4m0 3L9 4"/></svg>Mapa de clientes</h2>
+        <p class="vazio" style="margin: -0.5rem 0 1rem">Clique num pino pra ver os dados do cliente. Use "Adicionar à rota" pra comparar distâncias entre clientes.</p>
+        <div id="mapa" style="height: 520px; border-radius: 10px; overflow: hidden; border: 1px solid var(--border);"></div>
+
+        <div class="rota-painel" style="margin-top: 1rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem;">
+          <strong style="font-size: 0.85rem;">Rota:</strong>
+          <span id="rota-lista" class="vazio">Nenhum cliente selecionado.</span>
+          <button id="btn-calcular-rota" class="secundario" type="button">Calcular rota</button>
+          <button id="btn-limpar-rota" class="secundario" type="button">Limpar</button>
+          <span id="rota-resultado" style="font-weight: 700; color: var(--blue-dark);"></span>
+        </div>
+      </section>
+
+      <section class="card" id="mapa-cliente-info" hidden>
+        <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/></svg><span id="mapa-cliente-nome">Cliente</span></h2>
+        <div class="resumo-grid" id="mapa-cliente-dados"></div>
+      </section>
+    </div>
   </main>
 
   <footer>Buntech Agro — painel interno de vendas</footer>
@@ -437,6 +464,116 @@ const ROTULOS_TIPO = {
   whatsapp: 'WhatsApp',
 };
 
+// --- Mapa ---
+
+let mapa;
+let camadaRota;
+let pontosRota = [];
+const marcadoresMapa = {};
+
+function fmtData(iso) {
+  return iso ? new Date(iso).toLocaleDateString('pt-BR') : '—';
+}
+
+function mostrarInfoCliente(cliente) {
+  document.getElementById('mapa-cliente-nome').textContent = cliente.nome;
+  document.getElementById('mapa-cliente-dados').innerHTML = `
+    <div class="stat" style="background:#f3f7f6;border:1px solid var(--border)"><div class="valor" style="color:var(--ink)">${fmtMoeda(cliente.faturamento)}</div><div class="label" style="color:var(--muted)">Faturamento total</div></div>
+    <div class="stat" style="background:#f3f7f6;border:1px solid var(--border)"><div class="valor" style="color:var(--ink);font-size:1rem">${fmtData(cliente.ultimo_pedido)}</div><div class="label" style="color:var(--muted)">Último pedido</div></div>
+    <div class="stat" style="background:#f3f7f6;border:1px solid var(--border)"><div class="valor" style="color:var(--ink);font-size:0.9rem">${cliente.cnpj ?? '—'}</div><div class="label" style="color:var(--muted)">CNPJ</div></div>
+    <div class="stat" style="background:#f3f7f6;border:1px solid var(--border)"><div class="valor" style="color:var(--ink);font-size:0.85rem">${cliente.produtos.length ? cliente.produtos.join(', ') : '—'}</div><div class="label" style="color:var(--muted)">Produtos utilizados</div></div>
+  `;
+  document.getElementById('mapa-cliente-info').hidden = false;
+}
+
+function atualizarListaRota() {
+  const span = document.getElementById('rota-lista');
+  span.textContent = pontosRota.length ? pontosRota.map((p) => p.nome).join(' → ') : 'Nenhum cliente selecionado.';
+  span.className = pontosRota.length ? '' : 'vazio';
+}
+
+function adicionarPontoRota(cliente) {
+  if (pontosRota.some((p) => p.id === cliente.id)) return;
+  pontosRota.push(cliente);
+  atualizarListaRota();
+  mapa.closePopup();
+}
+
+async function carregarClientesMapa() {
+  Object.values(marcadoresMapa).forEach((marcador) => mapa.removeLayer(marcador));
+  Object.keys(marcadoresMapa).forEach((id) => delete marcadoresMapa[id]);
+
+  const clientes = await api('/mapa/clientes');
+  clientes.forEach((cliente) => {
+    const marcador = L.marker([cliente.latitude, cliente.longitude]).addTo(mapa);
+    marcador.bindPopup(`
+      <strong>${cliente.nome}</strong><br/>
+      ${cliente.endereco ?? ''}<br/>
+      <button type="button" data-add-rota="${cliente.id}" style="margin-top:6px">Adicionar à rota</button>
+    `);
+    marcador.on('click', () => mostrarInfoCliente(cliente));
+    marcador.on('popupopen', () => {
+      const btn = document.querySelector(`button[data-add-rota="${cliente.id}"]`);
+      if (btn) btn.addEventListener('click', () => adicionarPontoRota(cliente));
+    });
+    marcadoresMapa[cliente.id] = marcador;
+  });
+
+  if (clientes.length) {
+    const grupo = L.featureGroup(Object.values(marcadoresMapa));
+    mapa.fitBounds(grupo.getBounds().pad(0.2));
+  }
+}
+
+const mapaPronto = (async function iniciarMapa() {
+  mapa = L.map('mapa').setView([-18.5, -44.5], 7);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    maxZoom: 19,
+  }).addTo(mapa);
+
+  await carregarClientesMapa();
+})();
+
+document.getElementById('btn-limpar-rota').addEventListener('click', () => {
+  pontosRota = [];
+  atualizarListaRota();
+  document.getElementById('rota-resultado').textContent = '';
+  if (camadaRota) {
+    mapa.removeLayer(camadaRota);
+    camadaRota = null;
+  }
+});
+
+document.getElementById('btn-calcular-rota').addEventListener('click', async () => {
+  if (pontosRota.length < 2) {
+    alert('Selecione pelo menos 2 clientes no mapa (botão "Adicionar à rota" no pino).');
+    return;
+  }
+
+  const coords = pontosRota.map((p) => `${p.longitude},${p.latitude}`).join(';');
+  const url = `https://router.project-osrm.org/trip/v1/driving/${coords}?source=first&roundtrip=false&geometries=geojson&overview=full`;
+
+  document.getElementById('rota-resultado').textContent = 'Calculando...';
+  try {
+    const res = await fetch(url);
+    const dados = await res.json();
+    if (dados.code !== 'Ok' || !dados.trips?.length) throw new Error('Não foi possível calcular a rota.');
+
+    const trip = dados.trips[0];
+    if (camadaRota) mapa.removeLayer(camadaRota);
+    camadaRota = L.geoJSON(trip.geometry, { style: { color: '#0B6FB0', weight: 4 } }).addTo(mapa);
+    mapa.fitBounds(camadaRota.getBounds().pad(0.15));
+
+    const km = (trip.distance / 1000).toFixed(1);
+    const minutos = Math.round(trip.duration / 60);
+    document.getElementById('rota-resultado').textContent = `${km} km · ~${minutos} min de carro`;
+  } catch (err) {
+    document.getElementById('rota-resultado').textContent = '';
+    alert(err.message);
+  }
+});
+
 // --- Abas ---
 
 document.querySelectorAll('nav.abas button').forEach((btn) => {
@@ -445,6 +582,13 @@ document.querySelectorAll('nav.abas button').forEach((btn) => {
     btn.classList.add('ativa');
     document.getElementById('painel-inicio').hidden = btn.dataset.aba !== 'inicio';
     document.getElementById('painel-crm').hidden = btn.dataset.aba !== 'crm';
+    document.getElementById('painel-mapa').hidden = btn.dataset.aba !== 'mapa';
+    if (btn.dataset.aba === 'mapa') {
+      mapaPronto.then(() => {
+        mapa.invalidateSize();
+        carregarClientesMapa();
+      });
+    }
   });
 });
 
@@ -613,9 +757,10 @@ function formHandler(formId, path, aoTerminar) {
   document.getElementById(formId).addEventListener('submit', async (e) => {
     e.preventDefault();
     try {
-      await api(path, { method: 'POST', body: JSON.stringify(Object.fromEntries(new FormData(e.target))) });
+      const resultado = await api(path, { method: 'POST', body: JSON.stringify(Object.fromEntries(new FormData(e.target))) });
       e.target.reset();
       await aoTerminar();
+      if (resultado?.aviso) alert(resultado.aviso);
     } catch (err) {
       alert(err.message);
     }

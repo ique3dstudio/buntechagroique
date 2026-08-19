@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { supabase } from '../services/supabase.js';
+import { geocodificarEndereco } from '../services/geocode.js';
 
 const router = Router();
 
@@ -37,16 +38,84 @@ router.get('/empresas', async (req, res) => {
 });
 
 router.post('/empresas', async (req, res) => {
-  const { nome, segmento, site, telefone, cidade } = req.body;
+  const { nome, segmento, site, telefone, cidade, cnpj, endereco } = req.body;
   if (!nome) return res.status(400).json({ error: 'nome é obrigatório' });
+
+  let latitude = null;
+  let longitude = null;
+  let avisoGeocodificacao;
+  if (endereco) {
+    const enderecoCompleto = [endereco, cidade, 'Minas Gerais', 'Brasil'].filter(Boolean).join(', ');
+    const coords = await geocodificarEndereco(enderecoCompleto).catch(() => null);
+    if (coords) {
+      latitude = coords.latitude;
+      longitude = coords.longitude;
+    } else {
+      avisoGeocodificacao = 'Não conseguimos localizar esse endereço no mapa. A empresa foi salva mesmo assim.';
+    }
+  }
 
   const { data, error } = await supabase
     .from('empresas')
-    .insert({ nome, segmento, site, telefone, cidade })
+    .insert({ nome, segmento, site, telefone, cidade, cnpj, endereco, latitude, longitude })
     .select()
     .single();
   if (error) return res.status(500).json({ error: error.message });
-  res.status(201).json(data);
+  res.status(201).json({ ...data, aviso: avisoGeocodificacao });
+});
+
+// --- Mapa de clientes ---
+
+router.get('/mapa/clientes', async (req, res) => {
+  const { data: empresas, error } = await supabase
+    .from('empresas')
+    .select('*')
+    .not('latitude', 'is', null)
+    .not('longitude', 'is', null);
+  if (error) return res.status(500).json({ error: error.message });
+
+  const resultado = [];
+  for (const empresa of empresas) {
+    const { data: contatosEmpresa, error: contatosError } = await supabase
+      .from('contatos')
+      .select('id')
+      .eq('empresa_id', empresa.id);
+    if (contatosError) return res.status(500).json({ error: contatosError.message });
+    const contatoIds = contatosEmpresa.map((c) => c.id);
+
+    let faturamento = 0;
+    let ultimoPedido = null;
+    let produtos = [];
+
+    if (contatoIds.length) {
+      const { data: negociacoesGanhas, error: negociacoesError } = await supabase
+        .from('negociacoes')
+        .select('valor, updated_at, produtos(nome)')
+        .in('contato_id', contatoIds)
+        .eq('etapa', 'ganha')
+        .order('updated_at', { ascending: false });
+      if (negociacoesError) return res.status(500).json({ error: negociacoesError.message });
+
+      faturamento = negociacoesGanhas.reduce((soma, n) => soma + Number(n.valor || 0), 0);
+      ultimoPedido = negociacoesGanhas[0]?.updated_at ?? null;
+      produtos = [...new Set(negociacoesGanhas.map((n) => n.produtos?.nome).filter(Boolean))];
+    }
+
+    resultado.push({
+      id: empresa.id,
+      nome: empresa.nome,
+      cnpj: empresa.cnpj,
+      endereco: empresa.endereco,
+      cidade: empresa.cidade,
+      latitude: empresa.latitude,
+      longitude: empresa.longitude,
+      faturamento,
+      ultimo_pedido: ultimoPedido,
+      produtos,
+    });
+  }
+
+  res.json(resultado);
 });
 
 // --- Produtos ---
