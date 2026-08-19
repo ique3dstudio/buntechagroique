@@ -63,19 +63,38 @@
   .logo .agro { background: linear-gradient(90deg, var(--teal), var(--green)); -webkit-background-clip: text; background-clip: text; color: transparent; }
   .logo .subtitulo { font-size: 0.7rem; color: var(--muted); font-weight: 500; margin-top: -2px; }
 
-  nav.secoes { display: flex; gap: 0.25rem; flex-wrap: wrap; }
+  nav.abas { display: flex; gap: 0.35rem; }
+  nav.abas button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: 'Poppins', sans-serif;
+    color: var(--muted);
+    font-size: 0.9rem;
+    font-weight: 700;
+    padding: 0.5rem 1rem;
+    border-radius: 999px;
+    transition: background 0.15s, color 0.15s;
+  }
+  nav.abas button:hover { background: #eef6f5; color: var(--teal); }
+  nav.abas button.ativa { background: linear-gradient(90deg, var(--blue-dark), var(--teal)); color: #fff; }
+
+  nav.secoes { display: flex; gap: 0.25rem; flex-wrap: wrap; margin: 0 0 1.25rem; }
   nav.secoes a {
     text-decoration: none;
     color: var(--muted);
-    font-size: 0.85rem;
+    font-size: 0.82rem;
     font-weight: 600;
-    padding: 0.4rem 0.7rem;
+    padding: 0.35rem 0.65rem;
     border-radius: 999px;
+    background: var(--card);
+    border: 1px solid var(--border);
     transition: background 0.15s, color 0.15s;
   }
   nav.secoes a:hover { background: #eef6f5; color: var(--teal); }
 
   main { max-width: 1080px; margin: 0 auto; padding: 1.25rem; }
+  .painel[hidden] { display: none; }
 
   /* --- Hero / resumo --- */
   .hero {
@@ -96,8 +115,8 @@
     padding: 0.85rem;
     text-align: center;
   }
-  .stat .valor { font-family: 'Poppins', sans-serif; font-size: 1.5rem; font-weight: 700; }
-  .stat .label { font-size: 0.75rem; color: rgba(255,255,255,0.85); margin-top: 0.15rem; }
+  .stat .valor { font-family: 'Poppins', sans-serif; font-size: 1.4rem; font-weight: 700; }
+  .stat .label { font-size: 0.72rem; color: rgba(255,255,255,0.85); margin-top: 0.15rem; }
   .hero button {
     margin-top: 1.1rem;
     background: #fff;
@@ -198,16 +217,16 @@
   .temp-quente { background: #fdecec; color: #c0392b; }
   .temp-morno { background: #fff4e0; color: #b45309; }
   .temp-frio { background: #e6f4fb; color: var(--blue-dark); }
-  .status-lead { background: #eef1f0; color: #4b5563; }
+  .status-desenvolvimento { background: #fff4e0; color: #b45309; }
   .status-ativo { background: #e7f7ea; color: #1e7e34; }
   .status-inativo { background: #f1f1f1; color: #9ca3af; }
+  .status-convertido { background: #e3f5f3; color: #0f766e; }
 
   footer { text-align: center; color: var(--muted); font-size: 0.78rem; padding: 1.5rem 1rem 2rem; }
 
   @media (max-width: 640px) {
     header.top { padding: 0.7rem 1rem; }
     main { padding: 1rem 0.85rem; }
-    nav.secoes { width: 100%; overflow-x: auto; flex-wrap: nowrap; }
   }
 </style>
 </head>
@@ -220,151 +239,181 @@
         <div class="subtitulo">Painel de Vendas</div>
       </div>
     </div>
-    <nav class="secoes">
-      <a href="#resumo">Resumo</a>
-      <a href="#empresas">Empresas</a>
-      <a href="#contatos">Contatos</a>
-      <a href="#produtos">Produtos</a>
-      <a href="#negociacoes">Negociações</a>
-      <a href="#atividades">Atividades</a>
+    <nav class="abas">
+      <button class="ativa" data-aba="inicio">Início</button>
+      <button data-aba="crm">CRM</button>
     </nav>
   </header>
 
   <main>
-    <section class="hero" id="resumo">
-      <h2>Resumo do mês</h2>
-      <p class="legenda">Seu desempenho de vendas em tempo real.</p>
-      <div class="resumo-grid" id="resumo-stats">Carregando...</div>
-      <button class="secundario" id="btn-meta">Definir meta do mês</button>
-    </section>
+    <!-- ===== ABA INICIO ===== -->
+    <div class="painel" id="painel-inicio">
+      <section class="hero">
+        <h2>Seus números</h2>
+        <p class="legenda">Visão geral do mês — atualizado em tempo real.</p>
+        <div class="resumo-grid" id="resumo-stats">Carregando...</div>
+        <button class="secundario" id="btn-meta">Definir meta do mês</button>
+      </section>
 
-    <section class="card" id="empresas">
-      <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h1M14 9h1M9 13h1M14 13h1M9 17h1M14 17h1"/></svg>Empresas</h2>
-      <form id="form-empresa">
-        <div class="form-grid">
-          <div class="field"><label>Nome da empresa</label><input name="nome" placeholder="Ex: Fazenda Boa Vista" required /></div>
-          <div class="field"><label>Segmento</label><input name="segmento" placeholder="Ex: Grãos" /></div>
-          <div class="field"><label>Site</label><input name="site" placeholder="www.exemplo.com" /></div>
-          <div class="field"><label>Telefone</label><input name="telefone" placeholder="(00) 00000-0000" /></div>
-          <div class="field"><label>Cidade</label><input name="cidade" placeholder="Cidade / UF" /></div>
-          <button type="submit">Adicionar empresa</button>
-        </div>
-      </form>
-      <div class="tabela-wrap">
-        <table>
-          <thead><tr><th>Nome</th><th>Segmento</th><th>Cidade</th></tr></thead>
-          <tbody id="tabela-empresas"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="card" id="contatos">
-      <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>Contatos</h2>
-      <form id="form-contato">
-        <div class="form-grid">
-          <div class="field"><label>Nome</label><input name="nome" placeholder="Nome completo" required /></div>
-          <div class="field"><label>Empresa</label><select name="empresa_id" id="select-empresa-contato"><option value="">Sem empresa</option></select></div>
-          <div class="field"><label>Cargo</label><input name="cargo" placeholder="Ex: Comprador" /></div>
-          <div class="field"><label>Telefone</label><input name="telefone" placeholder="(00) 00000-0000" /></div>
-          <div class="field"><label>E-mail</label><input name="email" placeholder="nome@empresa.com" type="email" /></div>
-          <div class="field"><label>Origem</label>
-            <select name="origem">
-              <option value="">Selecionar</option>
-              <option value="indicacao">Indicação</option>
-              <option value="site">Site</option>
-              <option value="evento">Evento</option>
-              <option value="ligacao_fria">Ligação fria</option>
-              <option value="outro">Outro</option>
-            </select>
+      <section class="card" id="visitas">
+        <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.1 7-11a7 7 0 0 0-14 0c0 4.9 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>Registrar visita</h2>
+        <form id="form-visita">
+          <div class="form-grid">
+            <div class="field"><label>Cliente</label><select name="contato_id" id="select-contato-visita" required></select></div>
+            <div class="field"><label>Data</label><input name="data" type="date" required /></div>
+            <div class="field"><label>Km rodados</label><input name="km" placeholder="0" type="number" step="0.1" min="0" /></div>
+            <div class="field"><label>Observações</label><input name="observacoes" placeholder="Opcional" /></div>
+            <button type="submit">Registrar visita</button>
           </div>
-          <div class="field"><label>Status</label>
-            <select name="status">
-              <option value="lead">Lead</option>
-              <option value="ativo">Ativo</option>
-              <option value="inativo">Inativo</option>
-            </select>
-          </div>
-          <button type="submit">Adicionar contato</button>
+        </form>
+        <div class="tabela-wrap">
+          <table>
+            <thead><tr><th>Cliente</th><th>Data</th><th>Km</th><th>Observações</th></tr></thead>
+            <tbody id="tabela-visitas"></tbody>
+          </table>
         </div>
-      </form>
-      <div class="tabela-wrap">
-        <table>
-          <thead><tr><th>Nome</th><th>Empresa</th><th>Telefone</th><th>Status</th></tr></thead>
-          <tbody id="tabela-contatos"></tbody>
-        </table>
-      </div>
-    </section>
+      </section>
+    </div>
 
-    <section class="card" id="produtos">
-      <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>Produtos</h2>
-      <form id="form-produto">
-        <div class="form-grid">
-          <div class="field"><label>Nome do produto</label><input name="nome" placeholder="Ex: Fertilizante NPK" required /></div>
-          <div class="field"><label>Preço (R$)</label><input name="preco" placeholder="0,00" type="number" step="0.01" min="0" /></div>
-          <button type="submit">Adicionar produto</button>
-        </div>
-      </form>
-      <div class="tabela-wrap">
-        <table>
-          <thead><tr><th>Nome</th><th>Preço</th></tr></thead>
-          <tbody id="tabela-produtos"></tbody>
-        </table>
-      </div>
-    </section>
+    <!-- ===== ABA CRM ===== -->
+    <div class="painel" id="painel-crm" hidden>
+      <nav class="secoes">
+        <a href="#empresas">Empresas</a>
+        <a href="#contatos">Contatos</a>
+        <a href="#produtos">Produtos</a>
+        <a href="#negociacoes">Negociações</a>
+        <a href="#atividades">Atividades</a>
+      </nav>
 
-    <section class="card" id="negociacoes">
-      <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17 9 11 13 15 21 7"/><path d="M15 7h6v6"/></svg>Negociações</h2>
-      <form id="form-negociacao">
-        <div class="form-grid">
-          <div class="field"><label>Contato</label><select name="contato_id" id="select-contato-negociacao" required></select></div>
-          <div class="field"><label>Produto</label><select name="produto_id" id="select-produto-negociacao"><option value="">Sem produto</option></select></div>
-          <div class="field"><label>Título</label><input name="titulo" placeholder="Descrição da negociação" required /></div>
-          <div class="field"><label>Valor (R$)</label><input name="valor" placeholder="0,00" type="number" step="0.01" min="0" /></div>
-          <div class="field"><label>Temperatura</label>
-            <select name="temperatura">
-              <option value="morno">Morno</option>
-              <option value="quente">Quente</option>
-              <option value="frio">Frio</option>
-            </select>
+      <section class="card" id="empresas">
+        <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h1M14 9h1M9 13h1M14 13h1M9 17h1M14 17h1"/></svg>Empresas</h2>
+        <form id="form-empresa">
+          <div class="form-grid">
+            <div class="field"><label>Nome da empresa</label><input name="nome" placeholder="Ex: Fazenda Boa Vista" required /></div>
+            <div class="field"><label>Segmento</label><input name="segmento" placeholder="Ex: Grãos" /></div>
+            <div class="field"><label>Site</label><input name="site" placeholder="www.exemplo.com" /></div>
+            <div class="field"><label>Telefone</label><input name="telefone" placeholder="(00) 00000-0000" /></div>
+            <div class="field"><label>Cidade</label><input name="cidade" placeholder="Cidade / UF" /></div>
+            <button type="submit">Adicionar empresa</button>
           </div>
-          <div class="field"><label>Previsão de fechamento</label><input name="data_prevista" type="date" /></div>
-          <button type="submit">Adicionar negociação</button>
+        </form>
+        <div class="tabela-wrap">
+          <table>
+            <thead><tr><th>Nome</th><th>Segmento</th><th>Cidade</th></tr></thead>
+            <tbody id="tabela-empresas"></tbody>
+          </table>
         </div>
-      </form>
-      <div class="tabela-wrap">
-        <table>
-          <thead><tr><th>Contato</th><th>Negociação</th><th>Valor</th><th>Temperatura</th><th>Etapa</th></tr></thead>
-          <tbody id="tabela-negociacoes"></tbody>
-        </table>
-      </div>
-    </section>
+      </section>
 
-    <section class="card" id="atividades">
-      <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/><path d="m8 15 2 2 4-4"/></svg>Atividades pendentes</h2>
-      <form id="form-atividade">
-        <div class="form-grid">
-          <div class="field"><label>Contato</label><select name="contato_id" id="select-contato-atividade" required></select></div>
-          <div class="field"><label>Tipo</label>
-            <select name="tipo">
-              <option value="tarefa">Tarefa</option>
-              <option value="ligacao">Ligação</option>
-              <option value="email">E-mail</option>
-              <option value="reuniao">Reunião</option>
-              <option value="whatsapp">WhatsApp</option>
-            </select>
+      <section class="card" id="contatos">
+        <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>Contatos</h2>
+        <form id="form-contato">
+          <div class="form-grid">
+            <div class="field"><label>Nome</label><input name="nome" placeholder="Nome completo" required /></div>
+            <div class="field"><label>Empresa</label><select name="empresa_id" id="select-empresa-contato"><option value="">Sem empresa</option></select></div>
+            <div class="field"><label>Cargo</label><input name="cargo" placeholder="Ex: Comprador" /></div>
+            <div class="field"><label>Telefone</label><input name="telefone" placeholder="(00) 00000-0000" /></div>
+            <div class="field"><label>E-mail</label><input name="email" placeholder="nome@empresa.com" type="email" /></div>
+            <div class="field"><label>Origem</label>
+              <select name="origem">
+                <option value="">Selecionar</option>
+                <option value="indicacao">Indicação</option>
+                <option value="site">Site</option>
+                <option value="evento">Evento</option>
+                <option value="ligacao_fria">Ligação fria</option>
+                <option value="outro">Outro</option>
+              </select>
+            </div>
+            <div class="field"><label>Status</label>
+              <select name="status">
+                <option value="desenvolvimento">Em desenvolvimento</option>
+                <option value="ativo">Ativo</option>
+                <option value="convertido">Convertido</option>
+                <option value="inativo">Inativo</option>
+              </select>
+            </div>
+            <button type="submit">Adicionar contato</button>
           </div>
-          <div class="field"><label>O que fazer</label><input name="descricao" placeholder="Ex: Retornar ligação" required /></div>
-          <div class="field"><label>Data</label><input name="data" type="date" required /></div>
-          <button type="submit">Adicionar atividade</button>
+        </form>
+        <div class="tabela-wrap">
+          <table>
+            <thead><tr><th>Nome</th><th>Empresa</th><th>Telefone</th><th>Status</th></tr></thead>
+            <tbody id="tabela-contatos"></tbody>
+          </table>
         </div>
-      </form>
-      <div class="tabela-wrap">
-        <table>
-          <thead><tr><th>Contato</th><th>Tipo</th><th>Descrição</th><th>Data</th><th></th></tr></thead>
-          <tbody id="tabela-atividades"></tbody>
-        </table>
-      </div>
-    </section>
+      </section>
+
+      <section class="card" id="produtos">
+        <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>Produtos</h2>
+        <form id="form-produto">
+          <div class="form-grid">
+            <div class="field"><label>Nome do produto</label><input name="nome" placeholder="Ex: Fertilizante NPK" required /></div>
+            <div class="field"><label>Preço (R$)</label><input name="preco" placeholder="0,00" type="number" step="0.01" min="0" /></div>
+            <button type="submit">Adicionar produto</button>
+          </div>
+        </form>
+        <div class="tabela-wrap">
+          <table>
+            <thead><tr><th>Nome</th><th>Preço</th></tr></thead>
+            <tbody id="tabela-produtos"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card" id="negociacoes">
+        <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17 9 11 13 15 21 7"/><path d="M15 7h6v6"/></svg>Negociações</h2>
+        <form id="form-negociacao">
+          <div class="form-grid">
+            <div class="field"><label>Contato</label><select name="contato_id" id="select-contato-negociacao" required></select></div>
+            <div class="field"><label>Produto</label><select name="produto_id" id="select-produto-negociacao"><option value="">Sem produto</option></select></div>
+            <div class="field"><label>Título</label><input name="titulo" placeholder="Descrição da negociação" required /></div>
+            <div class="field"><label>Valor (R$)</label><input name="valor" placeholder="0,00" type="number" step="0.01" min="0" /></div>
+            <div class="field"><label>Temperatura</label>
+              <select name="temperatura">
+                <option value="morno">Morno</option>
+                <option value="quente">Quente</option>
+                <option value="frio">Frio</option>
+              </select>
+            </div>
+            <div class="field"><label>Previsão de fechamento</label><input name="data_prevista" type="date" /></div>
+            <button type="submit">Adicionar negociação</button>
+          </div>
+        </form>
+        <div class="tabela-wrap">
+          <table>
+            <thead><tr><th>Contato</th><th>Negociação</th><th>Valor</th><th>Temperatura</th><th>Etapa</th></tr></thead>
+            <tbody id="tabela-negociacoes"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card" id="atividades">
+        <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/><path d="m8 15 2 2 4-4"/></svg>Atividades pendentes</h2>
+        <form id="form-atividade">
+          <div class="form-grid">
+            <div class="field"><label>Contato</label><select name="contato_id" id="select-contato-atividade" required></select></div>
+            <div class="field"><label>Tipo</label>
+              <select name="tipo">
+                <option value="tarefa">Tarefa</option>
+                <option value="ligacao">Ligação</option>
+                <option value="email">E-mail</option>
+                <option value="reuniao">Reunião</option>
+                <option value="whatsapp">WhatsApp</option>
+              </select>
+            </div>
+            <div class="field"><label>O que fazer</label><input name="descricao" placeholder="Ex: Retornar ligação" required /></div>
+            <div class="field"><label>Data</label><input name="data" type="date" required /></div>
+            <button type="submit">Adicionar atividade</button>
+          </div>
+        </form>
+        <div class="tabela-wrap">
+          <table>
+            <thead><tr><th>Contato</th><th>Tipo</th><th>Descrição</th><th>Data</th><th></th></tr></thead>
+            <tbody id="tabela-atividades"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
   </main>
 
   <footer>Buntech Agro — painel interno de vendas</footer>
@@ -388,6 +437,19 @@ const ROTULOS_TIPO = {
   whatsapp: 'WhatsApp',
 };
 
+// --- Abas ---
+
+document.querySelectorAll('nav.abas button').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('nav.abas button').forEach((b) => b.classList.remove('ativa'));
+    btn.classList.add('ativa');
+    document.getElementById('painel-inicio').hidden = btn.dataset.aba !== 'inicio';
+    document.getElementById('painel-crm').hidden = btn.dataset.aba !== 'crm';
+  });
+});
+
+// --- API helpers ---
+
 async function api(path, options) {
   const res = await fetch('/api' + path, {
     headers: { 'Content-Type': 'application/json' },
@@ -404,15 +466,42 @@ function fmtMoeda(valor) {
   return (valor ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
+function fmtKm(valor) {
+  return (valor ?? 0).toLocaleString('pt-BR') + ' km';
+}
+
+// --- Aba Início ---
+
 async function carregarResumo() {
   const r = await api('/resumo');
   document.getElementById('resumo-stats').innerHTML = `
-    <div class="stat"><div class="valor">${fmtMoeda(r.valor_realizado)}</div><div class="label">Realizado no mês</div></div>
+    <div class="stat"><div class="valor">${fmtMoeda(r.faturamento_mes)}</div><div class="label">Faturamento do mês</div></div>
     <div class="stat"><div class="valor">${r.valor_meta != null ? fmtMoeda(r.valor_meta) : '—'}</div><div class="label">Meta do mês</div></div>
-    <div class="stat"><div class="valor">${r.negociacoes_em_aberto}</div><div class="label">Negociações em aberto</div></div>
-    <div class="stat"><div class="valor">${r.atividades_pendentes}</div><div class="label">Atividades pendentes</div></div>
+    <div class="stat"><div class="valor">${r.clientes_visitados_mes}</div><div class="label">Clientes visitados (mês)</div></div>
+    <div class="stat"><div class="valor">${fmtKm(r.km_rodados_mes)}</div><div class="label">Km rodados (mês)</div></div>
+    <div class="stat"><div class="valor">${r.clientes_ativos}</div><div class="label">Clientes ativos</div></div>
+    <div class="stat"><div class="valor">${r.clientes_inativos}</div><div class="label">Clientes inativos</div></div>
+    <div class="stat"><div class="valor">${r.clientes_desenvolvimento}</div><div class="label">Em desenvolvimento</div></div>
+    <div class="stat"><div class="valor">${r.clientes_convertidos}</div><div class="label">Convertidos</div></div>
   `;
 }
+
+async function carregarVisitas() {
+  const visitas = await api('/visitas');
+  const tbody = document.getElementById('tabela-visitas');
+  tbody.innerHTML = visitas.length
+    ? visitas.map((v) => `
+        <tr>
+          <td>${v.contatos?.nome ?? '—'}</td>
+          <td>${new Date(v.data + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
+          <td>${v.km != null ? fmtKm(v.km) : '—'}</td>
+          <td>${v.observacoes ?? '—'}</td>
+        </tr>
+      `).join('')
+    : '<tr><td class="vazio" colspan="4">Nenhuma visita registrada ainda.</td></tr>';
+}
+
+// --- Aba CRM ---
 
 async function carregarEmpresas() {
   const empresas = await api('/empresas');
@@ -453,6 +542,7 @@ async function carregarContatos() {
   const opcoes = contatos.map((c) => `<option value="${c.id}">${c.nome}</option>`).join('');
   document.getElementById('select-contato-negociacao').innerHTML = opcoes;
   document.getElementById('select-contato-atividade').innerHTML = opcoes;
+  document.getElementById('select-contato-visita').innerHTML = opcoes;
 }
 
 async function carregarNegociacoes() {
@@ -517,6 +607,8 @@ async function carregarAtividades() {
   });
 }
 
+// --- Formularios ---
+
 function formHandler(formId, path, aoTerminar) {
   document.getElementById(formId).addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -532,9 +624,10 @@ function formHandler(formId, path, aoTerminar) {
 
 formHandler('form-empresa', '/empresas', carregarEmpresas);
 formHandler('form-produto', '/produtos', carregarProdutos);
-formHandler('form-contato', '/contatos', carregarContatos);
+formHandler('form-contato', '/contatos', () => Promise.all([carregarContatos(), carregarResumo()]));
 formHandler('form-negociacao', '/negociacoes', () => Promise.all([carregarNegociacoes(), carregarResumo()]));
 formHandler('form-atividade', '/atividades', () => Promise.all([carregarAtividades(), carregarResumo()]));
+formHandler('form-visita', '/visitas', () => Promise.all([carregarVisitas(), carregarResumo()]));
 
 document.getElementById('btn-meta').addEventListener('click', async () => {
   const valor = prompt('Meta do mês (R$):');
@@ -552,7 +645,7 @@ document.getElementById('btn-meta').addEventListener('click', async () => {
 (async function iniciar() {
   await Promise.all([carregarEmpresas(), carregarProdutos()]);
   await carregarContatos();
-  await Promise.all([carregarResumo(), carregarNegociacoes(), carregarAtividades()]);
+  await Promise.all([carregarResumo(), carregarVisitas(), carregarNegociacoes(), carregarAtividades()]);
 })();
 </script>
 </body>

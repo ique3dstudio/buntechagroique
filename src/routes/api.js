@@ -20,6 +20,11 @@ function inicioMesAtual() {
   return `${ano}-${mes}-01`;
 }
 
+function inicioProximoMes(inicioMes) {
+  const [ano, mes] = inicioMes.split('-').map(Number);
+  return mes === 12 ? `${ano + 1}-01-01` : `${ano}-${String(mes + 1).padStart(2, '0')}-01`;
+}
+
 // --- Empresas ---
 
 router.get('/empresas', async (req, res) => {
@@ -189,6 +194,33 @@ router.patch('/atividades/:id/concluir', async (req, res) => {
   res.json(data);
 });
 
+// --- Visitas ---
+
+router.get('/visitas', async (req, res) => {
+  const { data, error } = await supabase
+    .from('visitas')
+    .select('*, contatos(nome)')
+    .order('data', { ascending: false })
+    .limit(20);
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
+router.post('/visitas', async (req, res) => {
+  const { contato_id, data: dataVisita, km, observacoes } = req.body;
+  if (!contato_id || !dataVisita) {
+    return res.status(400).json({ error: 'contato_id e data são obrigatórios' });
+  }
+
+  const { data, error } = await supabase
+    .from('visitas')
+    .insert({ contato_id, data: dataVisita, km, observacoes })
+    .select('*, contatos(nome)')
+    .single();
+  if (error) return res.status(500).json({ error: error.message });
+  res.status(201).json(data);
+});
+
 // --- Metas e resumo do mês ---
 
 router.post('/metas', async (req, res) => {
@@ -204,6 +236,7 @@ router.post('/metas', async (req, res) => {
 
 router.get('/resumo', async (req, res) => {
   const mes = inicioMesAtual();
+  const proximoMes = inicioProximoMes(mes);
 
   const { data: meta, error: metaError } = await supabase
     .from('metas')
@@ -214,28 +247,44 @@ router.get('/resumo', async (req, res) => {
     .maybeSingle();
   if (metaError) return res.status(500).json({ error: metaError.message });
 
-  const { data: negociacoes, error: negociacoesError } = await supabase
+  const { data: negociacoesGanhas, error: negociacoesError } = await supabase
     .from('negociacoes')
-    .select('valor, etapa');
+    .select('valor')
+    .eq('etapa', 'ganha')
+    .gte('updated_at', mes)
+    .lt('updated_at', proximoMes);
   if (negociacoesError) return res.status(500).json({ error: negociacoesError.message });
+  const faturamentoMes = negociacoesGanhas.reduce((soma, n) => soma + Number(n.valor || 0), 0);
 
-  const valorRealizado = negociacoes
-    .filter((n) => n.etapa === 'ganha')
-    .reduce((soma, n) => soma + Number(n.valor || 0), 0);
-  const negociacoesEmAberto = negociacoes.filter((n) => n.etapa !== 'ganha' && n.etapa !== 'perdida').length;
+  const { data: visitas, error: visitasError } = await supabase
+    .from('visitas')
+    .select('contato_id, km')
+    .gte('data', mes)
+    .lt('data', proximoMes);
+  if (visitasError) return res.status(500).json({ error: visitasError.message });
+  const clientesVisitadosMes = new Set(visitas.map((v) => v.contato_id)).size;
+  const kmRodadosMes = visitas.reduce((soma, v) => soma + Number(v.km || 0), 0);
 
-  const { count: atividadesPendentes, error: atividadesError } = await supabase
-    .from('atividades')
-    .select('*', { count: 'exact', head: true })
-    .eq('concluido', false);
-  if (atividadesError) return res.status(500).json({ error: atividadesError.message });
+  const statusContagens = {};
+  for (const status of ['ativo', 'inativo', 'desenvolvimento', 'convertido']) {
+    const { count, error } = await supabase
+      .from('contatos')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', status);
+    if (error) return res.status(500).json({ error: error.message });
+    statusContagens[status] = count ?? 0;
+  }
 
   res.json({
     mes,
     valor_meta: meta?.valor_meta ?? null,
-    valor_realizado: valorRealizado,
-    negociacoes_em_aberto: negociacoesEmAberto,
-    atividades_pendentes: atividadesPendentes ?? 0,
+    faturamento_mes: faturamentoMes,
+    clientes_visitados_mes: clientesVisitadosMes,
+    km_rodados_mes: kmRodadosMes,
+    clientes_ativos: statusContagens.ativo,
+    clientes_inativos: statusContagens.inativo,
+    clientes_desenvolvimento: statusContagens.desenvolvimento,
+    clientes_convertidos: statusContagens.convertido,
   });
 });
 
