@@ -2,22 +2,25 @@
 window.APP_CONFIG = {
   // Dados do projeto Supabase NOVO (criado especialmente para este app).
   // Painel Supabase > Project Settings > API
-  supabaseUrl: "COLOQUE_A_URL_DO_SEU_PROJETO_SUPABASE",
+  supabaseUrl: "https://gofqnrckdjqikbitglfh.supabase.co",
+  // IMPORTANTE: aqui vai a "anon public key" (NUNCA a "service_role key").
+  // Painel Supabase > Project Settings > API > Project API keys > anon public
   supabaseAnonKey: "COLOQUE_A_ANON_KEY_DO_SEU_PROJETO_SUPABASE",
 
   // Números de WhatsApp por área. Formato internacional, só dígitos
-  // (Brasil: 55 + DDD + número). Ex: "5511987654321"
+  // (Brasil: 55 + DDD + número).
   whatsapp: {
-    hortalicas: "55SEUNUMEROAQUI",
-    grandesCulturas: "55SEUNUMEROAQUI",
-    b2bInsumos: "55SEUNUMEROAQUI",
+    hortalicas: "5511910097461",
+    grandesCulturas: "5518997911679",
+    b2bInsumos: "5511917410629",
     forrageiras: {
-      saoPaulo: "55SEUNUMEROAQUI",
-      minasGerais: "55SEUNUMEROAQUI",
-      goias: "55SEUNUMEROAQUI",
-      matoGrossoSul: "55SEUNUMEROAQUI",
-      outro: "55SEUNUMEROAQUI",
+      saoPaulo: "5511956390977",
+      minasGerais: "5511917412544",
+      goias: "5511971924029",
+      bahia: "5511971924029",
+      matoGrossoSul: "5567996681117",
+      outro: "5547999066045",
     },
-    outros: "55SEUNUMEROAQUI",
+    outros: "5547999066045",
   },
 };
