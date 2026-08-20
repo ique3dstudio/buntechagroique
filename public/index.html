@@ -32,6 +32,7 @@
   }
 
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
 
   body {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
@@ -315,6 +316,83 @@
     box-shadow: 0 0 0 3px rgba(20, 160, 152, 0.15);
   }
   .celula-truncada { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* --- Grade de clientes --- */
+  .clientes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.85rem; }
+  .cliente-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    background: #fff;
+    color: inherit;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem 0.6rem;
+    cursor: pointer;
+    box-shadow: none;
+    text-align: center;
+    transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+  }
+  .cliente-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); border-color: var(--teal); }
+  .foto-cliente-mini, .foto-cliente-mini-fallback { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; }
+  .foto-cliente-mini-fallback, .foto-cliente-grande-fallback {
+    display: flex; align-items: center; justify-content: center;
+    background: linear-gradient(135deg, var(--teal), var(--green));
+    color: #fff; font-family: 'Poppins', sans-serif; font-weight: 700;
+  }
+  .foto-cliente-mini-fallback { font-size: 1.1rem; }
+  .cliente-card .nome-cliente { font-size: 0.85rem; font-weight: 600; line-height: 1.25; }
+
+  /* --- Detalhe do cliente --- */
+  .btn-voltar {
+    display: inline-flex; align-items: center; gap: 0.35rem;
+    background: none; border: none; color: var(--muted); font-weight: 600; font-size: 0.85rem;
+    cursor: pointer; padding: 0.3rem 0; box-shadow: none; margin-bottom: 1rem;
+  }
+  .btn-voltar:hover { color: var(--teal); background: none; transform: none; box-shadow: none; }
+  .btn-voltar svg { width: 16px; height: 16px; }
+  .detalhe-cabecalho { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+  .foto-cliente-grande, .foto-cliente-grande-fallback {
+    width: 84px; height: 84px; border-radius: 50%; object-fit: cover;
+    border: 3px solid var(--bg); box-shadow: var(--shadow);
+  }
+  .foto-cliente-grande-fallback { font-size: 1.6rem; }
+  .avatar-editar-wrap { position: relative; display: inline-block; flex-shrink: 0; }
+  .avatar-editar-btn {
+    position: absolute; right: -2px; bottom: -2px;
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--teal); color: #fff; border: 2px solid #fff;
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+    box-shadow: var(--shadow);
+  }
+  .avatar-editar-btn svg { width: 13px; height: 13px; }
+
+  .campo-linha { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem; padding: 0.75rem 0; border-top: 1px solid var(--border); }
+  .campo-linha .campo-conteudo { flex: 1; min-width: 0; }
+  .campo-label { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); margin-bottom: 0.25rem; }
+  .campo-valor { font-size: 0.92rem; word-break: break-word; white-space: pre-wrap; }
+  .btn-lapis {
+    flex-shrink: 0; width: 30px; height: 30px; border-radius: 50%;
+    background: #eef1f0; border: none; color: var(--muted); cursor: pointer; box-shadow: none;
+    display: flex; align-items: center; justify-content: center; padding: 0;
+  }
+  .btn-lapis:hover { background: #e3f5f3; color: var(--teal); transform: none; box-shadow: none; }
+  .btn-lapis svg { width: 14px; height: 14px; }
+  .campo-edicao { display: flex; gap: 0.5rem; align-items: flex-start; flex: 1; }
+  .campo-edicao input, .campo-edicao select, .campo-edicao textarea { flex: 1; }
+  .campo-edicao-acoes { display: flex; gap: 0.3rem; flex-shrink: 0; }
+  .btn-confirmar, .btn-cancelar {
+    width: 30px; height: 30px; border-radius: 50%; border: none; cursor: pointer; box-shadow: none; padding: 0;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .btn-confirmar { background: var(--teal); color: #fff; }
+  .btn-cancelar { background: #eef1f0; color: var(--ink); }
+  .btn-confirmar:hover, .btn-cancelar:hover { transform: none; box-shadow: none; filter: brightness(1.08); }
+  .btn-confirmar svg, .btn-cancelar svg { width: 14px; height: 14px; }
+
+  /* --- Marcadores customizados do mapa --- */
+  .marcador-cliente { background: transparent; border: none; }
   button:focus-visible {
     outline: 2px solid var(--teal);
     outline-offset: 2px;
@@ -666,19 +744,28 @@
 
     <!-- ===== ABA CLIENTES ===== -->
     <div class="painel" id="painel-clientes" hidden>
-      <section class="card">
+      <section class="card" id="clientes-lista-view">
         <h2><span class="icone-secao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>Clientes</h2>
-        <p class="vazio" style="margin: -0.5rem 0 1rem">Clique numa linha pra editar. As colunas são as mesmas da sua planilha — adicione novas quando precisar.</p>
-        <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:1rem;">
+        <p class="vazio" style="margin: -0.5rem 0 1rem">Clique num cliente pra ver e editar as informações.</p>
+        <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:1.25rem;">
           <button type="button" id="btn-novo-cliente">Adicionar novo cliente</button>
           <button type="button" class="secundario" id="btn-novo-campo">+ Adicionar campo</button>
         </div>
-        <div class="tabela-wrap">
-          <table>
-            <thead><tr id="cabecalho-clientes"><th>Nome</th></tr></thead>
-            <tbody id="tabela-clientes"></tbody>
-          </table>
+        <div class="clientes-grid" id="grade-clientes"></div>
+      </section>
+
+      <section class="card" id="clientes-detalhe-view" hidden>
+        <button type="button" class="btn-voltar" id="btn-voltar-clientes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>Voltar</button>
+        <div class="detalhe-cabecalho">
+          <div class="avatar-editar-wrap">
+            <img class="foto-cliente-grande" id="detalhe-foto-img" alt="" hidden />
+            <div class="foto-cliente-grande-fallback" id="detalhe-foto-fallback"></div>
+            <div class="avatar-editar-btn" id="btn-editar-foto-cliente" title="Trocar foto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2Z"/><circle cx="12" cy="13" r="4"/></svg></div>
+            <input type="file" accept="image/*" id="input-foto-cliente" hidden />
+          </div>
+          <h2 id="detalhe-nome" style="margin:0; font-size:1.2rem;"></h2>
         </div>
+        <div id="detalhe-campos"></div>
       </section>
     </div>
 
@@ -686,7 +773,10 @@
     <div class="painel" id="painel-mapa" hidden>
       <section class="card">
         <h2><span class="icone-secao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20 3 17V4l6 3m0 13 6-3m-6 3V7m6 10 6 3V7l-6-3m0 13V4m0 3L9 4"/></svg></span>Mapa de clientes</h2>
-        <p class="vazio" style="margin: -0.5rem 0 1rem">Clique num pino pra ver os dados do cliente. Use "Adicionar à rota" pra comparar distâncias entre clientes.</p>
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin: -0.5rem 0 1rem;">
+          <p class="vazio" style="margin:0">Clique num pino pra ver os dados. Use "Adicionar à rota" pra comparar distâncias.</p>
+          <button type="button" id="btn-add-cliente-mapa">Adicionar cliente</button>
+        </div>
         <div id="mapa" style="height: 520px; border-radius: 10px; overflow: hidden; border: 1px solid var(--border);"></div>
 
         <div class="rota-painel" style="margin-top: 1rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem;">
@@ -737,6 +827,23 @@ function fmtData(iso) {
   return iso ? new Date(iso).toLocaleDateString('pt-BR') : '—';
 }
 
+function iniciaisNome(nome) {
+  return (nome || '?').trim().split(/\s+/).slice(0, 2).map((p) => p[0]).join('').toUpperCase();
+}
+
+function construirIconeCliente(cliente) {
+  const conteudo = cliente.foto_url
+    ? `<img src="${cliente.foto_url}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;border:2px solid #fff;box-shadow:0 2px 6px rgba(20,36,32,0.35);" />`
+    : `<div style="width:100%;height:100%;border-radius:50%;background:linear-gradient(135deg,#14A098,#4CAF50);color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Poppins',sans-serif;font-weight:700;font-size:0.85rem;border:2px solid #fff;box-shadow:0 2px 6px rgba(20,36,32,0.35);">${iniciaisNome(cliente.nome)}</div>`;
+  return L.divIcon({
+    html: conteudo,
+    className: 'marcador-cliente',
+    iconSize: [38, 38],
+    iconAnchor: [19, 19],
+    popupAnchor: [0, -19],
+  });
+}
+
 function mostrarInfoCliente(cliente) {
   document.getElementById('mapa-cliente-nome').textContent = cliente.nome;
   document.getElementById('mapa-cliente-dados').innerHTML = `
@@ -767,16 +874,21 @@ async function carregarClientesMapa() {
 
   const clientes = await api('/mapa/clientes');
   clientes.forEach((cliente) => {
-    const marcador = L.marker([cliente.latitude, cliente.longitude]).addTo(mapa);
+    const marcador = L.marker([cliente.latitude, cliente.longitude], { icon: construirIconeCliente(cliente) }).addTo(mapa);
     marcador.bindPopup(`
       <strong>${cliente.nome}</strong><br/>
       ${cliente.endereco ?? ''}<br/>
-      <button type="button" data-add-rota="${cliente.id}" style="margin-top:6px">Adicionar à rota</button>
+      <div style="margin-top:6px; display:flex; gap:4px; flex-wrap:wrap;">
+        <button type="button" data-add-rota="${cliente.id}">Adicionar à rota</button>
+        ${cliente.origem === 'cliente' ? `<button type="button" data-ver-cliente="${cliente.id}">Ver cliente</button>` : ''}
+      </div>
     `);
     marcador.on('click', () => mostrarInfoCliente(cliente));
     marcador.on('popupopen', () => {
-      const btn = document.querySelector(`button[data-add-rota="${cliente.id}"]`);
-      if (btn) btn.addEventListener('click', () => adicionarPontoRota(cliente));
+      const btnRota = document.querySelector(`button[data-add-rota="${cliente.id}"]`);
+      if (btnRota) btnRota.addEventListener('click', () => adicionarPontoRota(cliente));
+      const btnVer = document.querySelector(`button[data-ver-cliente="${cliente.id}"]`);
+      if (btnVer) btnVer.addEventListener('click', () => irParaClienteNoMapa(cliente.id));
     });
     marcadoresMapa[cliente.id] = marcador;
   });
@@ -796,6 +908,13 @@ const mapaPronto = (async function iniciarMapa() {
 
   await carregarClientesMapa();
 })();
+
+document.getElementById('btn-add-cliente-mapa').addEventListener('click', () => abrirModalCliente(null));
+
+function irParaClienteNoMapa(id) {
+  document.querySelector('nav.abas button[data-aba="clientes"]').click();
+  abrirDetalheCliente(id);
+}
 
 document.getElementById('btn-limpar-rota').addEventListener('click', () => {
   pontosRota = [];
@@ -1109,27 +1228,180 @@ async function carregarCamposClientes() {
 
 async function carregarClientes() {
   clientesCache = await api('/clientes');
+  renderizarGradeClientes();
+  if (clienteAtualId && !document.getElementById('clientes-detalhe-view').hidden) {
+    abrirDetalheCliente(clienteAtualId);
+  }
+}
 
-  document.getElementById('cabecalho-clientes').innerHTML =
-    '<th>Nome</th>' + camposClientes.map((c) => `<th>${c.rotulo}</th>`).join('');
-
-  const tbody = document.getElementById('tabela-clientes');
-  tbody.innerHTML = clientesCache.length
+function renderizarGradeClientes() {
+  const grade = document.getElementById('grade-clientes');
+  grade.innerHTML = clientesCache.length
     ? clientesCache.map((cli) => `
-        <tr data-id="${cli.id}" style="cursor:pointer">
-          <td>${cli.nome}</td>
-          ${camposClientes.map((c) => {
-            const valor = cli.dados?.[c.chave];
-            return `<td class="celula-truncada" title="${escaparAtributo(valor)}">${valorCampoParaExibicao(c, valor)}</td>`;
-          }).join('')}
-        </tr>
+        <button type="button" class="cliente-card" data-id="${cli.id}">
+          ${cli.foto_url
+            ? `<img class="foto-cliente-mini" src="${escaparAtributo(cli.foto_url)}" alt="" />`
+            : `<div class="foto-cliente-mini-fallback">${iniciaisNome(cli.nome)}</div>`}
+          <div class="nome-cliente">${cli.nome}</div>
+        </button>
       `).join('')
-    : `<tr><td class="vazio" colspan="${camposClientes.length + 1}">Nenhum cliente ainda.</td></tr>`;
+    : '<p class="vazio">Nenhum cliente ainda.</p>';
 
-  tbody.querySelectorAll('tr[data-id]').forEach((tr) => {
-    tr.addEventListener('click', () => abrirModalCliente(clientesCache.find((c) => c.id === tr.dataset.id)));
+  grade.querySelectorAll('.cliente-card').forEach((btn) => {
+    btn.addEventListener('click', () => abrirDetalheCliente(btn.dataset.id));
   });
 }
+
+let clienteAtualId = null;
+
+function renderizarFotoDetalhe(cliente) {
+  const img = document.getElementById('detalhe-foto-img');
+  const fallback = document.getElementById('detalhe-foto-fallback');
+  if (cliente.foto_url) {
+    img.src = cliente.foto_url;
+    img.hidden = false;
+    fallback.hidden = true;
+  } else {
+    img.hidden = true;
+    fallback.hidden = false;
+    fallback.textContent = iniciaisNome(cliente.nome);
+  }
+}
+
+function campoLinhaHtml(rotulo, chave, valorExibicao, tipo, opcoes, valorBruto) {
+  return `
+    <div class="campo-linha" data-chave="${chave}" data-tipo="${tipo}" data-opcoes='${escaparAtributo(JSON.stringify(opcoes || []))}'>
+      <div class="campo-conteudo">
+        <div class="campo-label">${rotulo}</div>
+        <div class="campo-valor">${valorExibicao}</div>
+      </div>
+      <button type="button" class="btn-lapis" data-editar="${chave}" data-valor="${escaparAtributo(valorBruto)}" title="Editar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+      </button>
+    </div>
+  `;
+}
+
+function abrirDetalheCliente(id) {
+  const cliente = clientesCache.find((c) => c.id === id);
+  if (!cliente) return;
+  clienteAtualId = id;
+
+  document.getElementById('clientes-lista-view').hidden = true;
+  document.getElementById('clientes-detalhe-view').hidden = false;
+
+  document.getElementById('detalhe-nome').textContent = cliente.nome;
+  renderizarFotoDetalhe(cliente);
+
+  const linhas = [
+    campoLinhaHtml('Nome', '_nome', cliente.nome, 'texto', null, cliente.nome),
+    campoLinhaHtml('Endereço (para o mapa)', '_endereco', cliente.endereco || '—', 'texto', null, cliente.endereco || ''),
+    ...camposClientes.map((c) => {
+      const valor = cliente.dados?.[c.chave];
+      return campoLinhaHtml(c.rotulo, c.chave, valorCampoParaExibicao(c, valor), c.tipo, c.opcoes, valor ?? '');
+    }),
+  ];
+  document.getElementById('detalhe-campos').innerHTML = linhas.join('');
+
+  document.querySelectorAll('#detalhe-campos .btn-lapis').forEach((btn) => {
+    btn.addEventListener('click', () => ativarEdicaoCampo(btn.dataset.editar));
+  });
+}
+
+document.getElementById('btn-voltar-clientes').addEventListener('click', () => {
+  clienteAtualId = null;
+  document.getElementById('clientes-detalhe-view').hidden = true;
+  document.getElementById('clientes-lista-view').hidden = false;
+});
+
+function ativarEdicaoCampo(chave) {
+  const linha = document.querySelector(`.campo-linha[data-chave="${chave}"]`);
+  const tipo = linha.dataset.tipo;
+  const opcoes = JSON.parse(linha.dataset.opcoes || '[]');
+  const btnLapis = linha.querySelector('.btn-lapis');
+  const valorAtual = btnLapis.dataset.valor;
+  const rotulo = linha.querySelector('.campo-label').textContent;
+  const conteudo = linha.querySelector('.campo-conteudo');
+
+  let inputHtml;
+  if (tipo === 'texto_longo') {
+    inputHtml = `<textarea>${escaparAtributo(valorAtual)}</textarea>`;
+  } else if (tipo === 'numero') {
+    inputHtml = `<input type="number" step="0.01" value="${escaparAtributo(valorAtual)}" />`;
+  } else if (tipo === 'data') {
+    inputHtml = `<input type="date" value="${escaparAtributo(valorAtual)}" />`;
+  } else if (tipo === 'selecao') {
+    inputHtml = `<select><option value="">Selecionar</option>${opcoes.map((o) => `<option value="${escaparAtributo(o)}" ${o === valorAtual ? 'selected' : ''}>${o}</option>`).join('')}</select>`;
+  } else {
+    inputHtml = `<input type="text" value="${escaparAtributo(valorAtual)}" />`;
+  }
+
+  conteudo.innerHTML = `
+    <div class="campo-label">${rotulo}</div>
+    <div class="campo-edicao">
+      ${inputHtml}
+      <div class="campo-edicao-acoes">
+        <button type="button" class="btn-confirmar" title="Salvar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
+        <button type="button" class="btn-cancelar" title="Cancelar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      </div>
+    </div>
+  `;
+  linha.querySelector('.btn-lapis').hidden = true;
+
+  const campoInput = conteudo.querySelector('input, select, textarea');
+  campoInput.focus();
+
+  conteudo.querySelector('.btn-cancelar').addEventListener('click', () => abrirDetalheCliente(clienteAtualId));
+  conteudo.querySelector('.btn-confirmar').addEventListener('click', () => salvarCampoCliente(chave, campoInput.value.trim()));
+}
+
+async function salvarCampoCliente(chave, valor) {
+  const cliente = clientesCache.find((c) => c.id === clienteAtualId);
+  try {
+    let resultado;
+    if (chave === '_nome') {
+      resultado = await api(`/clientes/${clienteAtualId}`, { method: 'PATCH', body: JSON.stringify({ nome: valor }) });
+    } else if (chave === '_endereco') {
+      resultado = await api(`/clientes/${clienteAtualId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ endereco: valor, dados: cliente.dados || {} }),
+      });
+    } else {
+      const novosDados = { ...(cliente.dados || {}) };
+      if (valor) novosDados[chave] = valor;
+      else delete novosDados[chave];
+      resultado = await api(`/clientes/${clienteAtualId}`, { method: 'PATCH', body: JSON.stringify({ dados: novosDados }) });
+    }
+    await carregarClientes();
+    abrirDetalheCliente(clienteAtualId);
+    mapaPronto.then(() => carregarClientesMapa()).catch(() => {});
+    if (resultado?.aviso) alert(resultado.aviso);
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+document.getElementById('btn-editar-foto-cliente').addEventListener('click', () => {
+  document.getElementById('input-foto-cliente').click();
+});
+document.getElementById('input-foto-cliente').addEventListener('change', async (e) => {
+  const arquivo = e.target.files[0];
+  if (!arquivo || !clienteAtualId) return;
+  const formData = new FormData();
+  formData.append('arquivo', arquivo);
+  try {
+    const res = await fetch(`/api/clientes/${clienteAtualId}/foto`, { method: 'POST', body: formData });
+    if (!res.ok) {
+      const erro = await res.json().catch(() => ({}));
+      throw new Error(erro.error || 'Erro ao enviar foto');
+    }
+    await carregarClientes();
+    abrirDetalheCliente(clienteAtualId);
+    mapaPronto.then(() => carregarClientesMapa()).catch(() => {});
+  } catch (err) {
+    alert(err.message);
+  }
+});
 
 function campoInputHtml(campo, valorAtual) {
   const valor = valorAtual ?? '';
@@ -1190,6 +1462,7 @@ document.getElementById('form-cliente-modal').addEventListener('submit', async (
       : await api('/clientes', { method: 'POST', body: JSON.stringify({ nome, endereco, dados }) });
     document.getElementById('modal-cliente').hidden = true;
     await carregarClientes();
+    mapaPronto.then(() => carregarClientesMapa()).catch(() => {});
     if (resultado?.aviso) alert(resultado.aviso);
   } catch (err) {
     alert(err.message);

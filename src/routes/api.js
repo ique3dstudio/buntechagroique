@@ -139,8 +139,10 @@ router.get('/mapa/clientes', async (req, res) => {
 
     resultado.push({
       id: empresa.id,
+      origem: 'empresa',
       nome: empresa.nome,
       cnpj: empresa.cnpj,
+      foto_url: null,
       endereco: empresa.endereco,
       cidade: empresa.cidade,
       latitude: empresa.latitude,
@@ -162,8 +164,10 @@ router.get('/mapa/clientes', async (req, res) => {
     const d = cliente.dados || {};
     resultado.push({
       id: cliente.id,
+      origem: 'cliente',
       nome: cliente.nome,
       cnpj: null,
+      foto_url: cliente.foto_url,
       endereco: cliente.endereco,
       cidade: d.cidade ?? null,
       latitude: cliente.latitude,
@@ -291,6 +295,29 @@ router.patch('/clientes/:id', async (req, res) => {
     .single();
   if (error) return res.status(500).json({ error: error.message });
   res.json({ ...data, aviso });
+});
+
+router.post('/clientes/:id/foto', upload.single('arquivo'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'arquivo é obrigatório' });
+
+  const extensao = (req.file.originalname.split('.').pop() || 'jpg').toLowerCase();
+  const caminho = `cliente-${req.params.id}-${Date.now()}.${extensao}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from('app-assets')
+    .upload(caminho, req.file.buffer, { contentType: req.file.mimetype, upsert: true });
+  if (uploadError) return res.status(500).json({ error: uploadError.message });
+
+  const { data: urlData } = supabase.storage.from('app-assets').getPublicUrl(caminho);
+
+  const { data, error } = await supabase
+    .from('clientes')
+    .update({ foto_url: urlData.publicUrl, updated_at: new Date().toISOString() })
+    .eq('id', req.params.id)
+    .select()
+    .single();
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
 });
 
 // --- Produtos ---
