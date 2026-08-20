@@ -151,7 +151,146 @@ router.get('/mapa/clientes', async (req, res) => {
     });
   }
 
+  const { data: clientes, error: clientesError } = await supabase
+    .from('clientes')
+    .select('*')
+    .not('latitude', 'is', null)
+    .not('longitude', 'is', null);
+  if (clientesError) return res.status(500).json({ error: clientesError.message });
+
+  for (const cliente of clientes) {
+    const d = cliente.dados || {};
+    resultado.push({
+      id: cliente.id,
+      nome: cliente.nome,
+      cnpj: null,
+      endereco: cliente.endereco,
+      cidade: d.cidade ?? null,
+      latitude: cliente.latitude,
+      longitude: cliente.longitude,
+      faturamento: Number(d.faturamento) || 0,
+      ultimo_pedido: d.data_ultima_compra ?? null,
+      produtos: d.produto ? [d.produto] : [],
+    });
+  }
+
   res.json(resultado);
+});
+
+// --- Clientes (planilha, com campos dinâmicos) ---
+
+router.get('/campos-clientes', async (req, res) => {
+  const { data, error } = await supabase
+    .from('campos_clientes')
+    .select('*')
+    .order('ordem', { ascending: true });
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
+router.post('/campos-clientes', async (req, res) => {
+  const { rotulo, tipo, opcoes } = req.body;
+  if (!rotulo) return res.status(400).json({ error: 'rótulo é obrigatório' });
+
+  const chave = rotulo
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+  if (!chave) return res.status(400).json({ error: 'rótulo inválido' });
+
+  const { data: existente } = await supabase.from('campos_clientes').select('id').eq('chave', chave).maybeSingle();
+  if (existente) return res.status(400).json({ error: 'já existe um campo com esse nome' });
+
+  const { count } = await supabase.from('campos_clientes').select('*', { count: 'exact', head: true });
+
+  const { data, error } = await supabase
+    .from('campos_clientes')
+    .insert({
+      chave,
+      rotulo,
+      tipo: tipo || 'texto',
+      opcoes: opcoes && opcoes.length ? opcoes : null,
+      ordem: (count ?? 0) + 1,
+    })
+    .select()
+    .single();
+  if (error) return res.status(500).json({ error: error.message });
+  res.status(201).json(data);
+});
+
+router.get('/clientes', async (req, res) => {
+  const { data, error } = await supabase.from('clientes').select('*').order('nome', { ascending: true });
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
+router.post('/clientes', async (req, res) => {
+  const { nome, endereco, dados } = req.body;
+  if (!nome) return res.status(400).json({ error: 'nome é obrigatório' });
+
+  let latitude = null;
+  let longitude = null;
+  let aviso;
+  if (endereco) {
+    const cidade = dados?.cidade;
+    const enderecoCompleto = [endereco, cidade, 'Minas Gerais', 'Brasil'].filter(Boolean).join(', ');
+    const coords = await geocodificarEndereco(enderecoCompleto).catch(() => null);
+    if (coords) {
+      latitude = coords.latitude;
+      longitude = coords.longitude;
+    } else {
+      aviso = 'Não conseguimos localizar esse endereço no mapa. O cliente foi salvo mesmo assim.';
+    }
+  }
+
+  const { data, error } = await supabase
+    .from('clientes')
+    .insert({ nome, endereco, latitude, longitude, dados: dados || {} })
+    .select()
+    .single();
+  if (error) return res.status(500).json({ error: error.message });
+  res.status(201).json({ ...data, aviso });
+});
+
+router.patch('/clientes/:id', async (req, res) => {
+  const { nome, endereco, dados } = req.body;
+
+  const atualizacao = { updated_at: new Date().toISOString() };
+  if (nome !== undefined) atualizacao.nome = nome;
+  if (dados !== undefined) atualizacao.dados = dados;
+
+  let aviso;
+  if (endereco !== undefined) {
+    atualizacao.endereco = endereco;
+    if (endereco) {
+      const cidade = dados?.cidade;
+      const enderecoCompleto = [endereco, cidade, 'Minas Gerais', 'Brasil'].filter(Boolean).join(', ');
+      const coords = await geocodificarEndereco(enderecoCompleto).catch(() => null);
+      if (coords) {
+        atualizacao.latitude = coords.latitude;
+        atualizacao.longitude = coords.longitude;
+      } else {
+        atualizacao.latitude = null;
+        atualizacao.longitude = null;
+        aviso = 'Não conseguimos localizar esse endereço no mapa. O cliente foi salvo mesmo assim.';
+      }
+    } else {
+      atualizacao.latitude = null;
+      atualizacao.longitude = null;
+    }
+  }
+
+  const { data, error } = await supabase
+    .from('clientes')
+    .update(atualizacao)
+    .eq('id', req.params.id)
+    .select()
+    .single();
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ ...data, aviso });
 });
 
 // --- Produtos ---
