@@ -5,7 +5,8 @@ window.APP_CONFIG = {
   supabaseUrl: "https://gofqnrckdjqikbitglfh.supabase.co",
   // IMPORTANTE: aqui vai a "anon public key" (NUNCA a "service_role key").
   // Painel Supabase > Project Settings > API > Project API keys > anon public
-  supabaseAnonKey: "COLOQUE_A_ANON_KEY_DO_SEU_PROJETO_SUPABASE",
+  supabaseAnonKey:
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdvZnFucmNrZGpxaWtiaXRnbGZoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcyMzQ5MDQsImV4cCI6MjEwMjgxMDkwNH0.UaKfjSQw2W9G9Qa-ZBwHfJxZa0zdV2iU9uwM5NGCrFI",
 
   // Números de WhatsApp por área. Formato internacional, só dígitos
   // (Brasil: 55 + DDD + número).
