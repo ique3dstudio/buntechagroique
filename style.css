@@ -358,6 +358,26 @@ textarea {
   height: 240px;
 }
 
+.seed {
+  position: absolute;
+  z-index: 1;
+  width: var(--w);
+  height: var(--h);
+  top: var(--top, auto);
+  left: var(--left, auto);
+  right: var(--right, auto);
+  bottom: var(--bottom, auto);
+  border-radius: 50%;
+  transform: rotate(var(--rot, 0deg));
+  background:
+    radial-gradient(ellipse at 32% 26%, rgba(255, 255, 255, 0.85), transparent 45%),
+    linear-gradient(155deg, var(--c1), var(--c2));
+  box-shadow:
+    0 8px 16px rgba(0, 0, 0, 0.35),
+    inset 0 -6px 10px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+}
+
 .hero-header {
   position: relative;
   z-index: 2;
