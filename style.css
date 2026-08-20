@@ -69,33 +69,56 @@ body {
 }
 
 .card {
-  background: var(--card);
-  border-radius: var(--radius);
-  padding: 20px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-  margin-bottom: 16px;
+  width: min(92vw, 440px);
+  margin: 0 auto 16px;
+  background: rgba(0, 40, 56, 0.55);
+  border: 1px solid rgba(103, 238, 218, 0.4);
+  border-radius: 20px;
+  padding: 22px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
 
 .btn {
+  position: relative;
+  overflow: hidden;
   display: block;
   width: 100%;
   padding: 14px 16px;
   margin-bottom: 12px;
-  border-radius: 10px;
-  border: none;
-  background: var(--buntech-blue);
+  border-radius: 16px;
+  border: 2px solid rgba(132, 245, 255, 0.95);
+  background: linear-gradient(180deg, #017da4 0%, #01678e 36%, #005a7c 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.07),
+    0 0 18px rgba(0, 210, 255, 0.18),
+    0 8px 22px rgba(0, 0, 0, 0.26);
   color: #fff;
   font-size: 1rem;
-  font-weight: 600;
+  font-weight: 700;
   font-family: inherit;
   cursor: pointer;
   text-align: center;
+  transition: transform 150ms ease, filter 150ms ease;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.07);
+}
+
+.btn:active {
+  transform: scale(0.985);
 }
 
 .btn.outline {
-  background: #fff;
-  color: var(--buntech-blue);
-  border: 2px solid var(--buntech-blue);
+  background: linear-gradient(180deg, #155f63 0%, #003740 22%, #012b33 55%, #002128 100%);
+  border: 2px solid rgba(103, 238, 218, 0.95);
+}
+
+#view-form-ok > .btn {
+  max-width: min(92vw, 440px);
+  margin-left: auto;
+  margin-right: auto;
 }
 
 /* ---------- Opções de orçamento (mesmo padrão visual da tela inicial) ---------- */
@@ -188,10 +211,18 @@ body {
 
 .btn.back {
   background: transparent;
+  border: none;
+  box-shadow: none;
   color: var(--text-secondary);
   font-weight: 500;
   margin: 8px auto 0;
   max-width: min(88vw, 420px);
+}
+
+.btn.back:hover {
+  transform: none;
+  filter: none;
+  color: var(--text-primary);
 }
 
 label {
@@ -199,11 +230,12 @@ label {
   font-size: 0.9rem;
   font-weight: 600;
   margin: 14px 0 6px;
+  color: var(--text-primary);
 }
 
 label .opt {
   font-weight: 400;
-  color: var(--muted);
+  color: var(--text-secondary);
   font-size: 0.8rem;
 }
 
@@ -227,13 +259,14 @@ textarea {
 }
 
 .section-title {
+  color: var(--text-primary);
   font-weight: 700;
   margin-bottom: 12px;
   font-size: 1.05rem;
 }
 
 .hint {
-  color: var(--muted);
+  color: var(--text-secondary);
   font-size: 0.85rem;
   margin-bottom: 16px;
 }
@@ -247,8 +280,16 @@ textarea {
   font-size: 2.5rem;
 }
 
+.success h2 {
+  color: var(--text-primary);
+}
+
+.success p {
+  color: var(--text-secondary);
+}
+
 .error-msg {
-  color: #b3261e;
+  color: #ff8a8a;
   font-size: 0.85rem;
   margin-top: 8px;
   display: none;
@@ -260,17 +301,18 @@ textarea {
   position: relative;
   overflow: hidden;
   width: 100%;
-  min-height: 100vh;
+  height: 100dvh;
   color: var(--white);
   background:
     radial-gradient(circle at 50% 43%, #003348 0%, #001823 26%, #000c14 62%, #01070d 100%);
-  padding: clamp(56px, 10vh, 140px) 0 clamp(70px, 12vh, 160px);
+  padding: 3dvh 16px;
 }
 
 #view-menu.active {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: space-between;
 }
 
 #view-menu::before {
@@ -321,23 +363,23 @@ textarea {
   z-index: 2;
   width: 100%;
   text-align: center;
-  padding: 0 16px;
+  flex-shrink: 0;
 }
 
 .buntech-logo {
   display: block;
-  width: min(72vw, 340px);
+  width: min(52vw, 230px);
   height: auto;
   margin: 0 auto;
   object-fit: contain;
 }
 
 .hero-header h1 {
-  margin: clamp(32px, 6vh, 54px) auto clamp(12px, 2vh, 18px);
+  margin: 2dvh auto 0.8dvh;
   font-family: "Montserrat", sans-serif;
   font-weight: 700;
-  font-size: clamp(28px, 7.5vw, 42px);
-  line-height: 1.17;
+  font-size: clamp(22px, 6vw, 34px);
+  line-height: 1.15;
   letter-spacing: -0.02em;
   color: var(--text-primary);
 }
@@ -345,7 +387,7 @@ textarea {
 .hero-header p {
   margin: 0;
   color: var(--text-secondary);
-  font-size: clamp(16px, 4.2vw, 20px);
+  font-size: clamp(14px, 3.6vw, 18px);
   font-weight: 400;
 }
 
@@ -353,24 +395,25 @@ textarea {
   position: relative;
   z-index: 2;
   width: min(86vw, 400px);
-  margin: clamp(32px, 5vh, 48px) auto 0;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: clamp(16px, 3.5vw, 24px);
+  gap: clamp(10px, 2.2vw, 16px);
+  flex-shrink: 0;
 }
 
 .action-card {
   position: relative;
   overflow: hidden;
   width: 100%;
-  min-height: clamp(120px, 26vw, 160px);
-  padding: 20px;
-  border-radius: 22px;
+  min-height: clamp(84px, 15dvh, 130px);
+  padding: 14px;
+  border-radius: 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: clamp(10px, 2.5vw, 16px);
+  gap: clamp(6px, 1.5dvh, 12px);
   color: var(--white);
   font-family: inherit;
   cursor: pointer;
@@ -425,7 +468,7 @@ textarea {
 .action-card span {
   position: relative;
   z-index: 2;
-  font-size: clamp(18px, 4.6vw, 24px);
+  font-size: clamp(15px, 3.8vw, 20px);
   font-weight: 700;
   line-height: 1.1;
   text-align: center;
@@ -436,12 +479,13 @@ textarea {
   z-index: 2;
   width: 100%;
   text-align: center;
+  flex-shrink: 0;
 }
 
 .congress-logo {
   display: block;
-  width: min(55vw, 220px);
+  width: min(38vw, 150px);
   height: auto;
-  margin: clamp(48px, 8vh, 80px) auto 0;
+  margin: 0 auto;
   object-fit: contain;
 }
