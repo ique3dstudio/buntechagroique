@@ -367,6 +367,8 @@
     box-shadow: var(--shadow);
   }
   .avatar-editar-btn svg { width: 13px; height: 13px; }
+  .avatar-editar-btn-mini { width: 20px; height: 20px; border-width: 1.5px; }
+  .avatar-editar-btn-mini svg { width: 10px; height: 10px; }
 
   .campo-linha { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem; padding: 0.75rem 0; border-top: 1px solid var(--border); }
   .campo-linha .campo-conteudo { flex: 1; min-width: 0; }
@@ -1239,9 +1241,14 @@ function renderizarGradeClientes() {
   grade.innerHTML = clientesCache.length
     ? clientesCache.map((cli) => `
         <button type="button" class="cliente-card" data-id="${cli.id}">
-          ${cli.foto_url
-            ? `<img class="foto-cliente-mini" src="${escaparAtributo(cli.foto_url)}" alt="" />`
-            : `<div class="foto-cliente-mini-fallback">${iniciaisNome(cli.nome)}</div>`}
+          <div class="avatar-editar-wrap">
+            ${cli.foto_url
+              ? `<img class="foto-cliente-mini" src="${escaparAtributo(cli.foto_url)}" alt="" />`
+              : `<div class="foto-cliente-mini-fallback">${iniciaisNome(cli.nome)}</div>`}
+            <div class="avatar-editar-btn avatar-editar-btn-mini" data-foto-grid="${cli.id}" title="Trocar foto">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2Z"/><circle cx="12" cy="13" r="4"/></svg>
+            </div>
+          </div>
           <div class="nome-cliente">${cli.nome}</div>
         </button>
       `).join('')
@@ -1249,6 +1256,12 @@ function renderizarGradeClientes() {
 
   grade.querySelectorAll('.cliente-card').forEach((btn) => {
     btn.addEventListener('click', () => abrirDetalheCliente(btn.dataset.id));
+  });
+  grade.querySelectorAll('[data-foto-grid]').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      dispararUploadFoto(btn.dataset.fotoGrid);
+    });
   });
 }
 
@@ -1381,22 +1394,32 @@ async function salvarCampoCliente(chave, valor) {
   }
 }
 
-document.getElementById('btn-editar-foto-cliente').addEventListener('click', () => {
+let idFotoPendente = null;
+
+function dispararUploadFoto(id) {
+  idFotoPendente = id;
   document.getElementById('input-foto-cliente').click();
-});
+}
+
+document.getElementById('btn-editar-foto-cliente').addEventListener('click', () => dispararUploadFoto(clienteAtualId));
+
 document.getElementById('input-foto-cliente').addEventListener('change', async (e) => {
   const arquivo = e.target.files[0];
-  if (!arquivo || !clienteAtualId) return;
+  const id = idFotoPendente;
+  e.target.value = '';
+  if (!arquivo || !id) return;
   const formData = new FormData();
   formData.append('arquivo', arquivo);
   try {
-    const res = await fetch(`/api/clientes/${clienteAtualId}/foto`, { method: 'POST', body: formData });
+    const res = await fetch(`/api/clientes/${id}/foto`, { method: 'POST', body: formData });
     if (!res.ok) {
       const erro = await res.json().catch(() => ({}));
       throw new Error(erro.error || 'Erro ao enviar foto');
     }
     await carregarClientes();
-    abrirDetalheCliente(clienteAtualId);
+    if (clienteAtualId === id && !document.getElementById('clientes-detalhe-view').hidden) {
+      abrirDetalheCliente(id);
+    }
     mapaPronto.then(() => carregarClientesMapa()).catch(() => {});
   } catch (err) {
     alert(err.message);
