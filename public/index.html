@@ -16,6 +16,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<link rel="stylesheet" href="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.css" />
+<script src="https://unpkg.com/cropperjs@1.6.2/dist/cropper.min.js"></script>
 <style>
   :root {
     --blue-light: #29ABE2;
@@ -395,6 +397,21 @@
 
   /* --- Marcadores customizados do mapa --- */
   .marcador-cliente { background: transparent; border: none; }
+
+  /* --- Recorte de imagem (zoom/arraste) --- */
+  .recorte-area {
+    max-height: 55vh;
+    overflow: hidden;
+    background: #142420;
+    border-radius: 10px;
+  }
+  .recorte-area img { display: block; max-width: 100%; }
+  .recorte-zoom { display: flex; align-items: center; gap: 0.6rem; margin-top: 1rem; color: var(--muted); }
+  .recorte-zoom svg { width: 18px; height: 18px; flex-shrink: 0; }
+  .recorte-zoom svg:last-child { width: 22px; height: 22px; }
+  .recorte-zoom input[type="range"] { flex: 1; accent-color: var(--teal); }
+  #modal-recorte.recorte-circular .cropper-view-box,
+  #modal-recorte.recorte-circular .cropper-face { border-radius: 50%; }
   button:focus-visible {
     outline: 2px solid var(--teal);
     outline-offset: 2px;
@@ -528,6 +545,25 @@
         </div>
         <label class="btn-upload">Escolher<input type="file" accept="image/*" id="input-foto-perfil" hidden /></label>
       </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modal-recorte" hidden>
+    <div class="modal-card" style="max-width: 480px;">
+      <div class="modal-header">
+        <h3>Ajustar imagem</h3>
+        <button class="fechar-modal" id="btn-fechar-recorte" type="button" aria-label="Fechar">&times;</button>
+      </div>
+      <div class="recorte-area">
+        <img id="imagem-recorte" alt="" />
+      </div>
+      <div class="recorte-zoom">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="range" id="zoom-recorte" min="0" max="100" value="0" />
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"/><path d="m21 21-4.35-4.35"/><path d="M10 7v6M7 10h6"/></svg>
+      </div>
+      <p class="vazio" style="text-align:center; margin: 0.5rem 0 0;">Arraste a imagem pra posicionar</p>
+      <button type="button" id="btn-confirmar-recorte" style="width:100%; margin-top:1rem;">Aplicar</button>
     </div>
   </div>
 
@@ -984,9 +1020,9 @@ async function carregarConfig() {
   }
 }
 
-async function enviarImagemConfig(campo, arquivo) {
+async function enviarImagemConfig(campo, arquivoOuBlob) {
   const formData = new FormData();
-  formData.append('arquivo', arquivo);
+  formData.append('arquivo', arquivoOuBlob, 'imagem.jpg');
   const res = await fetch(`/api/config/${campo}`, { method: 'POST', body: formData });
   if (!res.ok) {
     const erro = await res.json().catch(() => ({}));
@@ -995,20 +1031,90 @@ async function enviarImagemConfig(campo, arquivo) {
   return res.json();
 }
 
-[
-  ['input-icone', 'icone'],
-  ['input-capa', 'capa'],
-  ['input-foto-perfil', 'foto_perfil'],
-].forEach(([inputId, campo]) => {
-  document.getElementById(inputId).addEventListener('change', async (e) => {
-    const arquivo = e.target.files[0];
-    if (!arquivo) return;
+// --- Recorte de imagem (zoom/arraste antes de enviar) ---
+
+let cropperInstancia = null;
+let recorteContexto = null; // { aspectRatio, aoConfirmar }
+
+function abrirRecorte(arquivo, aspectRatio, aoConfirmar) {
+  const leitor = new FileReader();
+  leitor.onload = () => {
+    const img = document.getElementById('imagem-recorte');
+    img.src = leitor.result;
+
+    const modal = document.getElementById('modal-recorte');
+    modal.classList.toggle('recorte-circular', aspectRatio === 1);
+    modal.hidden = false;
+
+    if (cropperInstancia) cropperInstancia.destroy();
+    cropperInstancia = new Cropper(img, {
+      aspectRatio,
+      viewMode: 1,
+      dragMode: 'move',
+      autoCropArea: 1,
+      cropBoxResizable: false,
+      cropBoxMovable: false,
+      toggleDragModeOnDblclick: false,
+      guides: true,
+      background: false,
+    });
+    document.getElementById('zoom-recorte').value = 0;
+  };
+  leitor.readAsDataURL(arquivo);
+  recorteContexto = { aspectRatio, aoConfirmar };
+}
+
+function fecharRecorte() {
+  document.getElementById('modal-recorte').hidden = true;
+  if (cropperInstancia) {
+    cropperInstancia.destroy();
+    cropperInstancia = null;
+  }
+  recorteContexto = null;
+}
+
+document.getElementById('btn-fechar-recorte').addEventListener('click', fecharRecorte);
+document.getElementById('modal-recorte').addEventListener('click', (e) => {
+  if (e.target.id === 'modal-recorte') fecharRecorte();
+});
+
+document.getElementById('zoom-recorte').addEventListener('input', (e) => {
+  if (!cropperInstancia) return;
+  cropperInstancia.zoomTo(1 + Number(e.target.value) / 33.3);
+});
+
+document.getElementById('btn-confirmar-recorte').addEventListener('click', () => {
+  if (!cropperInstancia || !recorteContexto) return;
+  const { aspectRatio, aoConfirmar } = recorteContexto;
+  const largura = aspectRatio === 1 ? 512 : 1200;
+  const canvas = cropperInstancia.getCroppedCanvas({
+    width: largura,
+    height: Math.round(largura / aspectRatio),
+    imageSmoothingQuality: 'high',
+  });
+  canvas.toBlob(async (blob) => {
+    fecharRecorte();
     try {
-      const config = await enviarImagemConfig(campo, arquivo);
-      aplicarConfig(config);
+      await aoConfirmar(blob);
     } catch (err) {
       alert(err.message);
     }
+  }, 'image/jpeg', 0.92);
+});
+
+[
+  ['input-icone', 'icone', 1],
+  ['input-capa', 'capa', 3],
+  ['input-foto-perfil', 'foto_perfil', 1],
+].forEach(([inputId, campo, aspectRatio]) => {
+  document.getElementById(inputId).addEventListener('change', (e) => {
+    const arquivo = e.target.files[0];
+    e.target.value = '';
+    if (!arquivo) return;
+    abrirRecorte(arquivo, aspectRatio, async (blob) => {
+      const config = await enviarImagemConfig(campo, blob);
+      aplicarConfig(config);
+    });
   });
 });
 
@@ -1413,14 +1519,15 @@ function dispararUploadFoto(id) {
 
 document.getElementById('btn-editar-foto-cliente').addEventListener('click', () => dispararUploadFoto(clienteAtualId));
 
-document.getElementById('input-foto-cliente').addEventListener('change', async (e) => {
+document.getElementById('input-foto-cliente').addEventListener('change', (e) => {
   const arquivo = e.target.files[0];
   const id = idFotoPendente;
   e.target.value = '';
   if (!arquivo || !id) return;
-  const formData = new FormData();
-  formData.append('arquivo', arquivo);
-  try {
+
+  abrirRecorte(arquivo, 1, async (blob) => {
+    const formData = new FormData();
+    formData.append('arquivo', blob, 'foto.jpg');
     const res = await fetch(`/api/clientes/${id}/foto`, { method: 'POST', body: formData });
     if (!res.ok) {
       const erro = await res.json().catch(() => ({}));
@@ -1431,9 +1538,7 @@ document.getElementById('input-foto-cliente').addEventListener('change', async (
       abrirDetalheCliente(id);
     }
     mapaPronto.then(() => carregarClientesMapa()).catch(() => {});
-  } catch (err) {
-    alert(err.message);
-  }
+  });
 });
 
 function campoInputHtml(campo, valorAtual) {
