@@ -1,8 +1,11 @@
 import { Router } from 'express';
+import multer from 'multer';
 import { supabase } from '../services/supabase.js';
 import { geocodificarEndereco } from '../services/geocode.js';
 
 const router = Router();
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024 } });
+const CAMPOS_CONFIG = ['icone', 'capa', 'foto_perfil'];
 
 const ETAPAS = [
   'novo_lead',
@@ -62,6 +65,39 @@ router.post('/empresas', async (req, res) => {
     .single();
   if (error) return res.status(500).json({ error: error.message });
   res.status(201).json({ ...data, aviso: avisoGeocodificacao });
+});
+
+// --- Configurações visuais (icone, capa, foto de perfil) ---
+
+router.get('/config', async (req, res) => {
+  const { data, error } = await supabase.from('configuracoes').select('*').eq('id', 1).maybeSingle();
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data ?? {});
+});
+
+router.post('/config/:campo', upload.single('arquivo'), async (req, res) => {
+  const { campo } = req.params;
+  if (!CAMPOS_CONFIG.includes(campo)) return res.status(400).json({ error: 'campo inválido' });
+  if (!req.file) return res.status(400).json({ error: 'arquivo é obrigatório' });
+
+  const extensao = (req.file.originalname.split('.').pop() || 'jpg').toLowerCase();
+  const caminho = `${campo}-${Date.now()}.${extensao}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from('app-assets')
+    .upload(caminho, req.file.buffer, { contentType: req.file.mimetype, upsert: true });
+  if (uploadError) return res.status(500).json({ error: uploadError.message });
+
+  const { data: urlData } = supabase.storage.from('app-assets').getPublicUrl(caminho);
+
+  const { data, error } = await supabase
+    .from('configuracoes')
+    .update({ [`${campo}_url`]: urlData.publicUrl, updated_at: new Date().toISOString() })
+    .eq('id', 1)
+    .select()
+    .single();
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
 });
 
 // --- Mapa de clientes ---

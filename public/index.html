@@ -5,7 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="theme-color" content="#0B6FB0" />
 <title>Buntech Agro — Painel de Vendas</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2314A098'/%3E%3Cstop offset='1' stop-color='%234CAF50'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M50 8C22 24 14 58 50 92 86 58 78 24 50 8Z' fill='url(%23g)'/%3E%3C/svg%3E" />
+<link rel="icon" id="favicon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2314A098'/%3E%3Cstop offset='1' stop-color='%234CAF50'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M50 8C22 24 14 58 50 92 86 58 78 24 50 8Z' fill='url(%23g)'/%3E%3C/svg%3E" />
+<link rel="apple-touch-icon" id="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2314A098'/%3E%3Cstop offset='1' stop-color='%234CAF50'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='100' height='100' fill='white'/%3E%3Cpath d='M50 8C22 24 14 58 50 92 86 58 78 24 50 8Z' fill='url(%23g)'/%3E%3C/svg%3E" />
+<link rel="manifest" href="/manifest.json" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="Buntech Agro" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -65,21 +70,120 @@
   .logo .agro { background: linear-gradient(90deg, var(--teal), var(--green)); -webkit-background-clip: text; background-clip: text; color: transparent; }
   .logo .subtitulo { font-size: 0.7rem; color: var(--muted); font-weight: 500; margin-top: -2px; }
 
-  nav.abas { display: flex; gap: 0.35rem; }
+  .header-direita { display: flex; align-items: center; gap: 0.5rem; }
+
+  nav.abas { display: flex; gap: 0.35rem; background: #f0f4f3; padding: 0.3rem; border-radius: 999px; }
   nav.abas button {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
     background: none;
     border: none;
     cursor: pointer;
     font-family: 'Poppins', sans-serif;
     color: var(--muted);
-    font-size: 0.9rem;
+    font-size: 0.87rem;
     font-weight: 700;
-    padding: 0.5rem 1rem;
+    padding: 0.45rem 0.9rem;
     border-radius: 999px;
-    transition: background 0.15s, color 0.15s;
+    transition: background 0.2s, color 0.2s, box-shadow 0.2s;
   }
-  nav.abas button:hover { background: #eef6f5; color: var(--teal); }
-  nav.abas button.ativa { background: linear-gradient(90deg, var(--blue-dark), var(--teal)); color: #fff; }
+  nav.abas button svg { width: 16px; height: 16px; }
+  nav.abas button:hover { color: var(--teal); }
+  nav.abas button.ativa { background: #fff; color: var(--blue-dark); box-shadow: 0 2px 6px rgba(20,36,32,0.12); }
+
+  .btn-icone {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: #f0f4f3;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, transform 0.15s;
+  }
+  .btn-icone:hover { background: #e3f5f3; color: var(--teal); transform: rotate(20deg); }
+  .btn-icone svg { width: 18px; height: 18px; flex-shrink: 0; min-width: 18px; }
+
+  /* --- Capa e avatar --- */
+  .capa {
+    position: relative;
+    height: 150px;
+    background: linear-gradient(120deg, var(--blue-dark), var(--teal) 55%, var(--green));
+    background-size: cover;
+    background-position: center;
+  }
+  .capa-inner { max-width: 1080px; margin: 0 auto; height: 100%; position: relative; padding: 0 1.25rem; }
+  .avatar-wrap { position: absolute; left: 1.25rem; bottom: -2.6rem; }
+  .avatar-img, .avatar-fallback {
+    width: 86px;
+    height: 86px;
+    border-radius: 50%;
+    border: 4px solid var(--bg);
+    box-shadow: var(--shadow);
+    object-fit: cover;
+    display: block;
+  }
+  .avatar-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--teal), var(--green));
+    color: #fff;
+  }
+  .avatar-fallback svg { width: 38px; height: 38px; }
+  .avatar-img[hidden], .avatar-fallback[hidden] { display: none; }
+  .capa-espaco { height: 3rem; }
+
+  /* --- Modal de configuracoes --- */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 36, 32, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    z-index: 100;
+  }
+  .modal-overlay[hidden] { display: none; }
+  .modal-card {
+    background: #fff;
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    width: 100%;
+    max-width: 440px;
+    box-shadow: 0 20px 60px -15px rgba(20,36,32,0.35);
+  }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
+  .modal-header h3 { font-family: 'Poppins', sans-serif; margin: 0; font-size: 1.05rem; }
+  .fechar-modal { background: none; border: none; font-size: 1.4rem; line-height: 1; cursor: pointer; color: var(--muted); padding: 0.2rem 0.5rem; }
+  .config-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.85rem 0;
+    border-top: 1px solid var(--border);
+  }
+  .config-item strong { font-size: 0.9rem; }
+  .config-item p { margin: 0.2rem 0 0; }
+  .btn-upload {
+    display: inline-block;
+    padding: 0.5rem 0.9rem;
+    border-radius: 999px;
+    background: #eef1f0;
+    color: var(--ink);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s;
+  }
+  .btn-upload:hover { background: #e3f5f3; }
 
   nav.secoes { display: flex; gap: 0.25rem; flex-wrap: wrap; margin: 0 0 1.25rem; }
   nav.secoes a {
@@ -97,30 +201,56 @@
 
   main { max-width: 1080px; margin: 0 auto; padding: 1.25rem; }
   .painel[hidden] { display: none; }
+  .painel { animation: entrarPainel 0.25s ease; }
+  @keyframes entrarPainel { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 
   /* --- Hero / resumo --- */
   .hero {
-    background: linear-gradient(120deg, var(--blue-dark), var(--teal) 60%, var(--green));
+    background: linear-gradient(135deg, var(--blue-dark), var(--teal) 55%, var(--green));
     border-radius: var(--radius);
     padding: 1.5rem;
     color: #fff;
     margin-bottom: 1.5rem;
-    box-shadow: var(--shadow);
+    box-shadow: 0 16px 40px -18px rgba(11, 111, 176, 0.55);
   }
   .hero h2 { color: #fff; margin: 0 0 0.2rem; font-size: 1.2rem; }
-  .hero .legenda { color: rgba(255,255,255,0.85); font-size: 0.85rem; margin: 0 0 1rem; }
+  .hero .legenda { color: rgba(255,255,255,0.85); font-size: 0.85rem; margin: 0 0 1.1rem; }
   .resumo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.9rem; }
   .stat {
+    position: relative;
     background: rgba(255, 255, 255, 0.14);
     border: 1px solid rgba(255, 255, 255, 0.22);
-    border-radius: 10px;
-    padding: 0.85rem;
-    text-align: center;
+    border-radius: 12px;
+    padding: 0.9rem 0.9rem 0.9rem 1rem;
+    overflow: hidden;
+    transition: transform 0.2s, background 0.2s;
   }
-  .stat .valor { font-family: 'Poppins', sans-serif; font-size: 1.4rem; font-weight: 700; }
+  .stat::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: rgba(255,255,255,0.6);
+  }
+  .stat:hover { transform: translateY(-2px); background: rgba(255, 255, 255, 0.2); }
+  .stat.destaque { grid-column: span 2; }
+  .stat .valor { font-family: 'Poppins', sans-serif; font-size: 1.5rem; font-weight: 700; }
   .stat .label { font-size: 0.72rem; color: rgba(255,255,255,0.85); margin-top: 0.15rem; }
+  .barra-progresso {
+    margin-top: 0.6rem;
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.25);
+    overflow: hidden;
+  }
+  .barra-progresso > div {
+    height: 100%;
+    background: #fff;
+    border-radius: 999px;
+    transition: width 0.4s ease;
+  }
   .hero button {
-    margin-top: 1.1rem;
+    margin-top: 1.2rem;
     background: #fff;
     color: var(--blue-dark);
     font-weight: 700;
@@ -135,7 +265,9 @@
     margin-bottom: 1.25rem;
     box-shadow: var(--shadow);
     scroll-margin-top: 5rem;
+    transition: box-shadow 0.2s, transform 0.2s;
   }
+  section.card:hover { box-shadow: 0 12px 32px -16px rgba(20, 36, 32, 0.2); }
   section.card h2 {
     display: flex;
     align-items: center;
@@ -144,6 +276,16 @@
     margin: 0 0 1rem;
   }
   section.card h2 svg { width: 20px; height: 20px; color: var(--teal); flex-shrink: 0; }
+  section.card h2 .icone-secao {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #e3f5f3, #e6f4fb);
+  }
+  section.card h2 .icone-secao svg { width: 18px; height: 18px; }
 
   /* --- Formularios --- */
   .form-grid {
@@ -163,14 +305,21 @@
     font-family: inherit;
     background: #fff;
     color: var(--ink);
+    transition: border-color 0.15s, box-shadow 0.15s;
   }
-  input:focus, select:focus, button:focus {
+  input:hover, select:hover { border-color: #c9d6d3; }
+  input:focus, select:focus {
+    outline: none;
+    border-color: var(--teal);
+    box-shadow: 0 0 0 3px rgba(20, 160, 152, 0.15);
+  }
+  button:focus-visible {
     outline: 2px solid var(--teal);
-    outline-offset: 1px;
+    outline-offset: 2px;
   }
   button {
-    padding: 0.6rem 1rem;
-    border-radius: 8px;
+    padding: 0.6rem 1.1rem;
+    border-radius: 999px;
     border: none;
     font-family: inherit;
     font-size: 0.9rem;
@@ -178,10 +327,13 @@
     cursor: pointer;
     background: linear-gradient(90deg, var(--blue-dark), var(--teal));
     color: #fff;
-    transition: filter 0.15s;
+    box-shadow: 0 6px 16px -8px rgba(11, 111, 176, 0.6);
+    transition: filter 0.15s, transform 0.15s, box-shadow 0.15s;
   }
-  button:hover { filter: brightness(1.06); }
-  button.secundario { background: #eef1f0; color: var(--ink); }
+  button:hover { filter: brightness(1.06); transform: translateY(-1px); box-shadow: 0 10px 20px -8px rgba(11, 111, 176, 0.55); }
+  button:active { transform: translateY(0); }
+  button.secundario { background: #eef1f0; color: var(--ink); box-shadow: none; }
+  button.secundario:hover { background: #e3f5f3; box-shadow: none; }
 
   /* --- Tabelas --- */
   .tabela-wrap { overflow-x: auto; }
@@ -241,12 +393,60 @@
         <div class="subtitulo">Painel de Vendas</div>
       </div>
     </div>
-    <nav class="abas">
-      <button class="ativa" data-aba="inicio">Início</button>
-      <button data-aba="crm">CRM</button>
-      <button data-aba="mapa">Mapa</button>
-    </nav>
+    <div class="header-direita">
+      <nav class="abas">
+        <button class="ativa" data-aba="inicio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10"/></svg>Início</button>
+        <button data-aba="crm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>CRM</button>
+        <button data-aba="mapa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20 3 17V4l6 3m0 13 6-3m-6 3V7m6 10 6 3V7l-6-3m0 13V4m0 3L9 4"/></svg>Mapa</button>
+      </nav>
+      <button class="btn-icone" id="btn-config" type="button" title="Personalizar" aria-label="Personalizar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
+      </button>
+    </div>
   </header>
+
+  <div class="capa" id="capa">
+    <div class="capa-inner">
+      <div class="avatar-wrap">
+        <img class="avatar-img" id="avatar-img" alt="Foto de perfil" hidden />
+        <div class="avatar-fallback" id="avatar-fallback"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg></div>
+      </div>
+    </div>
+  </div>
+  <div class="capa-espaco"></div>
+
+  <div class="modal-overlay" id="modal-config" hidden>
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Personalizar</h3>
+        <button class="fechar-modal" id="btn-fechar-config" type="button" aria-label="Fechar">&times;</button>
+      </div>
+
+      <div class="config-item">
+        <div>
+          <strong>Ícone do app</strong>
+          <p class="vazio">Aba do navegador e tela inicial do iPhone. Ideal: imagem quadrada, 512×512.</p>
+        </div>
+        <label class="btn-upload">Escolher<input type="file" accept="image/*" id="input-icone" hidden /></label>
+      </div>
+
+      <div class="config-item">
+        <div>
+          <strong>Capa</strong>
+          <p class="vazio">Banner no topo do painel.</p>
+        </div>
+        <label class="btn-upload">Escolher<input type="file" accept="image/*" id="input-capa" hidden /></label>
+      </div>
+
+      <div class="config-item">
+        <div>
+          <strong>Foto de perfil</strong>
+          <p class="vazio">Seu círculo de foto.</p>
+        </div>
+        <label class="btn-upload">Escolher<input type="file" accept="image/*" id="input-foto-perfil" hidden /></label>
+      </div>
+    </div>
+  </div>
 
   <main>
     <!-- ===== ABA INICIO ===== -->
@@ -259,7 +459,7 @@
       </section>
 
       <section class="card" id="visitas">
-        <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.1 7-11a7 7 0 0 0-14 0c0 4.9 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>Registrar visita</h2>
+        <h2><span class="icone-secao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.1 7-11a7 7 0 0 0-14 0c0 4.9 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg></span>Registrar visita</h2>
         <form id="form-visita">
           <div class="form-grid">
             <div class="field"><label>Cliente</label><select name="contato_id" id="select-contato-visita" required></select></div>
@@ -289,7 +489,7 @@
       </nav>
 
       <section class="card" id="empresas">
-        <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h1M14 9h1M9 13h1M14 13h1M9 17h1M14 17h1"/></svg>Empresas</h2>
+        <h2><span class="icone-secao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h1M14 9h1M9 13h1M14 13h1M9 17h1M14 17h1"/></svg></span>Empresas</h2>
         <form id="form-empresa">
           <div class="form-grid">
             <div class="field"><label>Nome da empresa</label><input name="nome" placeholder="Ex: Fazenda Boa Vista" required /></div>
@@ -311,7 +511,7 @@
       </section>
 
       <section class="card" id="contatos">
-        <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>Contatos</h2>
+        <h2><span class="icone-secao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg></span>Contatos</h2>
         <form id="form-contato">
           <div class="form-grid">
             <div class="field"><label>Nome</label><input name="nome" placeholder="Nome completo" required /></div>
@@ -349,7 +549,7 @@
       </section>
 
       <section class="card" id="produtos">
-        <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>Produtos</h2>
+        <h2><span class="icone-secao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg></span>Produtos</h2>
         <form id="form-produto">
           <div class="form-grid">
             <div class="field"><label>Nome do produto</label><input name="nome" placeholder="Ex: Fertilizante NPK" required /></div>
@@ -366,7 +566,7 @@
       </section>
 
       <section class="card" id="negociacoes">
-        <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17 9 11 13 15 21 7"/><path d="M15 7h6v6"/></svg>Negociações</h2>
+        <h2><span class="icone-secao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17 9 11 13 15 21 7"/><path d="M15 7h6v6"/></svg></span>Negociações</h2>
         <form id="form-negociacao">
           <div class="form-grid">
             <div class="field"><label>Contato</label><select name="contato_id" id="select-contato-negociacao" required></select></div>
@@ -393,7 +593,7 @@
       </section>
 
       <section class="card" id="atividades">
-        <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/><path d="m8 15 2 2 4-4"/></svg>Atividades pendentes</h2>
+        <h2><span class="icone-secao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/><path d="m8 15 2 2 4-4"/></svg></span>Atividades pendentes</h2>
         <form id="form-atividade">
           <div class="form-grid">
             <div class="field"><label>Contato</label><select name="contato_id" id="select-contato-atividade" required></select></div>
@@ -423,7 +623,7 @@
     <!-- ===== ABA MAPA ===== -->
     <div class="painel" id="painel-mapa" hidden>
       <section class="card">
-        <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20 3 17V4l6 3m0 13 6-3m-6 3V7m6 10 6 3V7l-6-3m0 13V4m0 3L9 4"/></svg>Mapa de clientes</h2>
+        <h2><span class="icone-secao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20 3 17V4l6 3m0 13 6-3m-6 3V7m6 10 6 3V7l-6-3m0 13V4m0 3L9 4"/></svg></span>Mapa de clientes</h2>
         <p class="vazio" style="margin: -0.5rem 0 1rem">Clique num pino pra ver os dados do cliente. Use "Adicionar à rota" pra comparar distâncias entre clientes.</p>
         <div id="mapa" style="height: 520px; border-radius: 10px; overflow: hidden; border: 1px solid var(--border);"></div>
 
@@ -437,7 +637,7 @@
       </section>
 
       <section class="card" id="mapa-cliente-info" hidden>
-        <h2><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/></svg><span id="mapa-cliente-nome">Cliente</span></h2>
+        <h2><span class="icone-secao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/></svg></span><span id="mapa-cliente-nome">Cliente</span></h2>
         <div class="resumo-grid" id="mapa-cliente-dados"></div>
       </section>
     </div>
@@ -574,6 +774,71 @@ document.getElementById('btn-calcular-rota').addEventListener('click', async () 
   }
 });
 
+// --- Configurações visuais (ícone, capa, foto de perfil) ---
+
+function aplicarConfig(config) {
+  if (config.capa_url) {
+    document.getElementById('capa').style.backgroundImage = `url("${config.capa_url}")`;
+  }
+  if (config.foto_perfil_url) {
+    const img = document.getElementById('avatar-img');
+    img.src = config.foto_perfil_url;
+    img.hidden = false;
+    document.getElementById('avatar-fallback').hidden = true;
+  }
+  if (config.icone_url) {
+    document.getElementById('favicon').href = config.icone_url;
+    document.getElementById('apple-touch-icon').href = config.icone_url;
+  }
+}
+
+async function carregarConfig() {
+  try {
+    const config = await api('/config');
+    aplicarConfig(config);
+  } catch {
+    // sem configuração ainda; segue com os padrões
+  }
+}
+
+async function enviarImagemConfig(campo, arquivo) {
+  const formData = new FormData();
+  formData.append('arquivo', arquivo);
+  const res = await fetch(`/api/config/${campo}`, { method: 'POST', body: formData });
+  if (!res.ok) {
+    const erro = await res.json().catch(() => ({}));
+    throw new Error(erro.error || 'Erro ao enviar imagem');
+  }
+  return res.json();
+}
+
+[
+  ['input-icone', 'icone'],
+  ['input-capa', 'capa'],
+  ['input-foto-perfil', 'foto_perfil'],
+].forEach(([inputId, campo]) => {
+  document.getElementById(inputId).addEventListener('change', async (e) => {
+    const arquivo = e.target.files[0];
+    if (!arquivo) return;
+    try {
+      const config = await enviarImagemConfig(campo, arquivo);
+      aplicarConfig(config);
+    } catch (err) {
+      alert(err.message);
+    }
+  });
+});
+
+document.getElementById('btn-config').addEventListener('click', () => {
+  document.getElementById('modal-config').hidden = false;
+});
+document.getElementById('btn-fechar-config').addEventListener('click', () => {
+  document.getElementById('modal-config').hidden = true;
+});
+document.getElementById('modal-config').addEventListener('click', (e) => {
+  if (e.target.id === 'modal-config') document.getElementById('modal-config').hidden = true;
+});
+
 // --- Abas ---
 
 document.querySelectorAll('nav.abas button').forEach((btn) => {
@@ -618,9 +883,14 @@ function fmtKm(valor) {
 
 async function carregarResumo() {
   const r = await api('/resumo');
+  const progresso = r.valor_meta ? Math.min(100, Math.round((r.faturamento_mes / r.valor_meta) * 100)) : null;
+
   document.getElementById('resumo-stats').innerHTML = `
-    <div class="stat"><div class="valor">${fmtMoeda(r.faturamento_mes)}</div><div class="label">Faturamento do mês</div></div>
-    <div class="stat"><div class="valor">${r.valor_meta != null ? fmtMoeda(r.valor_meta) : '—'}</div><div class="label">Meta do mês</div></div>
+    <div class="stat destaque">
+      <div class="valor">${fmtMoeda(r.faturamento_mes)}</div>
+      <div class="label">Faturamento do mês${r.valor_meta != null ? ` · meta ${fmtMoeda(r.valor_meta)}` : ''}</div>
+      ${progresso != null ? `<div class="barra-progresso"><div style="width:${progresso}%"></div></div>` : ''}
+    </div>
     <div class="stat"><div class="valor">${r.clientes_visitados_mes}</div><div class="label">Clientes visitados (mês)</div></div>
     <div class="stat"><div class="valor">${fmtKm(r.km_rodados_mes)}</div><div class="label">Km rodados (mês)</div></div>
     <div class="stat"><div class="valor">${r.clientes_ativos}</div><div class="label">Clientes ativos</div></div>
@@ -788,6 +1058,7 @@ document.getElementById('btn-meta').addEventListener('click', async () => {
 });
 
 (async function iniciar() {
+  carregarConfig();
   await Promise.all([carregarEmpresas(), carregarProdutos()]);
   await carregarContatos();
   await Promise.all([carregarResumo(), carregarVisitas(), carregarNegociacoes(), carregarAtividades()]);
