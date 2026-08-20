@@ -104,21 +104,21 @@
   .btn-icone:hover { background: #e3f5f3; color: var(--teal); transform: rotate(20deg); }
   .btn-icone svg { width: 18px; height: 18px; flex-shrink: 0; min-width: 18px; }
 
-  /* --- Capa e avatar --- */
-  .capa {
-    position: relative;
-    height: 150px;
-    background: linear-gradient(120deg, var(--blue-dark), var(--teal) 55%, var(--green));
-    background-size: cover;
-    background-position: center;
+  /* --- Perfil (foto + cargo) --- */
+  .perfil-linha {
+    max-width: 1080px;
+    margin: 1.25rem auto 0;
+    padding: 0 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
   }
-  .capa-inner { max-width: 1080px; margin: 0 auto; height: 100%; position: relative; padding: 0 1.25rem; }
-  .avatar-wrap { position: absolute; left: 1.25rem; bottom: -2.6rem; }
   .avatar-img, .avatar-fallback {
-    width: 86px;
-    height: 86px;
+    width: 72px;
+    height: 72px;
     border-radius: 50%;
-    border: 4px solid var(--bg);
+    border: 3px solid #fff;
     box-shadow: var(--shadow);
     object-fit: cover;
     display: block;
@@ -130,9 +130,10 @@
     background: linear-gradient(135deg, var(--teal), var(--green));
     color: #fff;
   }
-  .avatar-fallback svg { width: 38px; height: 38px; }
+  .avatar-fallback svg { width: 32px; height: 32px; }
   .avatar-img[hidden], .avatar-fallback[hidden] { display: none; }
-  .capa-espaco { height: 3rem; }
+  .perfil-cargo-wrap { display: flex; align-items: center; gap: 0.5rem; }
+  .perfil-cargo-texto { font-size: 0.98rem; font-weight: 600; color: var(--ink); }
 
   /* --- Modal de configuracoes --- */
   .modal-overlay {
@@ -339,6 +340,22 @@
   .foto-cliente-mini-fallback { font-size: 1.1rem; }
   .cliente-card .nome-cliente { font-size: 0.85rem; font-weight: 600; line-height: 1.25; }
 
+  .filtro-clientes { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1.1rem; }
+  .filtro-pill {
+    padding: 0.4rem 0.9rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: #fff;
+    color: var(--muted);
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: none;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+  }
+  .filtro-pill:hover { background: #eef6f5; color: var(--teal); box-shadow: none; transform: none; }
+  .filtro-pill.ativo { background: linear-gradient(90deg, var(--blue-dark), var(--teal)); color: #fff; border-color: transparent; box-shadow: none; }
+
   /* --- Detalhe do cliente --- */
   .btn-voltar {
     display: inline-flex; align-items: center; gap: 0.35rem;
@@ -502,15 +519,16 @@
     </div>
   </header>
 
-  <div class="capa" id="capa">
-    <div class="capa-inner">
-      <div class="avatar-wrap">
-        <img class="avatar-img" id="avatar-img" alt="Foto de perfil" hidden />
-        <div class="avatar-fallback" id="avatar-fallback"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg></div>
+  <div class="perfil-linha">
+    <div class="avatar-editar-wrap">
+      <img class="avatar-img" id="avatar-img" alt="Foto de perfil" hidden />
+      <div class="avatar-fallback" id="avatar-fallback"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg></div>
+      <div class="avatar-editar-btn" id="btn-editar-avatar-app" title="Trocar foto">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2Z"/><circle cx="12" cy="13" r="4"/></svg>
       </div>
     </div>
+    <div class="perfil-cargo-wrap" id="perfil-cargo-wrap"></div>
   </div>
-  <div class="capa-espaco"></div>
 
   <div class="modal-overlay" id="modal-config" hidden>
     <div class="modal-card">
@@ -525,14 +543,6 @@
           <p class="vazio">Aba do navegador e tela inicial do iPhone. Ideal: imagem quadrada, 512×512.</p>
         </div>
         <label class="btn-upload">Escolher<input type="file" accept="image/*" id="input-icone" hidden /></label>
-      </div>
-
-      <div class="config-item">
-        <div>
-          <strong>Capa</strong>
-          <p class="vazio">Banner no topo do painel.</p>
-        </div>
-        <label class="btn-upload">Escolher<input type="file" accept="image/*" id="input-capa" hidden /></label>
       </div>
 
       <div class="config-item">
@@ -786,6 +796,7 @@
           <button type="button" id="btn-novo-cliente">Adicionar novo cliente</button>
           <button type="button" class="secundario" id="btn-novo-campo">+ Adicionar campo</button>
         </div>
+        <div class="filtro-clientes" id="filtro-clientes"></div>
         <div class="clientes-grid" id="grade-clientes"></div>
       </section>
 
@@ -990,12 +1001,11 @@ document.getElementById('btn-calcular-rota').addEventListener('click', async () 
   }
 });
 
-// --- Configurações visuais (ícone, capa, foto de perfil) ---
+// --- Configurações visuais (ícone, foto de perfil, cargo) ---
+
+let cargoAtual = 'Vendedor Junior - Minas Gerais';
 
 function aplicarConfig(config) {
-  if (config.capa_url) {
-    document.getElementById('capa').style.backgroundImage = `url("${config.capa_url}")`;
-  }
   if (config.foto_perfil_url) {
     const img = document.getElementById('avatar-img');
     img.src = config.foto_perfil_url;
@@ -1006,6 +1016,8 @@ function aplicarConfig(config) {
     document.getElementById('favicon').href = config.icone_url;
     document.getElementById('apple-touch-icon').href = config.icone_url;
   }
+  if (config.cargo) cargoAtual = config.cargo;
+  renderizarCargo();
 }
 
 async function carregarConfig() {
@@ -1013,9 +1025,48 @@ async function carregarConfig() {
     const config = await api('/config');
     aplicarConfig(config);
   } catch {
-    // sem configuração ainda; segue com os padrões
+    renderizarCargo();
   }
 }
+
+function renderizarCargo() {
+  const wrap = document.getElementById('perfil-cargo-wrap');
+  wrap.innerHTML = `
+    <span class="perfil-cargo-texto">${cargoAtual}</span>
+    <button type="button" class="btn-lapis" id="btn-editar-cargo" title="Editar cargo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+    </button>
+  `;
+  document.getElementById('btn-editar-cargo').addEventListener('click', ativarEdicaoCargo);
+}
+
+function ativarEdicaoCargo() {
+  const wrap = document.getElementById('perfil-cargo-wrap');
+  wrap.innerHTML = `
+    <input type="text" id="input-cargo" value="${escaparAtributo(cargoAtual)}" style="min-width: 220px" />
+    <div class="campo-edicao-acoes">
+      <button type="button" class="btn-confirmar" id="btn-confirmar-cargo" title="Salvar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
+      <button type="button" class="btn-cancelar" id="btn-cancelar-cargo" title="Cancelar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+  `;
+  const input = document.getElementById('input-cargo');
+  input.focus();
+  document.getElementById('btn-cancelar-cargo').addEventListener('click', renderizarCargo);
+  document.getElementById('btn-confirmar-cargo').addEventListener('click', async () => {
+    const novoValor = input.value.trim();
+    try {
+      const config = await api('/config', { method: 'PATCH', body: JSON.stringify({ cargo: novoValor }) });
+      cargoAtual = config.cargo || cargoAtual;
+      renderizarCargo();
+    } catch (err) {
+      alert(err.message);
+    }
+  });
+}
+
+document.getElementById('btn-editar-avatar-app').addEventListener('click', () => {
+  document.getElementById('input-foto-perfil').click();
+});
 
 async function enviarImagemConfig(campo, arquivoOuBlob) {
   const formData = new FormData();
@@ -1101,7 +1152,6 @@ document.getElementById('btn-confirmar-recorte').addEventListener('click', () =>
 
 [
   ['input-icone', 'icone', 1],
-  ['input-capa', 'capa', 3],
   ['input-foto-perfil', 'foto_perfil', 1],
 ].forEach(([inputId, campo, aspectRatio]) => {
   document.getElementById(inputId).addEventListener('change', (e) => {
@@ -1331,18 +1381,48 @@ async function carregarCamposClientes() {
   camposClientes = await api('/campos-clientes');
 }
 
+let filtroSituacaoAtual = null;
+
 async function carregarClientes() {
   clientesCache = await api('/clientes');
+  renderizarFiltroClientes();
   renderizarGradeClientes();
   if (clienteAtualId && !document.getElementById('clientes-detalhe-view').hidden) {
     abrirDetalheCliente(clienteAtualId);
   }
 }
 
+function renderizarFiltroClientes() {
+  const container = document.getElementById('filtro-clientes');
+  const campoSituacao = camposClientes.find((c) => c.chave === 'situacao');
+  const opcoes = campoSituacao?.opcoes || [];
+  if (!opcoes.length) {
+    container.innerHTML = '';
+    return;
+  }
+
+  const pill = (valor, rotulo) =>
+    `<button type="button" class="filtro-pill ${filtroSituacaoAtual === valor ? 'ativo' : ''}" data-filtro="${escaparAtributo(valor ?? '')}">${rotulo}</button>`;
+
+  container.innerHTML = pill(null, 'Todos') + opcoes.map((o) => pill(o, o)).join('');
+
+  container.querySelectorAll('.filtro-pill').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      filtroSituacaoAtual = btn.dataset.filtro || null;
+      renderizarFiltroClientes();
+      renderizarGradeClientes();
+    });
+  });
+}
+
 function renderizarGradeClientes() {
   const grade = document.getElementById('grade-clientes');
-  grade.innerHTML = clientesCache.length
-    ? clientesCache.map((cli) => `
+  const listaFiltrada = filtroSituacaoAtual
+    ? clientesCache.filter((cli) => cli.dados?.situacao === filtroSituacaoAtual)
+    : clientesCache;
+
+  grade.innerHTML = listaFiltrada.length
+    ? listaFiltrada.map((cli) => `
         <button type="button" class="cliente-card" data-id="${cli.id}">
           <div class="avatar-editar-wrap">
             ${cli.foto_url
@@ -1355,7 +1435,7 @@ function renderizarGradeClientes() {
           <div class="nome-cliente">${cli.nome}</div>
         </button>
       `).join('')
-    : '<p class="vazio">Nenhum cliente ainda.</p>';
+    : `<p class="vazio">${filtroSituacaoAtual ? 'Nenhum cliente com esse status.' : 'Nenhum cliente ainda.'}</p>`;
 
   grade.querySelectorAll('.cliente-card').forEach((btn) => {
     btn.addEventListener('click', () => abrirDetalheCliente(btn.dataset.id));

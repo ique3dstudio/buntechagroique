@@ -88,6 +88,16 @@ router.get('/config', async (req, res) => {
   res.json(data ?? {});
 });
 
+router.patch('/config', async (req, res) => {
+  const { cargo } = req.body;
+  const atualizacao = { updated_at: new Date().toISOString() };
+  if (cargo !== undefined) atualizacao.cargo = cargo;
+
+  const { data, error } = await supabase.from('configuracoes').update(atualizacao).eq('id', 1).select().single();
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
 router.post('/config/:campo', upload.single('arquivo'), async (req, res) => {
   const { campo } = req.params;
   if (!CAMPOS_CONFIG.includes(campo)) return res.status(400).json({ error: 'campo inválido' });
