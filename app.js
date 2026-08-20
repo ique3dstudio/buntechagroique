@@ -77,7 +77,7 @@
     const { error } = await supabase.from("respostas_congresso").insert(payload);
 
     btnEnviar.disabled = false;
-    btnEnviar.textContent = "Enviar";
+    btnEnviar.textContent = "Enviar!";
 
     if (error) {
       console.error(error);
