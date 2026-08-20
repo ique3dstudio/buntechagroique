@@ -356,6 +356,17 @@
   .filtro-pill:hover { background: #eef6f5; color: var(--teal); box-shadow: none; transform: none; }
   .filtro-pill.ativo { background: linear-gradient(90deg, var(--blue-dark), var(--teal)); color: #fff; border-color: transparent; box-shadow: none; }
 
+  /* --- Aviso de integracao pendente --- */
+  .aviso-integracao {
+    background: #fff9e8;
+    border: 1px solid #f3e3a8;
+    border-radius: 10px;
+    padding: 1rem 1.1rem;
+    font-size: 0.88rem;
+  }
+  .aviso-integracao ul { margin: 0.5rem 0 0; padding-left: 1.1rem; }
+  .aviso-integracao li { margin-bottom: 0.3rem; }
+
   /* --- Detalhe do cliente --- */
   .btn-voltar {
     display: inline-flex; align-items: center; gap: 0.35rem;
@@ -484,6 +495,8 @@
   .status-ativo { background: #e7f7ea; color: #1e7e34; }
   .status-inativo { background: #f1f1f1; color: #9ca3af; }
   .status-convertido { background: #e3f5f3; color: #0f766e; }
+  .status-rascunho { background: #f1f1f1; color: #6b7280; }
+  .status-enviado { background: #e7f7ea; color: #1e7e34; }
 
   footer { text-align: center; color: var(--muted); font-size: 0.78rem; padding: 1.5rem 1rem 2rem; }
 
@@ -512,6 +525,8 @@
         <button data-aba="crm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>CRM</button>
         <button data-aba="clientes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Clientes</button>
         <button data-aba="mapa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20 3 17V4l6 3m0 13 6-3m-6 3V7m6 10 6 3V7l-6-3m0 13V4m0 3L9 4"/></svg>Mapa</button>
+        <button data-aba="rdv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M9 15h6M9 11h2"/></svg>RDV</button>
+        <button data-aba="pedido"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>Criar pedido</button>
       </nav>
       <button class="btn-icone" id="btn-config" type="button" title="Personalizar" aria-label="Personalizar">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
@@ -837,6 +852,75 @@
       <section class="card" id="mapa-cliente-info" hidden>
         <h2><span class="icone-secao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/></svg></span><span id="mapa-cliente-nome">Cliente</span></h2>
         <div class="resumo-grid" id="mapa-cliente-dados"></div>
+      </section>
+    </div>
+
+    <!-- ===== ABA RDV ===== -->
+    <div class="painel" id="painel-rdv" hidden>
+      <section class="card">
+        <h2><span class="icone-secao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M9 15h6M9 11h2"/></svg></span>RDV — Reembolso de despesas</h2>
+        <p class="vazio" style="margin: -0.5rem 0 1rem">Rascunho local, espelhando os campos do portal da Buntech. O envio pra lá ainda é manual — mas já fica tudo pronto aqui.</p>
+
+        <form id="form-rdv">
+          <div class="form-grid">
+            <div class="field"><label>Tipo</label>
+              <select name="tipo" id="rdv-tipo">
+                <option value="reembolso">Reembolso</option>
+                <option value="adiantamento">Adiantamento</option>
+              </select>
+            </div>
+            <div class="field" id="rdv-numero-pa-wrap" style="display:none"><label>Número PA</label><input type="text" name="numero_pa" placeholder="Número do adiantamento" /></div>
+            <div class="field"><label>Conta contábil</label>
+              <input type="text" name="conta_contabil" id="rdv-conta-contabil" list="lista-contas-contabeis" placeholder="Digite pra buscar..." required />
+              <datalist id="lista-contas-contabeis"></datalist>
+            </div>
+            <div class="field" id="rdv-tipo-politica-wrap" style="display:none"><label>Tipo (refeição)</label>
+              <select name="tipo_politica" id="rdv-tipo-politica">
+                <option value="">Selecionar</option>
+                <option value="cafe">Café (teto R$ 35)</option>
+                <option value="almoco">Almoço (teto R$ 48)</option>
+                <option value="jantar">Jantar (teto R$ 62)</option>
+              </select>
+              <input type="hidden" name="politica" id="rdv-politica" />
+            </div>
+            <div class="field"><label>Quantidade</label><input type="number" name="quantidade" step="1" min="1" placeholder="1" /></div>
+            <div class="field"><label>Valor total (R$)</label><input type="number" name="valor_total" step="0.01" min="0" required /></div>
+            <div class="field"><label>Centro de custo</label>
+              <select name="centro_custo">
+                <option value="PESQUISA AGRONEGOCIO">Pesquisa Agronegócio</option>
+                <option value="COMERCIAL AGRO">Comercial Agro</option>
+              </select>
+            </div>
+            <div class="field" style="grid-column: 1 / -1"><label>Observação</label><input type="text" name="observacao" placeholder="Opcional" /></div>
+            <button type="submit">Adicionar despesa</button>
+          </div>
+        </form>
+
+        <div class="tabela-wrap">
+          <table>
+            <thead><tr><th>Conta contábil</th><th>Valor</th><th>Centro de custo</th><th>Comprovante</th><th>Status</th><th></th></tr></thead>
+            <tbody id="tabela-rdv"></tbody>
+          </table>
+        </div>
+        <input type="file" id="input-rdv-comprovante" accept="image/*,.pdf" hidden />
+      </section>
+    </div>
+
+    <!-- ===== ABA CRIAR PEDIDO ===== -->
+    <div class="painel" id="painel-pedido" hidden>
+      <section class="card">
+        <h2><span class="icone-secao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span>Criar pedido</h2>
+        <p class="vazio" style="margin: -0.5rem 0 1rem">Ainda não conectado ao TOTVS Protheus.</p>
+        <div class="aviso-integracao">
+          <strong>O que falta pra essa aba funcionar de verdade:</strong>
+          <ul>
+            <li>Print da tela de abertura do pedido (seleção de cliente)</li>
+            <li>Print da tela de adicionar item (produto, quantidade, preço)</li>
+            <li>Print da condição de pagamento / tabela de preço</li>
+            <li>Print da tela de resumo antes de confirmar</li>
+          </ul>
+          <p class="vazio" style="margin: 0.75rem 0 0">Depois disso: você monta o pedido aqui (cliente + produtos), e eu gero ele direto no Protheus.</p>
+        </div>
       </section>
     </div>
   </main>
@@ -1185,6 +1269,8 @@ document.querySelectorAll('nav.abas button').forEach((btn) => {
     document.getElementById('painel-crm').hidden = btn.dataset.aba !== 'crm';
     document.getElementById('painel-clientes').hidden = btn.dataset.aba !== 'clientes';
     document.getElementById('painel-mapa').hidden = btn.dataset.aba !== 'mapa';
+    document.getElementById('painel-rdv').hidden = btn.dataset.aba !== 'rdv';
+    document.getElementById('painel-pedido').hidden = btn.dataset.aba !== 'pedido';
     if (btn.dataset.aba === 'mapa') {
       mapaPronto.then(() => {
         mapa.invalidateSize();
@@ -1721,6 +1807,113 @@ document.getElementById('form-campo').addEventListener('submit', async (e) => {
   }
 });
 
+// --- Aba RDV ---
+
+const CONTAS_CONTABEIS = [
+  '510202007-COMBUSTIVEL',
+  '510105011-CONDUCAO',
+  '510207016-ALUGUEL DE VEICULOS',
+  '510105007-LANCHES E REFEICOES',
+];
+
+document.getElementById('lista-contas-contabeis').innerHTML =
+  CONTAS_CONTABEIS.map((c) => `<option value="${c}"></option>`).join('');
+
+const POLITICAS_REFEICAO = { cafe: 35, almoco: 48, jantar: 62 };
+const RDV_STATUS_ROTULO = { rascunho: 'Rascunho', enviado: 'Enviado' };
+
+function contaEhRefeicao(valor) {
+  return String(valor ?? '').toUpperCase().includes('LANCHES');
+}
+
+document.getElementById('rdv-tipo').addEventListener('change', (e) => {
+  document.getElementById('rdv-numero-pa-wrap').style.display = e.target.value === 'adiantamento' ? '' : 'none';
+});
+
+document.getElementById('rdv-conta-contabil').addEventListener('input', (e) => {
+  const ehRefeicao = contaEhRefeicao(e.target.value);
+  document.getElementById('rdv-tipo-politica-wrap').style.display = ehRefeicao ? '' : 'none';
+  if (!ehRefeicao) {
+    document.getElementById('rdv-tipo-politica').value = '';
+    document.getElementById('rdv-politica').value = '';
+  }
+});
+
+document.getElementById('rdv-tipo-politica').addEventListener('change', (e) => {
+  document.getElementById('rdv-politica').value = POLITICAS_REFEICAO[e.target.value] ?? '';
+});
+
+let rdvIdPendente = null;
+
+async function carregarRdv() {
+  const itens = await api('/rdv');
+  const tbody = document.getElementById('tabela-rdv');
+  tbody.innerHTML = itens.length
+    ? itens.map((r) => `
+        <tr>
+          <td>${r.conta_contabil}</td>
+          <td>${fmtMoeda(r.valor_total)}</td>
+          <td>${r.centro_custo}</td>
+          <td>${r.comprovante_url
+            ? `<a href="${r.comprovante_url}" target="_blank" rel="noopener">Ver</a>`
+            : `<button type="button" class="secundario" data-anexar="${r.id}">Anexar</button>`}</td>
+          <td><span class="badge status-${r.status}">${RDV_STATUS_ROTULO[r.status] ?? r.status}</span></td>
+          <td>
+            ${r.status === 'rascunho' ? `<button type="button" class="secundario" data-enviar="${r.id}">Marcar enviado</button>` : ''}
+            <button type="button" class="secundario" data-excluir="${r.id}">Excluir</button>
+          </td>
+        </tr>
+      `).join('')
+    : '<tr><td class="vazio" colspan="6">Nenhuma despesa ainda.</td></tr>';
+
+  tbody.querySelectorAll('button[data-anexar]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      rdvIdPendente = btn.dataset.anexar;
+      document.getElementById('input-rdv-comprovante').click();
+    });
+  });
+
+  tbody.querySelectorAll('button[data-enviar]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      try {
+        await api(`/rdv/${btn.dataset.enviar}`, { method: 'PATCH', body: JSON.stringify({ status: 'enviado' }) });
+        await carregarRdv();
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+  });
+
+  tbody.querySelectorAll('button[data-excluir]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('Excluir essa despesa?')) return;
+      try {
+        await api(`/rdv/${btn.dataset.excluir}`, { method: 'DELETE' });
+        await carregarRdv();
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+  });
+}
+
+document.getElementById('input-rdv-comprovante').addEventListener('change', async (e) => {
+  const arquivo = e.target.files[0];
+  e.target.value = '';
+  if (!arquivo || !rdvIdPendente) return;
+  const formData = new FormData();
+  formData.append('arquivo', arquivo);
+  try {
+    const res = await fetch(`/api/rdv/${rdvIdPendente}/comprovante`, { method: 'POST', body: formData });
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || 'Erro ao anexar comprovante');
+    await carregarRdv();
+  } catch (err) {
+    alert(err.message);
+  } finally {
+    rdvIdPendente = null;
+  }
+});
+
 // --- Formularios ---
 
 function formHandler(formId, path, aoTerminar) {
@@ -1743,6 +1936,11 @@ formHandler('form-contato', '/contatos', () => Promise.all([carregarContatos(), 
 formHandler('form-negociacao', '/negociacoes', () => Promise.all([carregarNegociacoes(), carregarResumo()]));
 formHandler('form-atividade', '/atividades', () => Promise.all([carregarAtividades(), carregarResumo()]));
 formHandler('form-visita', '/visitas', () => Promise.all([carregarVisitas(), carregarResumo()]));
+formHandler('form-rdv', '/rdv', () => {
+  document.getElementById('rdv-numero-pa-wrap').style.display = 'none';
+  document.getElementById('rdv-tipo-politica-wrap').style.display = 'none';
+  return carregarRdv();
+});
 
 document.getElementById('btn-meta').addEventListener('click', async () => {
   const valor = prompt('Meta do mês (R$):');
@@ -1761,7 +1959,7 @@ document.getElementById('btn-meta').addEventListener('click', async () => {
   carregarConfig();
   await Promise.all([carregarEmpresas(), carregarProdutos(), carregarCamposClientes()]);
   await Promise.all([carregarContatos(), carregarClientes()]);
-  await Promise.all([carregarResumo(), carregarVisitas(), carregarNegociacoes(), carregarAtividades()]);
+  await Promise.all([carregarResumo(), carregarVisitas(), carregarNegociacoes(), carregarAtividades(), carregarRdv()]);
 })();
 </script>
 </body>

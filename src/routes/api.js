@@ -602,4 +602,79 @@ router.get('/resumo', async (req, res) => {
   });
 });
 
+// --- RDV (rascunho de despesas/reembolso, futura integração com o portal Buntech) ---
+
+router.get('/rdv', async (req, res) => {
+  const { data, error } = await supabase.from('rdv').select('*').order('created_at', { ascending: false });
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
+router.post('/rdv', async (req, res) => {
+  const { tipo, numero_pa, conta_contabil, quantidade, tipo_politica, politica, valor_total, centro_custo, observacao } = req.body;
+  if (!conta_contabil) return res.status(400).json({ error: 'conta contábil é obrigatória' });
+  if (valor_total == null || valor_total === '') return res.status(400).json({ error: 'valor total é obrigatório' });
+
+  const { data, error } = await supabase
+    .from('rdv')
+    .insert({
+      tipo: tipo || 'reembolso',
+      numero_pa: numero_pa || null,
+      conta_contabil,
+      quantidade: quantidade || null,
+      tipo_politica: tipo_politica || null,
+      politica: politica || null,
+      valor_total,
+      centro_custo: centro_custo || 'PESQUISA AGRONEGOCIO',
+      observacao: observacao || null,
+    })
+    .select()
+    .single();
+  if (error) return res.status(500).json({ error: error.message });
+  res.status(201).json(data);
+});
+
+router.patch('/rdv/:id', async (req, res) => {
+  const { status } = req.body;
+  if (!['rascunho', 'enviado'].includes(status)) return res.status(400).json({ error: 'status inválido' });
+
+  const { data, error } = await supabase
+    .from('rdv')
+    .update({ status, updated_at: new Date().toISOString() })
+    .eq('id', req.params.id)
+    .select()
+    .single();
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
+router.delete('/rdv/:id', async (req, res) => {
+  const { error } = await supabase.from('rdv').delete().eq('id', req.params.id);
+  if (error) return res.status(500).json({ error: error.message });
+  res.status(204).end();
+});
+
+router.post('/rdv/:id/comprovante', upload.single('arquivo'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'arquivo é obrigatório' });
+
+  const extensao = (req.file.originalname.split('.').pop() || 'pdf').toLowerCase();
+  const caminho = `rdv-${req.params.id}-${Date.now()}.${extensao}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from('app-assets')
+    .upload(caminho, req.file.buffer, { contentType: req.file.mimetype, upsert: true });
+  if (uploadError) return res.status(500).json({ error: uploadError.message });
+
+  const { data: urlData } = supabase.storage.from('app-assets').getPublicUrl(caminho);
+
+  const { data, error } = await supabase
+    .from('rdv')
+    .update({ comprovante_url: urlData.publicUrl, updated_at: new Date().toISOString() })
+    .eq('id', req.params.id)
+    .select()
+    .single();
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
 export default router;
