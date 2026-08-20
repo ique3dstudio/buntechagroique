@@ -1,0 +1,142 @@
+<title>Congresso Nacional de Sementes</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="stylesheet" href="style.css" />
+
+<div class="app">
+  <header class="top">
+    <h1>Congresso Nacional de Sementes</h1>
+    <p>Escolha uma opção abaixo</p>
+  </header>
+
+  <!-- MENU PRINCIPAL -->
+  <section id="view-menu" class="view active">
+    <button class="menu-btn" data-goto="view-form">
+      <span class="emoji">📝</span>
+      Formulário
+    </button>
+    <button class="menu-btn secondary" data-goto="view-orcamento">
+      <span class="emoji">💬</span>
+      Solicite seu orçamento
+    </button>
+  </section>
+
+  <!-- FORMULÁRIO DE CONTATO + PESQUISA -->
+  <section id="view-form" class="view">
+    <div class="card">
+      <div class="section-title">Formulário</div>
+      <p class="hint">Campos com * são obrigatórios.</p>
+
+      <form id="form-contato" novalidate>
+        <label>Nome *</label>
+        <input type="text" name="nome" required />
+
+        <label>Empresa *</label>
+        <input type="text" name="empresa" required />
+
+        <label>Departamento <span class="opt">(opcional)</span></label>
+        <input type="text" name="departamento" />
+
+        <label>E-mail *</label>
+        <input type="email" name="email" required />
+
+        <label>Telefone/Celular *</label>
+        <input type="tel" name="telefone" required />
+
+        <label>Cidade *</label>
+        <input type="text" name="cidade" required />
+
+        <label>Estado *</label>
+        <input type="text" name="estado" required />
+
+        <label>Produto <span class="opt">(opcional)</span></label>
+        <select name="produto" id="select-produto">
+          <option value="">Selecione</option>
+          <option value="Seedgel">Seedgel</option>
+          <option value="Hortaliças">Hortaliças</option>
+          <option value="Seedflow">Seedflow</option>
+          <option value="Grafite">Grafite</option>
+          <option value="Polímeros">Polímeros</option>
+          <option value="Outros">Outros</option>
+        </select>
+        <input
+          type="text"
+          name="produto_outro"
+          id="input-produto-outro"
+          placeholder="Qual produto?"
+          style="display: none; margin-top: 8px"
+        />
+
+        <label>Comentários *</label>
+        <textarea name="comentarios" required></textarea>
+
+        <div class="error-msg" id="form-error">
+          Preencha os campos obrigatórios antes de enviar.
+        </div>
+
+        <button type="submit" class="btn" id="btn-enviar" style="margin-top: 18px">
+          Enviar
+        </button>
+      </form>
+    </div>
+    <button class="btn back" data-goto="view-menu">&larr; Voltar ao menu</button>
+  </section>
+
+  <!-- CONFIRMAÇÃO DE ENVIO -->
+  <section id="view-form-ok" class="view">
+    <div class="card success">
+      <div class="emoji">✅</div>
+      <h2>Obrigado!</h2>
+      <p>Suas informações foram enviadas com sucesso.</p>
+    </div>
+    <button class="btn" data-goto="view-menu">Voltar ao menu</button>
+  </section>
+
+  <!-- ORÇAMENTO: FALE COM VENDEDORES -->
+  <section id="view-orcamento" class="view">
+    <div class="card">
+      <div class="section-title">Fale com nossos vendedores:</div>
+      <button class="btn" data-wa="hortalicas">Hortaliças</button>
+      <button class="btn" data-wa="grandesCulturas">Grandes culturas</button>
+      <button class="btn" data-wa="b2bInsumos">B2B/Insumos</button>
+      <button class="btn" data-goto="view-forrageiras">Forrageiras/Pastagens</button>
+      <button class="btn outline" data-goto="view-outros">Outros</button>
+    </div>
+    <button class="btn back" data-goto="view-menu">&larr; Voltar ao menu</button>
+  </section>
+
+  <!-- ORÇAMENTO: FORRAGEIRAS -> REGIÃO -->
+  <section id="view-forrageiras" class="view">
+    <div class="card">
+      <div class="section-title">Escolha sua região:</div>
+      <button class="btn" data-wa-forrageiras="saoPaulo">São Paulo</button>
+      <button class="btn" data-wa-forrageiras="minasGerais">Minas Gerais</button>
+      <button class="btn" data-wa-forrageiras="goias">Goiás</button>
+      <button class="btn" data-wa-forrageiras="matoGrossoSul">Mato Grosso/Mato Grosso do Sul</button>
+
+      <label style="margin-top: 20px">Outra região <span class="opt">(descreva)</span></label>
+      <input type="text" id="input-forrageiras-outro" placeholder="Digite sua região" />
+      <button class="btn outline" id="btn-forrageiras-outro" style="margin-top: 10px">
+        Falar com vendedor
+      </button>
+    </div>
+    <button class="btn back" data-goto="view-orcamento">&larr; Voltar</button>
+  </section>
+
+  <!-- ORÇAMENTO: OUTROS -->
+  <section id="view-outros" class="view">
+    <div class="card">
+      <div class="section-title">Outros</div>
+      <label>Descreva o que você precisa</label>
+      <input type="text" id="input-outros" placeholder="Ex: peças, embalagens, etc." />
+      <button class="btn" id="btn-outros" style="margin-top: 14px">
+        Falar com vendedor
+      </button>
+    </div>
+    <button class="btn back" data-goto="view-orcamento">&larr; Voltar</button>
+  </section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
