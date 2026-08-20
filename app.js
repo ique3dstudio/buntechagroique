@@ -12,6 +12,18 @@
     console.error("Não foi possível iniciar o Supabase:", e);
   }
 
+  // ---------- Contador de visitas ----------
+  // Fire-and-forget: registra uma visita a cada abertura do app. Falha
+  // silenciosamente (sem internet, Supabase fora do ar, etc.) para nunca
+  // atrapalhar o uso do app.
+  if (supabase) {
+    supabase
+      .from("visitas_congresso")
+      .insert({})
+      .then(() => {})
+      .catch(() => {});
+  }
+
   // ---------- LinkedIn ----------
   const linkedinLink = document.getElementById("linkedin-link");
   if (linkedinLink && cfg.linkedinUrl) {

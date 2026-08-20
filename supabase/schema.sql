@@ -31,3 +31,21 @@ create policy "permitir insert publico"
 -- isso impede que o site público consiga listar ou alterar respostas.
 -- Para consultar os dados depois do congresso, use o Table Editor do
 -- Supabase (com seu login) ou exporte via SQL Editor.
+
+-- Contador simples de visitas: uma linha por vez que o app é aberto.
+-- Mesma lógica de proteção: só insert público, ninguém de fora lê.
+create table if not exists public.visitas_congresso (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now()
+);
+
+alter table public.visitas_congresso enable row level security;
+
+create policy "permitir insert publico"
+  on public.visitas_congresso
+  for insert
+  to anon
+  with check (true);
+
+-- Para ver o total de visitas depois, rode no SQL Editor:
+-- select count(*) from public.visitas_congresso;

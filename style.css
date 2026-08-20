@@ -61,7 +61,8 @@ body {
 #view-form-ok,
 #view-orcamento,
 #view-forrageiras,
-#view-outros {
+#view-outros,
+#view-sobre {
   padding: 24px 16px 48px;
   background:
     radial-gradient(circle at 50% 43%, #003348 0%, #001823 26%, #000c14 62%, #01070d 100%);
@@ -554,6 +555,38 @@ textarea {
   font-weight: 700;
   line-height: 1.1;
   text-align: center;
+}
+
+.link-sobre {
+  position: relative;
+  z-index: 2;
+  display: block;
+  margin: 10px auto 0;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 0.85rem;
+  text-decoration: underline;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.sobre-texto {
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  margin: 0 0 14px;
+}
+
+.sobre-estande {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.sobre-estande strong {
+  color: var(--text-primary);
 }
 
 .event-footer {
