@@ -35,6 +35,7 @@
 
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
+  html, body { overflow-x: hidden; max-width: 100%; }
 
   body {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
@@ -61,17 +62,9 @@
     gap: 1rem;
     flex-wrap: wrap;
   }
-  .logo { display: flex; align-items: center; gap: 0.5rem; }
-  .logo svg { width: 26px; height: 26px; flex-shrink: 0; }
-  .logo .marca {
-    font-family: 'Poppins', sans-serif;
-    font-weight: 800;
-    font-size: 1.3rem;
-    letter-spacing: -0.02em;
-  }
-  .logo .bun { background: linear-gradient(90deg, var(--blue-light), var(--blue-dark)); -webkit-background-clip: text; background-clip: text; color: transparent; }
-  .logo .agro { background: linear-gradient(90deg, var(--teal), var(--green)); -webkit-background-clip: text; background-clip: text; color: transparent; }
-  .logo .subtitulo { font-size: 0.7rem; color: var(--muted); font-weight: 500; margin-top: -2px; }
+  .logo { display: flex; flex-direction: column; align-items: flex-start; gap: 0.15rem; flex-shrink: 0; }
+  .logo-img { height: 28px; width: auto; display: block; }
+  .logo .subtitulo { font-size: 0.7rem; color: var(--muted); font-weight: 500; }
 
   .header-direita { display: flex; align-items: center; gap: 0.5rem; }
 
@@ -480,17 +473,21 @@
   @media (max-width: 640px) {
     header.top { padding: 0.7rem 1rem; }
     main { padding: 1rem 0.85rem; }
+    .header-direita { flex-wrap: wrap; justify-content: flex-end; row-gap: 0.5rem; }
+    nav.abas { flex-wrap: wrap; justify-content: center; row-gap: 0.3rem; }
+  }
+
+  @media (max-width: 460px) {
+    nav.abas button { padding: 0.4rem 0.6rem; font-size: 0.78rem; }
+    nav.abas button svg { width: 14px; height: 14px; }
   }
 </style>
 </head>
 <body>
   <header class="top">
     <div class="logo">
-      <svg viewBox="0 0 100 100" fill="none"><defs><linearGradient id="folha" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#14A098"/><stop offset="1" stop-color="#4CAF50"/></linearGradient></defs><path d="M50 8C22 24 14 58 50 92 86 58 78 24 50 8Z" fill="url(#folha)"/></svg>
-      <div>
-        <div class="marca"><span class="bun">buntech</span><span class="agro">agro</span></div>
-        <div class="subtitulo">Painel de Vendas</div>
-      </div>
+      <img src="/logo.png" alt="Buntech Agro" class="logo-img" />
+      <div class="subtitulo">Painel de Vendas</div>
     </div>
     <div class="header-direita">
       <nav class="abas">
