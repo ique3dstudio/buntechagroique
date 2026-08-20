@@ -1,6 +1,16 @@
 (function () {
   const cfg = window.APP_CONFIG;
-  const supabase = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
+
+  // Cria o cliente Supabase de forma defensiva: se o script do CDN não
+  // carregar (wifi ruim do evento, CDN fora do ar, etc.), o app continua
+  // funcionando para navegação e WhatsApp — só o envio do formulário fica
+  // indisponível, com aviso claro para o usuário.
+  let supabase = null;
+  try {
+    supabase = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseAnonKey);
+  } catch (e) {
+    console.error("Não foi possível iniciar o Supabase:", e);
+  }
 
   // ---------- Navegação entre telas ----------
   function goto(viewId) {
@@ -32,6 +42,12 @@
     if (!form.checkValidity()) {
       formError.style.display = "block";
       form.reportValidity();
+      return;
+    }
+
+    if (!supabase) {
+      formError.textContent = "Não foi possível conectar. Verifique sua internet e recarregue a página.";
+      formError.style.display = "block";
       return;
     }
 
