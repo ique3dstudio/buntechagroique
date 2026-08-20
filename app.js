@@ -12,6 +12,12 @@
     console.error("Não foi possível iniciar o Supabase:", e);
   }
 
+  // ---------- LinkedIn ----------
+  const linkedinLink = document.getElementById("linkedin-link");
+  if (linkedinLink && cfg.linkedinUrl) {
+    linkedinLink.href = cfg.linkedinUrl;
+  }
+
   // ---------- Navegação entre telas ----------
   function goto(viewId) {
     document.querySelectorAll(".view").forEach((el) => el.classList.remove("active"));

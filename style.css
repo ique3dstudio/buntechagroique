@@ -68,6 +68,12 @@ body {
   min-height: 100vh;
 }
 
+#view-orcamento {
+  position: relative;
+  overflow: hidden;
+  padding-top: 40px;
+}
+
 .card {
   width: min(92vw, 440px);
   margin: 0 auto 16px;
@@ -164,6 +170,21 @@ body {
   transition: transform 150ms ease, filter 150ms ease;
 }
 
+.option-card-icon {
+  justify-content: flex-start;
+  gap: 14px;
+  text-align: left;
+}
+
+.option-icon {
+  position: relative;
+  z-index: 2;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .option-card::before {
   content: "";
   position: absolute;
@@ -246,10 +267,23 @@ select,
 textarea {
   width: 100%;
   padding: 12px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  border: 2px solid rgba(132, 245, 255, 0.6);
+  border-radius: 10px;
   font-size: 1rem;
   font-family: inherit;
+  color: #fff;
+  background: linear-gradient(180deg, #017da4 0%, #01678e 36%, #005a7c 100%);
+}
+
+input[type="text"]::placeholder,
+input[type="email"]::placeholder,
+input[type="tel"]::placeholder,
+textarea::placeholder {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+select option {
+  color: #000;
   background: #fff;
 }
 
@@ -388,17 +422,17 @@ textarea {
 
 .buntech-logo {
   display: block;
-  width: min(52vw, 230px);
+  width: min(68vw, 320px);
   height: auto;
   margin: 0 auto;
   object-fit: contain;
 }
 
 .hero-header h1 {
-  margin: 2dvh auto 0.8dvh;
+  margin: 2.5dvh auto 1dvh;
   font-family: "Montserrat", sans-serif;
   font-weight: 700;
-  font-size: clamp(22px, 6vw, 34px);
+  font-size: clamp(26px, 7.5vw, 40px);
   line-height: 1.15;
   letter-spacing: -0.02em;
   color: var(--text-primary);
@@ -508,4 +542,17 @@ textarea {
   height: auto;
   margin: 0 auto;
   object-fit: contain;
+}
+
+.linkedin-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  margin: 10px auto 0;
+  border-radius: 8px;
+  background: #0a66c2;
+  color: #fff;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
 }

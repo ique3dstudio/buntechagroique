@@ -25,4 +25,7 @@ window.APP_CONFIG = {
     },
     outros: "5547999066045",
   },
+
+  // Link da página da Buntech Agro no LinkedIn.
+  linkedinUrl: "https://www.linkedin.com/company/grupobun/",
 };
