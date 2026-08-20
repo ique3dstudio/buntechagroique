@@ -19,6 +19,7 @@ window.APP_CONFIG = {
       minasGerais: "5511917412544",
       goias: "5511971924029",
       bahia: "5511971924029",
+      matoGrosso: "5567996681117",
       matoGrossoSul: "5567996681117",
       outro: "5547999066045",
     },
