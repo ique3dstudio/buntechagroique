@@ -1306,9 +1306,14 @@ function abrirDetalheCliente(id) {
   document.getElementById('detalhe-nome').textContent = cliente.nome;
   renderizarFotoDetalhe(cliente);
 
+  const coordenadasAtuais = cliente.latitude != null && cliente.longitude != null
+    ? `${cliente.latitude}, ${cliente.longitude}`
+    : '';
+
   const linhas = [
     campoLinhaHtml('Nome', '_nome', cliente.nome, 'texto', null, cliente.nome),
     campoLinhaHtml('Endereço (para o mapa)', '_endereco', cliente.endereco || '—', 'texto', null, cliente.endereco || ''),
+    campoLinhaHtml('Coordenadas (se não tiver endereço)', '_coordenadas', coordenadasAtuais || '—', 'texto', null, coordenadasAtuais),
     ...camposClientes.map((c) => {
       const valor = cliente.dados?.[c.chave];
       return campoLinhaHtml(c.rotulo, c.chave, valorCampoParaExibicao(c, valor), c.tipo, c.opcoes, valor ?? '');
@@ -1378,6 +1383,11 @@ async function salvarCampoCliente(chave, valor) {
       resultado = await api(`/clientes/${clienteAtualId}`, {
         method: 'PATCH',
         body: JSON.stringify({ endereco: valor, dados: cliente.dados || {} }),
+      });
+    } else if (chave === '_coordenadas') {
+      resultado = await api(`/clientes/${clienteAtualId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ coordenadas: valor }),
       });
     } else {
       const novosDados = { ...(cliente.dados || {}) };
@@ -1452,6 +1462,7 @@ function abrirModalCliente(cliente) {
   document.getElementById('campos-cliente-form').innerHTML = `
     <div class="field"><label>Nome</label><input type="text" data-campo="_nome" value="${escaparAtributo(cliente?.nome)}" required /></div>
     <div class="field"><label>Endereço (para o mapa)</label><input type="text" data-campo="_endereco" placeholder="Rua, número, bairro" value="${escaparAtributo(cliente?.endereco)}" /></div>
+    <div class="field"><label>Coordenadas (se não tiver endereço)</label><input type="text" data-campo="_coordenadas" placeholder="Ex: -18.512, -44.328" /></div>
     ${camposClientes.map((c) => campoInputHtml(c, cliente?.dados?.[c.chave])).join('')}
   `;
   document.getElementById('modal-cliente').hidden = false;
@@ -1470,19 +1481,21 @@ document.getElementById('form-cliente-modal').addEventListener('submit', async (
   const id = e.target.dataset.id;
   let nome;
   let endereco;
+  let coordenadas;
   const dados = {};
   document.querySelectorAll('#campos-cliente-form [data-campo]').forEach((el) => {
     const chave = el.dataset.campo;
     const valor = el.value.trim();
     if (chave === '_nome') nome = valor;
     else if (chave === '_endereco') endereco = valor;
+    else if (chave === '_coordenadas') coordenadas = valor;
     else if (valor) dados[chave] = valor;
   });
 
   try {
     const resultado = id
-      ? await api(`/clientes/${id}`, { method: 'PATCH', body: JSON.stringify({ nome, endereco, dados }) })
-      : await api('/clientes', { method: 'POST', body: JSON.stringify({ nome, endereco, dados }) });
+      ? await api(`/clientes/${id}`, { method: 'PATCH', body: JSON.stringify({ nome, endereco, coordenadas, dados }) })
+      : await api('/clientes', { method: 'POST', body: JSON.stringify({ nome, endereco, coordenadas, dados }) });
     document.getElementById('modal-cliente').hidden = true;
     await carregarClientes();
     mapaPronto.then(() => carregarClientesMapa()).catch(() => {});

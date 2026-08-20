@@ -7,6 +7,19 @@ const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024 } });
 const CAMPOS_CONFIG = ['icone', 'capa', 'foto_perfil'];
 
+// Aceita "lat, lng" (com ou sem espaço/vírgula/ponto-e-vírgula entre os números).
+// Útil pra clientes em área rural, sem endereço reconhecível pelo geocodificador.
+function tentarParsearCoordenadas(texto) {
+  if (!texto) return null;
+  const partes = texto.split(/[,;\s]+/).map((p) => p.trim()).filter(Boolean);
+  if (partes.length !== 2) return null;
+  const latitude = Number(partes[0]);
+  const longitude = Number(partes[1]);
+  if (Number.isNaN(latitude) || Number.isNaN(longitude)) return null;
+  if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) return null;
+  return { latitude, longitude };
+}
+
 const ETAPAS = [
   'novo_lead',
   'qualificacao',
@@ -232,13 +245,21 @@ router.get('/clientes', async (req, res) => {
 });
 
 router.post('/clientes', async (req, res) => {
-  const { nome, endereco, dados } = req.body;
+  const { nome, endereco, coordenadas, dados } = req.body;
   if (!nome) return res.status(400).json({ error: 'nome é obrigatório' });
 
   let latitude = null;
   let longitude = null;
   let aviso;
-  if (endereco) {
+
+  if (coordenadas) {
+    const coords = tentarParsearCoordenadas(coordenadas);
+    if (!coords) {
+      return res.status(400).json({ error: 'Coordenadas inválidas. Use o formato "latitude, longitude", ex: -18.512, -44.328.' });
+    }
+    latitude = coords.latitude;
+    longitude = coords.longitude;
+  } else if (endereco) {
     const cidade = dados?.cidade;
     const enderecoCompleto = [endereco, cidade, 'Minas Gerais', 'Brasil'].filter(Boolean).join(', ');
     const coords = await geocodificarEndereco(enderecoCompleto).catch(() => null);
@@ -246,7 +267,7 @@ router.post('/clientes', async (req, res) => {
       latitude = coords.latitude;
       longitude = coords.longitude;
     } else {
-      aviso = 'Não conseguimos localizar esse endereço no mapa. O cliente foi salvo mesmo assim.';
+      aviso = 'Não conseguimos localizar esse endereço no mapa. O cliente foi salvo mesmo assim — se for uma área rural, tenta preencher as coordenadas.';
     }
   }
 
@@ -260,14 +281,26 @@ router.post('/clientes', async (req, res) => {
 });
 
 router.patch('/clientes/:id', async (req, res) => {
-  const { nome, endereco, dados } = req.body;
+  const { nome, endereco, coordenadas, dados } = req.body;
 
   const atualizacao = { updated_at: new Date().toISOString() };
   if (nome !== undefined) atualizacao.nome = nome;
   if (dados !== undefined) atualizacao.dados = dados;
 
   let aviso;
-  if (endereco !== undefined) {
+  if (coordenadas !== undefined) {
+    if (coordenadas) {
+      const coords = tentarParsearCoordenadas(coordenadas);
+      if (!coords) {
+        return res.status(400).json({ error: 'Coordenadas inválidas. Use o formato "latitude, longitude", ex: -18.512, -44.328.' });
+      }
+      atualizacao.latitude = coords.latitude;
+      atualizacao.longitude = coords.longitude;
+    } else {
+      atualizacao.latitude = null;
+      atualizacao.longitude = null;
+    }
+  } else if (endereco !== undefined) {
     atualizacao.endereco = endereco;
     if (endereco) {
       const cidade = dados?.cidade;
@@ -279,7 +312,7 @@ router.patch('/clientes/:id', async (req, res) => {
       } else {
         atualizacao.latitude = null;
         atualizacao.longitude = null;
-        aviso = 'Não conseguimos localizar esse endereço no mapa. O cliente foi salvo mesmo assim.';
+        aviso = 'Não conseguimos localizar esse endereço no mapa. O cliente foi salvo mesmo assim — se for uma área rural, tenta preencher as coordenadas.';
       }
     } else {
       atualizacao.latitude = null;
