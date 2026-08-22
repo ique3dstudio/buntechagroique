@@ -21,9 +21,9 @@ window.APP_CONFIG = {
       bahia: "5511971924029",
       matoGrosso: "5567996681117",
       matoGrossoSul: "5567996681117",
-      outro: "5547999066045",
+      outro: "5511917413027",
     },
-    outros: "5547999066045",
+    outros: "5511917413027",
   },
 
   // Link da página da Buntech Agro no LinkedIn.
