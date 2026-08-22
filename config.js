@@ -12,7 +12,7 @@ window.APP_CONFIG = {
   // (Brasil: 55 + DDD + número).
   whatsapp: {
     hortalicas: "5511910097461",
-    grandesCulturas: "5518997911679",
+    grandesCulturas: "5511917412119",
     b2bInsumos: "5511917410629",
     forrageiras: {
       saoPaulo: "5511956390977",
