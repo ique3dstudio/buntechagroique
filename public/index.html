@@ -280,6 +280,8 @@
     color: var(--blue-dark);
     font-weight: 700;
   }
+  .stat-meta .meta-svg-wrap { margin-top: 0.5rem; line-height: 0; }
+  .stat-meta .meta-svg { width: 100%; height: 40px; display: block; }
 
   /* --- Cards de secao --- */
   section.card {
@@ -1346,6 +1348,7 @@ async function autenticarComFaceId() {
 }
 
 function renderizarMeta() {
+  renderizarMetaProgresso();
   const wrap = document.getElementById('perfil-meta-wrap');
   if (metaAtual == null) {
     wrap.innerHTML = `
@@ -1575,8 +1578,11 @@ function fmtKm(valor) {
 
 // --- Aba Início ---
 
+let resumoCache = null;
+
 async function carregarResumo() {
   const r = await api('/resumo');
+  resumoCache = r;
   const progresso = r.valor_meta ? Math.min(100, Math.round((r.faturamento_mes / r.valor_meta) * 100)) : null;
 
   document.getElementById('resumo-stats').innerHTML = `
@@ -1591,7 +1597,46 @@ async function carregarResumo() {
     <div class="stat"><div class="valor">${r.clientes_inativos}</div><div class="label">Clientes inativos</div></div>
     <div class="stat"><div class="valor">${r.clientes_desenvolvimento}</div><div class="label">Em desenvolvimento</div></div>
     <div class="stat"><div class="valor">${r.clientes_convertidos}</div><div class="label">Convertidos</div></div>
+    <div class="stat destaque stat-meta" id="stat-meta-progresso" hidden>
+      <div class="valor">0%</div>
+      <div class="label">Já feito da meta anual</div>
+      <div class="meta-svg-wrap"></div>
+    </div>
   `;
+  renderizarMetaProgresso();
+}
+
+function svgProgressoMeta(percentual) {
+  const p = Math.max(0, Math.min(100, percentual));
+  const w = 100, h = 40, margem = 3;
+  const yInicio = h - margem;
+  const yFim = h - margem - (p / 100) * (h - margem * 2);
+  return `
+    <svg viewBox="0 0 ${w} ${h}" class="meta-svg" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="gradMeta" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="rgba(255,255,255,0.55)" />
+          <stop offset="100%" stop-color="rgba(255,255,255,0.05)" />
+        </linearGradient>
+      </defs>
+      <polygon points="0,${yInicio} ${w},${yFim} ${w},${h} 0,${h}" fill="url(#gradMeta)" />
+      <polyline points="0,${yInicio} ${w},${yFim}" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+      <circle cx="${w}" cy="${yFim}" r="2.6" fill="#fff" />
+    </svg>
+  `;
+}
+
+function renderizarMetaProgresso() {
+  const el = document.getElementById('stat-meta-progresso');
+  if (!el) return;
+  if (!resumoCache || metaAtual == null) {
+    el.hidden = true;
+    return;
+  }
+  const percentual = (Number(resumoCache.faturamento_ano) || 0) / metaAtual * 100;
+  el.hidden = false;
+  el.querySelector('.valor').textContent = `${Math.round(Math.max(0, Math.min(100, percentual)))}%`;
+  el.querySelector('.meta-svg-wrap').innerHTML = svgProgressoMeta(percentual);
 }
 
 async function carregarVisitas() {

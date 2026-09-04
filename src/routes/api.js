@@ -604,10 +604,17 @@ router.get('/resumo', async (req, res) => {
     statusContagens[status] = count ?? 0;
   }
 
+  const { data: historico, error: historicoError } = await supabase
+    .from('historico_vendas')
+    .select('fat_2026_janjul');
+  if (historicoError) return res.status(500).json({ error: historicoError.message });
+  const faturamentoAno = historico.reduce((soma, h) => soma + Number(h.fat_2026_janjul || 0), 0);
+
   res.json({
     mes,
     valor_meta: meta?.valor_meta ?? null,
     faturamento_mes: faturamentoMes,
+    faturamento_ano: faturamentoAno,
     clientes_visitados_mes: clientesVisitadosMes,
     km_rodados_mes: kmRodadosMes,
     clientes_ativos: statusContagens.ativo,
