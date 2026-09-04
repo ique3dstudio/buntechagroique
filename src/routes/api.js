@@ -194,7 +194,7 @@ router.get('/mapa/clientes', async (req, res) => {
       id: cliente.id,
       origem: 'cliente',
       nome: cliente.nome,
-      cnpj: null,
+      cnpj: d.cnpj ?? null,
       foto_url: cliente.foto_url,
       endereco: cliente.endereco,
       cidade: d.cidade ?? null,
@@ -202,7 +202,7 @@ router.get('/mapa/clientes', async (req, res) => {
       longitude: cliente.longitude,
       faturamento: Number(d.faturamento) || 0,
       ultimo_pedido: d.data_ultima_compra ?? null,
-      produtos: d.produto ? [d.produto] : [],
+      produtos: d.produto_principal ? [d.produto_principal] : [],
     });
   }
 
