@@ -894,6 +894,10 @@
           <p class="vazio" style="margin:0">Clique num pino pra ver os dados. Use "Adicionar à rota" pra comparar distâncias.</p>
           <button type="button" id="btn-add-cliente-mapa">Adicionar cliente</button>
         </div>
+        <div class="filtro-grupo">
+          <div class="filtro-label">Etapa do funil</div>
+          <div class="filtro-clientes" id="filtro-mapa-funil"></div>
+        </div>
         <div id="mapa" style="height: 520px; border-radius: 10px; overflow: hidden; border: 1px solid var(--border);"></div>
 
         <div class="rota-painel" style="margin-top: 1rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem;">
@@ -1054,11 +1058,45 @@ function adicionarPontoRota(cliente) {
   mapa.closePopup();
 }
 
+let filtroFunilMapa = null;
+let clientesMapaCache = [];
+
+function renderizarFiltroMapa() {
+  const container = document.getElementById('filtro-mapa-funil');
+  const campo = camposClientes.find((c) => c.chave === 'funil');
+  const opcoes = campo?.opcoes || [];
+  if (!opcoes.length) {
+    container.innerHTML = '';
+    return;
+  }
+
+  const pill = (valor, rotulo) =>
+    `<button type="button" class="filtro-pill ${filtroFunilMapa === valor ? 'ativo' : ''}" data-filtro="${escaparAtributo(valor ?? '')}">${rotulo}</button>`;
+
+  container.innerHTML = pill(null, 'Todos') + opcoes.map((o) => pill(o, o)).join('');
+
+  container.querySelectorAll('.filtro-pill').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      filtroFunilMapa = btn.dataset.filtro || null;
+      renderizarFiltroMapa();
+      renderizarMarcadoresMapa();
+    });
+  });
+}
+
 async function carregarClientesMapa() {
+  clientesMapaCache = await api('/mapa/clientes');
+  renderizarFiltroMapa();
+  renderizarMarcadoresMapa();
+}
+
+function renderizarMarcadoresMapa() {
   Object.values(marcadoresMapa).forEach((marcador) => mapa.removeLayer(marcador));
   Object.keys(marcadoresMapa).forEach((id) => delete marcadoresMapa[id]);
 
-  const clientes = await api('/mapa/clientes');
+  const clientes = clientesMapaCache.filter(
+    (cliente) => !filtroFunilMapa || cliente.origem !== 'cliente' || cliente.funil === filtroFunilMapa
+  );
   clientes.forEach((cliente) => {
     const marcador = L.marker([cliente.latitude, cliente.longitude], { icon: construirIconeCliente(cliente) }).addTo(mapa);
     marcador.bindPopup(`
@@ -1549,7 +1587,7 @@ document.querySelectorAll('nav.abas button').forEach((btn) => {
       mapaPronto.then(() => {
         mapa.invalidateSize();
         carregarClientesMapa();
-      });
+      }).catch(() => {});
     }
   });
 });
