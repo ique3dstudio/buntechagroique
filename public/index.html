@@ -132,8 +132,11 @@
   }
   .avatar-fallback svg { width: 32px; height: 32px; }
   .avatar-img[hidden], .avatar-fallback[hidden] { display: none; }
+  .perfil-info-coluna { display: flex; flex-direction: column; gap: 0.15rem; }
   .perfil-cargo-wrap { display: flex; align-items: center; gap: 0.5rem; }
   .perfil-cargo-texto { font-size: 0.98rem; font-weight: 600; color: var(--ink); }
+  .perfil-vendedor-wrap { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+  .perfil-vendedor-texto { font-size: 0.8rem; color: var(--muted); }
 
   /* --- Modal de configuracoes --- */
   .modal-overlay {
@@ -340,7 +343,9 @@
   .foto-cliente-mini-fallback { font-size: 1.1rem; }
   .cliente-card .nome-cliente { font-size: 0.85rem; font-weight: 600; line-height: 1.25; }
 
-  .filtro-clientes { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1.1rem; }
+  .filtro-grupo { margin-bottom: 0.75rem; }
+  .filtro-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); margin-bottom: 0.35rem; }
+  .filtro-clientes { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.35rem; }
   .filtro-pill {
     padding: 0.4rem 0.9rem;
     border-radius: 999px;
@@ -543,7 +548,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2Z"/><circle cx="12" cy="13" r="4"/></svg>
       </div>
     </div>
-    <div class="perfil-cargo-wrap" id="perfil-cargo-wrap"></div>
+    <div class="perfil-info-coluna">
+      <div class="perfil-cargo-wrap" id="perfil-cargo-wrap"></div>
+      <div class="perfil-vendedor-wrap" id="perfil-vendedor-wrap"></div>
+    </div>
   </div>
 
   <div class="modal-overlay" id="modal-config" hidden>
@@ -812,7 +820,14 @@
           <button type="button" id="btn-novo-cliente">Adicionar novo cliente</button>
           <button type="button" class="secundario" id="btn-novo-campo">+ Adicionar campo</button>
         </div>
-        <div class="filtro-clientes" id="filtro-clientes"></div>
+        <div class="filtro-grupo">
+          <div class="filtro-label">Etapa do funil</div>
+          <div class="filtro-clientes" id="filtro-clientes-funil"></div>
+        </div>
+        <div class="filtro-grupo">
+          <div class="filtro-label">Situação</div>
+          <div class="filtro-clientes" id="filtro-clientes"></div>
+        </div>
         <div class="clientes-grid" id="grade-clientes"></div>
       </section>
 
@@ -1099,6 +1114,7 @@ document.getElementById('btn-calcular-rota').addEventListener('click', async () 
 // --- Configurações visuais (ícone, foto de perfil, cargo) ---
 
 let cargoAtual = 'Vendedor Junior - Minas Gerais';
+let vendedorAtual = { numero_vendedor: '', matricula: '', celular: '' };
 
 function aplicarConfig(config) {
   if (config.foto_perfil_url) {
@@ -1112,7 +1128,13 @@ function aplicarConfig(config) {
     document.getElementById('apple-touch-icon').href = config.icone_url;
   }
   if (config.cargo) cargoAtual = config.cargo;
+  vendedorAtual = {
+    numero_vendedor: config.numero_vendedor || '',
+    matricula: config.matricula || '',
+    celular: config.celular || '',
+  };
   renderizarCargo();
+  renderizarVendedor();
 }
 
 async function carregarConfig() {
@@ -1121,6 +1143,7 @@ async function carregarConfig() {
     aplicarConfig(config);
   } catch {
     renderizarCargo();
+    renderizarVendedor();
   }
 }
 
@@ -1153,6 +1176,55 @@ function ativarEdicaoCargo() {
       const config = await api('/config', { method: 'PATCH', body: JSON.stringify({ cargo: novoValor }) });
       cargoAtual = config.cargo || cargoAtual;
       renderizarCargo();
+    } catch (err) {
+      alert(err.message);
+    }
+  });
+}
+
+function renderizarVendedor() {
+  const wrap = document.getElementById('perfil-vendedor-wrap');
+  const partes = [
+    vendedorAtual.numero_vendedor ? `Nº vendedor: ${vendedorAtual.numero_vendedor}` : null,
+    vendedorAtual.matricula ? `Matrícula: ${vendedorAtual.matricula}` : null,
+    vendedorAtual.celular ? `Celular: ${vendedorAtual.celular}` : null,
+  ].filter(Boolean).join(' · ');
+  wrap.innerHTML = `
+    <span class="perfil-vendedor-texto">${partes || 'Sem dados de vendedor'}</span>
+    <button type="button" class="btn-lapis" id="btn-editar-vendedor" title="Editar dados de vendedor">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+    </button>
+  `;
+  document.getElementById('btn-editar-vendedor').addEventListener('click', ativarEdicaoVendedor);
+}
+
+function ativarEdicaoVendedor() {
+  const wrap = document.getElementById('perfil-vendedor-wrap');
+  wrap.innerHTML = `
+    <input type="text" id="input-numero-vendedor" placeholder="Nº vendedor" value="${escaparAtributo(vendedorAtual.numero_vendedor)}" style="width: 100px" />
+    <input type="text" id="input-matricula" placeholder="Matrícula" value="${escaparAtributo(vendedorAtual.matricula)}" style="width: 100px" />
+    <input type="text" id="input-celular" placeholder="Celular" value="${escaparAtributo(vendedorAtual.celular)}" style="width: 150px" />
+    <div class="campo-edicao-acoes">
+      <button type="button" class="btn-confirmar" id="btn-confirmar-vendedor" title="Salvar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
+      <button type="button" class="btn-cancelar" id="btn-cancelar-vendedor" title="Cancelar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+  `;
+  document.getElementById('input-numero-vendedor').focus();
+  document.getElementById('btn-cancelar-vendedor').addEventListener('click', renderizarVendedor);
+  document.getElementById('btn-confirmar-vendedor').addEventListener('click', async () => {
+    const body = {
+      numero_vendedor: document.getElementById('input-numero-vendedor').value.trim(),
+      matricula: document.getElementById('input-matricula').value.trim(),
+      celular: document.getElementById('input-celular').value.trim(),
+    };
+    try {
+      const config = await api('/config', { method: 'PATCH', body: JSON.stringify(body) });
+      vendedorAtual = {
+        numero_vendedor: config.numero_vendedor || '',
+        matricula: config.matricula || '',
+        celular: config.celular || '',
+      };
+      renderizarVendedor();
     } catch (err) {
       alert(err.message);
     }
@@ -1479,6 +1551,7 @@ async function carregarCamposClientes() {
 }
 
 let filtroSituacaoAtual = null;
+let filtroFunilAtual = null;
 
 async function carregarClientes() {
   clientesCache = await api('/clientes');
@@ -1489,34 +1562,41 @@ async function carregarClientes() {
   }
 }
 
-function renderizarFiltroClientes() {
-  const container = document.getElementById('filtro-clientes');
-  const campoSituacao = camposClientes.find((c) => c.chave === 'situacao');
-  const opcoes = campoSituacao?.opcoes || [];
+function renderizarFiltroCampo(chave, containerId, valorAtual, aoSelecionar) {
+  const container = document.getElementById(containerId);
+  const campo = camposClientes.find((c) => c.chave === chave);
+  const opcoes = campo?.opcoes || [];
   if (!opcoes.length) {
     container.innerHTML = '';
     return;
   }
 
   const pill = (valor, rotulo) =>
-    `<button type="button" class="filtro-pill ${filtroSituacaoAtual === valor ? 'ativo' : ''}" data-filtro="${escaparAtributo(valor ?? '')}">${rotulo}</button>`;
+    `<button type="button" class="filtro-pill ${valorAtual === valor ? 'ativo' : ''}" data-filtro="${escaparAtributo(valor ?? '')}">${rotulo}</button>`;
 
   container.innerHTML = pill(null, 'Todos') + opcoes.map((o) => pill(o, o)).join('');
 
   container.querySelectorAll('.filtro-pill').forEach((btn) => {
     btn.addEventListener('click', () => {
-      filtroSituacaoAtual = btn.dataset.filtro || null;
+      aoSelecionar(btn.dataset.filtro || null);
       renderizarFiltroClientes();
       renderizarGradeClientes();
     });
   });
 }
 
+function renderizarFiltroClientes() {
+  renderizarFiltroCampo('funil', 'filtro-clientes-funil', filtroFunilAtual, (v) => { filtroFunilAtual = v; });
+  renderizarFiltroCampo('situacao', 'filtro-clientes', filtroSituacaoAtual, (v) => { filtroSituacaoAtual = v; });
+}
+
 function renderizarGradeClientes() {
   const grade = document.getElementById('grade-clientes');
-  const listaFiltrada = filtroSituacaoAtual
-    ? clientesCache.filter((cli) => cli.dados?.situacao === filtroSituacaoAtual)
-    : clientesCache;
+  const filtroAtivo = filtroSituacaoAtual || filtroFunilAtual;
+  const listaFiltrada = clientesCache.filter((cli) =>
+    (!filtroSituacaoAtual || cli.dados?.situacao === filtroSituacaoAtual) &&
+    (!filtroFunilAtual || cli.dados?.funil === filtroFunilAtual)
+  );
 
   grade.innerHTML = listaFiltrada.length
     ? listaFiltrada.map((cli) => `
@@ -1532,7 +1612,7 @@ function renderizarGradeClientes() {
           <div class="nome-cliente">${cli.nome}</div>
         </button>
       `).join('')
-    : `<p class="vazio">${filtroSituacaoAtual ? 'Nenhum cliente com esse status.' : 'Nenhum cliente ainda.'}</p>`;
+    : `<p class="vazio">${filtroAtivo ? 'Nenhum cliente com esse filtro.' : 'Nenhum cliente ainda.'}</p>`;
 
   grade.querySelectorAll('.cliente-card').forEach((btn) => {
     btn.addEventListener('click', () => abrirDetalheCliente(btn.dataset.id));

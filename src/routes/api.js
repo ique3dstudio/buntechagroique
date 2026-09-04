@@ -89,9 +89,12 @@ router.get('/config', async (req, res) => {
 });
 
 router.patch('/config', async (req, res) => {
-  const { cargo } = req.body;
+  const { cargo, numero_vendedor, matricula, celular } = req.body;
   const atualizacao = { updated_at: new Date().toISOString() };
   if (cargo !== undefined) atualizacao.cargo = cargo;
+  if (numero_vendedor !== undefined) atualizacao.numero_vendedor = numero_vendedor;
+  if (matricula !== undefined) atualizacao.matricula = matricula;
+  if (celular !== undefined) atualizacao.celular = celular;
 
   const { data, error } = await supabase.from('configuracoes').update(atualizacao).eq('id', 1).select().single();
   if (error) return res.status(500).json({ error: error.message });
