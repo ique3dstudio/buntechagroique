@@ -363,6 +363,16 @@ router.post('/clientes/:id/foto', upload.single('arquivo'), async (req, res) => 
   res.json(data);
 });
 
+router.get('/clientes/:id/historico-vendas', async (req, res) => {
+  const { data, error } = await supabase
+    .from('historico_vendas')
+    .select('*')
+    .eq('cliente_id', req.params.id)
+    .order('produto', { ascending: true });
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
 // --- Produtos ---
 
 router.get('/produtos', async (req, res) => {
