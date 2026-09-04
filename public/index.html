@@ -133,10 +133,35 @@
   .avatar-fallback svg { width: 32px; height: 32px; }
   .avatar-img[hidden], .avatar-fallback[hidden] { display: none; }
   .perfil-info-coluna { display: flex; flex-direction: column; gap: 0.15rem; }
+  .perfil-secao-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
   .perfil-cargo-wrap { display: flex; align-items: center; gap: 0.5rem; }
   .perfil-cargo-texto { font-size: 0.98rem; font-weight: 600; color: var(--ink); }
-  .perfil-vendedor-wrap { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
-  .perfil-vendedor-texto { font-size: 0.8rem; color: var(--muted); }
+  .perfil-regiao-wrap { display: flex; align-items: center; gap: 0.5rem; }
+  .perfil-regiao-texto { font-size: 0.8rem; color: var(--muted); }
+  .perfil-vendedor-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    max-width: 100%;
+    scrollbar-width: none;
+  }
+  .perfil-vendedor-wrap::-webkit-scrollbar { display: none; }
+  .perfil-vendedor-texto { font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
+  .perfil-meta-wrap { display: flex; align-items: center; gap: 0.5rem; }
+  .perfil-meta-texto { font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .btn-olho {
+    background: none;
+    border: none;
+    padding: 2px;
+    cursor: pointer;
+    color: var(--muted);
+    display: inline-flex;
+    box-shadow: none;
+  }
+  .btn-olho:hover { color: var(--teal); transform: none; box-shadow: none; }
+  .btn-olho svg { width: 16px; height: 16px; }
 
   /* --- Modal de configuracoes --- */
   .modal-overlay {
@@ -549,8 +574,11 @@
       </div>
     </div>
     <div class="perfil-info-coluna">
+      <div class="perfil-secao-label">Cargo</div>
       <div class="perfil-cargo-wrap" id="perfil-cargo-wrap"></div>
+      <div class="perfil-regiao-wrap" id="perfil-regiao-wrap"></div>
       <div class="perfil-vendedor-wrap" id="perfil-vendedor-wrap"></div>
+      <div class="perfil-meta-wrap" id="perfil-meta-wrap"></div>
     </div>
   </div>
 
@@ -1113,8 +1141,11 @@ document.getElementById('btn-calcular-rota').addEventListener('click', async () 
 
 // --- Configurações visuais (ícone, foto de perfil, cargo) ---
 
-let cargoAtual = 'Vendedor Junior - Minas Gerais';
+let cargoAtual = 'Vendedor Júnior';
+let regiaoAtual = 'Minas Gerais';
 let vendedorAtual = { numero_vendedor: '', matricula: '', celular: '' };
+let metaAtual = null;
+let metaRevelada = false;
 
 function aplicarConfig(config) {
   if (config.foto_perfil_url) {
@@ -1128,13 +1159,17 @@ function aplicarConfig(config) {
     document.getElementById('apple-touch-icon').href = config.icone_url;
   }
   if (config.cargo) cargoAtual = config.cargo;
+  if (config.regiao) regiaoAtual = config.regiao;
   vendedorAtual = {
     numero_vendedor: config.numero_vendedor || '',
     matricula: config.matricula || '',
     celular: config.celular || '',
   };
+  metaAtual = config.meta_valor ?? null;
   renderizarCargo();
+  renderizarRegiao();
   renderizarVendedor();
+  renderizarMeta();
 }
 
 async function carregarConfig() {
@@ -1143,7 +1178,9 @@ async function carregarConfig() {
     aplicarConfig(config);
   } catch {
     renderizarCargo();
+    renderizarRegiao();
     renderizarVendedor();
+    renderizarMeta();
   }
 }
 
@@ -1182,12 +1219,47 @@ function ativarEdicaoCargo() {
   });
 }
 
+function renderizarRegiao() {
+  const wrap = document.getElementById('perfil-regiao-wrap');
+  wrap.innerHTML = `
+    <span class="perfil-regiao-texto">Região: ${regiaoAtual}</span>
+    <button type="button" class="btn-lapis" id="btn-editar-regiao" title="Editar região">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+    </button>
+  `;
+  document.getElementById('btn-editar-regiao').addEventListener('click', ativarEdicaoRegiao);
+}
+
+function ativarEdicaoRegiao() {
+  const wrap = document.getElementById('perfil-regiao-wrap');
+  wrap.innerHTML = `
+    <input type="text" id="input-regiao" value="${escaparAtributo(regiaoAtual)}" style="min-width: 160px" />
+    <div class="campo-edicao-acoes">
+      <button type="button" class="btn-confirmar" id="btn-confirmar-regiao" title="Salvar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
+      <button type="button" class="btn-cancelar" id="btn-cancelar-regiao" title="Cancelar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+  `;
+  const input = document.getElementById('input-regiao');
+  input.focus();
+  document.getElementById('btn-cancelar-regiao').addEventListener('click', renderizarRegiao);
+  document.getElementById('btn-confirmar-regiao').addEventListener('click', async () => {
+    const novoValor = input.value.trim();
+    try {
+      const config = await api('/config', { method: 'PATCH', body: JSON.stringify({ regiao: novoValor }) });
+      regiaoAtual = config.regiao || regiaoAtual;
+      renderizarRegiao();
+    } catch (err) {
+      alert(err.message);
+    }
+  });
+}
+
 function renderizarVendedor() {
   const wrap = document.getElementById('perfil-vendedor-wrap');
   const partes = [
-    vendedorAtual.numero_vendedor ? `Nº vendedor: ${vendedorAtual.numero_vendedor}` : null,
+    vendedorAtual.numero_vendedor ? `Nº: ${vendedorAtual.numero_vendedor}` : null,
     vendedorAtual.matricula ? `Matrícula: ${vendedorAtual.matricula}` : null,
-    vendedorAtual.celular ? `Celular: ${vendedorAtual.celular}` : null,
+    vendedorAtual.celular ? `Cel.: ${vendedorAtual.celular}` : null,
   ].filter(Boolean).join(' · ');
   wrap.innerHTML = `
     <span class="perfil-vendedor-texto">${partes || 'Sem dados de vendedor'}</span>
@@ -1225,6 +1297,122 @@ function ativarEdicaoVendedor() {
         celular: config.celular || '',
       };
       renderizarVendedor();
+    } catch (err) {
+      alert(err.message);
+    }
+  });
+}
+
+// Meta fica oculta por padrão; revelar (ou editar) exige biometria do aparelho
+// (Face ID/Touch ID via WebAuthn), igual ao saldo escondido de app de banco.
+// Isso é só uma trava de UX local — o valor já chega pro navegador na config,
+// então não substitui autenticação de servidor de verdade.
+async function autenticarComFaceId() {
+  if (!window.PublicKeyCredential || !navigator.credentials) return true;
+  try {
+    let credId = localStorage.getItem('meta_credential_id');
+    if (!credId) {
+      const cred = await navigator.credentials.create({
+        publicKey: {
+          challenge: crypto.getRandomValues(new Uint8Array(32)),
+          rp: { name: 'Buntech Agro' },
+          user: {
+            id: crypto.getRandomValues(new Uint8Array(16)),
+            name: 'vendedor',
+            displayName: 'Vendedor',
+          },
+          pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+          authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required' },
+          timeout: 60000,
+        },
+      });
+      if (!cred) return false;
+      localStorage.setItem('meta_credential_id', btoa(String.fromCharCode(...new Uint8Array(cred.rawId))));
+      return true;
+    }
+    const rawId = Uint8Array.from(atob(credId), (c) => c.charCodeAt(0));
+    const assertion = await navigator.credentials.get({
+      publicKey: {
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
+        allowCredentials: [{ id: rawId, type: 'public-key' }],
+        userVerification: 'required',
+        timeout: 60000,
+      },
+    });
+    return !!assertion;
+  } catch {
+    return false;
+  }
+}
+
+function renderizarMeta() {
+  const wrap = document.getElementById('perfil-meta-wrap');
+  if (metaAtual == null) {
+    wrap.innerHTML = `
+      <span class="perfil-meta-texto">Meta: —</span>
+      <button type="button" class="btn-lapis" id="btn-editar-meta" title="Definir meta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
+    `;
+    document.getElementById('btn-editar-meta').addEventListener('click', () => desbloquearMeta(true));
+    return;
+  }
+
+  if (!metaRevelada) {
+    wrap.innerHTML = `
+      <span class="perfil-meta-texto">Meta: ••••••</span>
+      <button type="button" class="btn-olho" id="btn-revelar-meta" title="Ver meta (Face ID)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    `;
+    document.getElementById('btn-revelar-meta').addEventListener('click', () => desbloquearMeta(false));
+    return;
+  }
+
+  wrap.innerHTML = `
+    <span class="perfil-meta-texto">Meta: ${fmtMoeda(metaAtual)}</span>
+    <button type="button" class="btn-olho" id="btn-ocultar-meta" title="Ocultar meta">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.6 21.6 0 0 1 5.06-6.06M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.6 21.6 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/></svg>
+    </button>
+    <button type="button" class="btn-lapis" id="btn-editar-meta" title="Editar meta">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+    </button>
+  `;
+  document.getElementById('btn-ocultar-meta').addEventListener('click', () => {
+    metaRevelada = false;
+    renderizarMeta();
+  });
+  document.getElementById('btn-editar-meta').addEventListener('click', () => ativarEdicaoMeta());
+}
+
+async function desbloquearMeta(paraEditar) {
+  const ok = await autenticarComFaceId();
+  if (!ok) {
+    alert('Não foi possível confirmar sua identidade.');
+    return;
+  }
+  metaRevelada = true;
+  renderizarMeta();
+  if (paraEditar) ativarEdicaoMeta();
+}
+
+function ativarEdicaoMeta() {
+  const wrap = document.getElementById('perfil-meta-wrap');
+  wrap.innerHTML = `
+    <span class="perfil-meta-texto">Meta: R$</span>
+    <input type="number" id="input-meta" step="0.01" min="0" value="${metaAtual ?? ''}" style="width: 140px" />
+    <div class="campo-edicao-acoes">
+      <button type="button" class="btn-confirmar" id="btn-confirmar-meta" title="Salvar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
+      <button type="button" class="btn-cancelar" id="btn-cancelar-meta" title="Cancelar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+  `;
+  document.getElementById('input-meta').focus();
+  document.getElementById('btn-cancelar-meta').addEventListener('click', renderizarMeta);
+  document.getElementById('btn-confirmar-meta').addEventListener('click', async () => {
+    const novoValor = Number(document.getElementById('input-meta').value);
+    try {
+      const config = await api('/config', { method: 'PATCH', body: JSON.stringify({ meta_valor: novoValor }) });
+      metaAtual = config.meta_valor ?? novoValor;
+      metaRevelada = true;
+      renderizarMeta();
     } catch (err) {
       alert(err.message);
     }
