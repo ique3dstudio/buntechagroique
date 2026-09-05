@@ -348,6 +348,12 @@ router.patch('/clientes/:id', async (req, res) => {
   res.json({ ...data, aviso });
 });
 
+router.delete('/clientes/:id', async (req, res) => {
+  const { error } = await supabase.from('clientes').delete().eq('id', req.params.id);
+  if (error) return res.status(500).json({ error: error.message });
+  res.status(204).end();
+});
+
 router.post('/clientes/:id/foto', upload.single('arquivo'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'arquivo é obrigatório' });
 
