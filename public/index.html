@@ -1518,7 +1518,13 @@ function fmtKm(valor) {
 let resumoCache = null;
 
 async function carregarResumo() {
-  const r = await api('/resumo');
+  let r;
+  try {
+    r = await api('/resumo');
+  } catch (err) {
+    document.getElementById('resumo-stats').innerHTML = `<p style="color:#fff">Não consegui carregar os números: ${err.message}</p>`;
+    return;
+  }
   resumoCache = r;
   const progresso = r.valor_meta ? Math.min(100, Math.round((r.faturamento_mes / r.valor_meta) * 100)) : null;
 
