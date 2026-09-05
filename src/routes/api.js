@@ -626,22 +626,24 @@ router.get('/resumo', async (req, res) => {
   if (negociacoesAnoError) return res.status(500).json({ error: negociacoesAnoError.message });
   const faturamentoAnoNegociacoes = negociacoesGanhasAno.reduce((soma, n) => soma + Number(n.valor || 0), 0);
 
-  const { data: config, error: configError } = await supabase
+  // Se a migracao que adiciona meta_valor/vendido_base ainda nao rodou nesse banco,
+  // nao derruba o /resumo inteiro - so deixa os cartoes de meta/pace sem dado.
+  const { data: config } = await supabase
     .from('configuracoes')
     .select('meta_valor, vendido_base')
     .eq('id', 1)
     .maybeSingle();
-  if (configError) return res.status(500).json({ error: configError.message });
 
+  const temMeta = config && config.meta_valor != null;
   const vendidoBase = Number(config?.vendido_base) || 0;
   const metaValor = Number(config?.meta_valor) || 0;
-  const vendidoAno = vendidoBase + faturamentoAnoNegociacoes;
+  const vendidoAno = temMeta ? vendidoBase + faturamentoAnoNegociacoes : null;
 
   // Pace = quanto falta pra meta dividido pelos meses restantes no ano (mes atual
   // incluso). So muda de valor quando o mes vira (todo dia 1) ou quando vendidoAno muda.
   const mesAtual = new Date().getMonth() + 1;
   const mesesRestantes = Math.max(1, 13 - mesAtual);
-  const paceMensal = Math.max(0, metaValor - vendidoAno) / mesesRestantes;
+  const paceMensal = temMeta ? Math.max(0, metaValor - vendidoAno) / mesesRestantes : null;
 
   res.json({
     mes,
