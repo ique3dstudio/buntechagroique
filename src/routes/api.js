@@ -89,16 +89,15 @@ router.get('/config', async (req, res) => {
 });
 
 router.patch('/config', async (req, res) => {
-  const { cargo, regiao, numero_vendedor, matricula, celular, meta_valor, vendido_total, pace_mensal } = req.body;
+  // meta_valor, meta_geral e vendido_base sao fixos (nao editaveis pelo app de
+  // proposito) - so mudam via migracao/SQL direto.
+  const { cargo, regiao, numero_vendedor, matricula, celular } = req.body;
   const atualizacao = { updated_at: new Date().toISOString() };
   if (cargo !== undefined) atualizacao.cargo = cargo;
   if (regiao !== undefined) atualizacao.regiao = regiao;
   if (numero_vendedor !== undefined) atualizacao.numero_vendedor = numero_vendedor;
   if (matricula !== undefined) atualizacao.matricula = matricula;
   if (celular !== undefined) atualizacao.celular = celular;
-  if (meta_valor !== undefined) atualizacao.meta_valor = meta_valor;
-  if (vendido_total !== undefined) atualizacao.vendido_total = vendido_total;
-  if (pace_mensal !== undefined) atualizacao.pace_mensal = pace_mensal;
 
   const { data, error } = await supabase.from('configuracoes').update(atualizacao).eq('id', 1).select().single();
   if (error) return res.status(500).json({ error: error.message });
@@ -608,17 +607,42 @@ router.get('/resumo', async (req, res) => {
     statusContagens[status] = count ?? 0;
   }
 
-  const { data: historico, error: historicoError } = await supabase
-    .from('historico_vendas')
-    .select('fat_2026_janjul');
-  if (historicoError) return res.status(500).json({ error: historicoError.message });
-  const faturamentoAno = historico.reduce((soma, h) => soma + Number(h.fat_2026_janjul || 0), 0);
+  const anoAtual = new Date().getFullYear();
+  const inicioAno = `${anoAtual}-01-01`;
+  const inicioProximoAno = `${anoAtual + 1}-01-01`;
+  const { data: negociacoesGanhasAno, error: negociacoesAnoError } = await supabase
+    .from('negociacoes')
+    .select('valor')
+    .eq('etapa', 'ganha')
+    .gte('updated_at', inicioAno)
+    .lt('updated_at', inicioProximoAno);
+  if (negociacoesAnoError) return res.status(500).json({ error: negociacoesAnoError.message });
+  const faturamentoAnoNegociacoes = negociacoesGanhasAno.reduce((soma, n) => soma + Number(n.valor || 0), 0);
+
+  const { data: config, error: configError } = await supabase
+    .from('configuracoes')
+    .select('meta_valor, vendido_base')
+    .eq('id', 1)
+    .maybeSingle();
+  if (configError) return res.status(500).json({ error: configError.message });
+
+  const vendidoBase = Number(config?.vendido_base) || 0;
+  const metaValor = Number(config?.meta_valor) || 0;
+  const vendidoAno = vendidoBase + faturamentoAnoNegociacoes;
+
+  // Pace = quanto falta pra meta dividido pelos meses restantes no ano (mes atual
+  // incluso). So muda de valor quando o mes vira (todo dia 1) ou quando vendidoAno muda.
+  const mesAtual = new Date().getMonth() + 1;
+  const mesesRestantes = Math.max(1, 13 - mesAtual);
+  const paceMensal = Math.max(0, metaValor - vendidoAno) / mesesRestantes;
 
   res.json({
     mes,
     valor_meta: meta?.valor_meta ?? null,
     faturamento_mes: faturamentoMes,
-    faturamento_ano: faturamentoAno,
+    vendido_ano: vendidoAno,
+    pace_mensal: paceMensal,
+    meses_restantes: mesesRestantes,
     clientes_visitados_mes: clientesVisitadosMes,
     km_rodados_mes: kmRodadosMes,
     clientes_ativos: statusContagens.ativo,

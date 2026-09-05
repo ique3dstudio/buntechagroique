@@ -1174,8 +1174,7 @@ let cargoAtual = 'Vendedor Júnior';
 let regiaoAtual = 'Minas Gerais';
 let vendedorAtual = { numero_vendedor: '', matricula: '', celular: '' };
 let metaAtual = null;
-let vendidoTotalAtual = null;
-let paceMensalAtual = null;
+let metaGeralAtual = null;
 
 function aplicarConfig(config) {
   if (config.foto_perfil_url) {
@@ -1196,12 +1195,12 @@ function aplicarConfig(config) {
     celular: config.celular || '',
   };
   metaAtual = config.meta_valor ?? null;
-  vendidoTotalAtual = config.vendido_total ?? null;
-  paceMensalAtual = config.pace_mensal ?? null;
+  metaGeralAtual = config.meta_geral ?? null;
   renderizarCargo();
   renderizarRegiao();
   renderizarVendedor();
-  renderizarMeta();
+  renderizarMetaGeral();
+  renderizarMetaProgresso();
 }
 
 async function carregarConfig() {
@@ -1212,7 +1211,7 @@ async function carregarConfig() {
     renderizarCargo();
     renderizarRegiao();
     renderizarVendedor();
-    renderizarMeta();
+    renderizarMetaGeral();
   }
 }
 
@@ -1335,52 +1334,19 @@ function ativarEdicaoVendedor() {
   });
 }
 
-function renderizarMeta() {
-  renderizarMetaProgresso();
+// Meta geral e a % dela ficam so no cabecalho, informativas - nao editaveis pelo
+// app (mudam via SQL). Os numeros de desempenho (meta anual, vendido, pace) ficam
+// no dashboard (ver renderizarMetaProgresso), nao aqui.
+function renderizarMetaGeral() {
   const wrap = document.getElementById('perfil-meta-wrap');
-  const partes = [
-    metaAtual != null ? `Meta: ${fmtMoeda(metaAtual)}` : null,
-    vendidoTotalAtual != null ? `Vendido: ${fmtMoeda(vendidoTotalAtual)}` : null,
-    paceMensalAtual != null ? `Ritmo necessário: ${fmtMoeda(paceMensalAtual)}/mês` : null,
-  ].filter(Boolean).join(' · ');
+  if (metaGeralAtual == null || metaAtual == null) {
+    wrap.innerHTML = '';
+    return;
+  }
+  const percentual = metaGeralAtual > 0 ? (metaAtual / metaGeralAtual) * 100 : 0;
   wrap.innerHTML = `
-    <span class="perfil-meta-texto">${partes || 'Meta não definida'}</span>
-    <button type="button" class="btn-lapis" id="btn-editar-meta" title="Editar meta">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
-    </button>
+    <span class="perfil-meta-texto">Meta geral: ${fmtMoeda(metaGeralAtual)} · ${percentual.toLocaleString('pt-BR', { maximumFractionDigits: 2 })}% da meta geral</span>
   `;
-  document.getElementById('btn-editar-meta').addEventListener('click', ativarEdicaoMeta);
-}
-
-function ativarEdicaoMeta() {
-  const wrap = document.getElementById('perfil-meta-wrap');
-  wrap.innerHTML = `
-    <input type="number" id="input-meta" step="0.01" min="0" placeholder="Meta (R$)" value="${metaAtual ?? ''}" style="width: 120px" />
-    <input type="number" id="input-vendido" step="0.01" min="0" placeholder="Vendido (R$)" value="${vendidoTotalAtual ?? ''}" style="width: 120px" />
-    <input type="number" id="input-pace" step="0.01" min="0" placeholder="Ritmo/mês (R$)" value="${paceMensalAtual ?? ''}" style="width: 130px" />
-    <div class="campo-edicao-acoes">
-      <button type="button" class="btn-confirmar" id="btn-confirmar-meta" title="Salvar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
-      <button type="button" class="btn-cancelar" id="btn-cancelar-meta" title="Cancelar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
-    </div>
-  `;
-  document.getElementById('input-meta').focus();
-  document.getElementById('btn-cancelar-meta').addEventListener('click', renderizarMeta);
-  document.getElementById('btn-confirmar-meta').addEventListener('click', async () => {
-    const body = {
-      meta_valor: document.getElementById('input-meta').value === '' ? null : Number(document.getElementById('input-meta').value),
-      vendido_total: document.getElementById('input-vendido').value === '' ? null : Number(document.getElementById('input-vendido').value),
-      pace_mensal: document.getElementById('input-pace').value === '' ? null : Number(document.getElementById('input-pace').value),
-    };
-    try {
-      const config = await api('/config', { method: 'PATCH', body: JSON.stringify(body) });
-      metaAtual = config.meta_valor ?? null;
-      vendidoTotalAtual = config.vendido_total ?? null;
-      paceMensalAtual = config.pace_mensal ?? null;
-      renderizarMeta();
-    } catch (err) {
-      alert(err.message);
-    }
-  });
 }
 
 document.getElementById('btn-editar-avatar-app').addEventListener('click', () => {
@@ -1563,9 +1529,9 @@ async function carregarResumo() {
       <div class="label">da meta anual</div>
       <div class="meta-svg-wrap"></div>
     </div>
-    <div class="stat destaque stat-meta" id="stat-ritmo-mensal" hidden>
+    <div class="stat destaque stat-meta" id="stat-pace-mensal" hidden>
       <div class="valor">R$ 0</div>
-      <div class="label">Vendido no mês</div>
+      <div class="label">Pace do mês</div>
       <div class="meta-svg-wrap"></div>
     </div>
   `;
@@ -1622,10 +1588,10 @@ function svgBarraProgresso(percentual, permiteUltrapassar) {
 function renderizarMetaProgresso() {
   const elMeta = document.getElementById('stat-meta-anual');
   if (elMeta) {
-    if (metaAtual == null) {
+    if (metaAtual == null || !resumoCache) {
       elMeta.hidden = true;
     } else {
-      const vendido = Number(vendidoTotalAtual) || 0;
+      const vendido = Number(resumoCache.vendido_ano) || 0;
       const meta = Number(metaAtual) || 0;
       const faltam = Math.max(0, meta - vendido);
       const percentual = meta > 0 ? (vendido / meta) * 100 : 0;
@@ -1636,18 +1602,18 @@ function renderizarMetaProgresso() {
     }
   }
 
-  const elRitmo = document.getElementById('stat-ritmo-mensal');
-  if (elRitmo) {
-    if (paceMensalAtual == null || !resumoCache) {
-      elRitmo.hidden = true;
+  const elPace = document.getElementById('stat-pace-mensal');
+  if (elPace) {
+    if (!resumoCache || resumoCache.pace_mensal == null) {
+      elPace.hidden = true;
     } else {
       const vendidoMes = Number(resumoCache.faturamento_mes) || 0;
-      const pace = Number(paceMensalAtual) || 0;
+      const pace = Number(resumoCache.pace_mensal) || 0;
       const percentual = pace > 0 ? (vendidoMes / pace) * 100 : 0;
-      elRitmo.hidden = false;
-      elRitmo.querySelector('.valor').textContent = fmtMoeda(vendidoMes);
-      elRitmo.querySelector('.label').textContent = `Ritmo do mês · meta ${fmtMoeda(pace)}${percentual >= 100 ? ' · ritmo batido! 🎉' : ''}`;
-      elRitmo.querySelector('.meta-svg-wrap').innerHTML = svgBarraProgresso(percentual, true);
+      elPace.hidden = false;
+      elPace.querySelector('.valor').textContent = fmtMoeda(vendidoMes);
+      elPace.querySelector('.label').textContent = `Pace do mês · meta ${fmtMoeda(pace)}${percentual >= 100 ? ' · pace batido! 🎉' : ''}`;
+      elPace.querySelector('.meta-svg-wrap').innerHTML = svgBarraProgresso(percentual, true);
     }
   }
 }
