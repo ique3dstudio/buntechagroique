@@ -663,24 +663,6 @@
   .status-rascunho { background: #f1f1f1; color: #6b7280; }
   .status-enviado { background: #e7f7ea; color: #1e7e34; }
 
-  .banner-marca {
-    margin-top: 1.5rem;
-    border-radius: var(--radius);
-    padding: 1.6rem 1.4rem;
-    background: linear-gradient(120deg, #0d3b2e 0%, var(--teal) 55%, var(--green) 100%);
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    flex-wrap: wrap;
-    box-shadow: var(--shadow);
-  }
-  .banner-marca-texto { font-family: 'Poppins', sans-serif; font-size: 1.15rem; line-height: 1.35; }
-  .banner-marca-texto strong { color: #fff; }
-  .banner-marca-tag { display: flex; align-items: center; gap: 0.6rem; opacity: 0.92; }
-  .banner-marca-tag span { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.04em; line-height: 1.35; }
-
   footer { text-align: center; color: var(--muted); font-size: 0.78rem; padding: 1.5rem 1rem 2rem; }
 
   @media (max-width: 640px) {
@@ -867,33 +849,6 @@
         <div class="resumo-grid" id="resumo-stats">Carregando...</div>
         <button class="secundario" id="btn-meta">Definir meta do mês</button>
       </section>
-
-      <section class="card" id="visitas">
-        <h2><span class="icone-secao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.1 7-11a7 7 0 0 0-14 0c0 4.9 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg></span>Registrar visita</h2>
-        <form id="form-visita">
-          <div class="form-grid">
-            <div class="field"><label>Cliente</label><select name="contato_id" id="select-contato-visita" required></select></div>
-            <div class="field"><label>Data</label><input name="data" type="date" required /></div>
-            <div class="field"><label>Km rodados</label><input name="km" placeholder="0" type="number" step="0.1" min="0" /></div>
-            <div class="field"><label>Observações</label><input name="observacoes" placeholder="Opcional" /></div>
-            <button type="submit">Registrar visita</button>
-          </div>
-        </form>
-        <div class="tabela-wrap">
-          <table>
-            <thead><tr><th>Cliente</th><th>Data</th><th>Km</th><th>Observações</th></tr></thead>
-            <tbody id="tabela-visitas"></tbody>
-          </table>
-        </div>
-      </section>
-
-      <div class="banner-marca">
-        <div class="banner-marca-texto">Do potencial<br/>da semente a<br/><strong>grandes resultados.</strong></div>
-        <div class="banner-marca-tag">
-          <svg viewBox="0 0 100 100" width="20" height="20"><path d="M50 8C22 24 14 58 50 92 86 58 78 24 50 8Z" fill="currentColor"/></svg>
-          <span>TECNOLOGIA<br/>QUE FAZ O AGRO<br/>IR MAIS LONGE</span>
-        </div>
-      </div>
     </div>
 
     <!-- ===== ABA CRM ===== -->
@@ -904,6 +859,7 @@
         <a href="#produtos">Produtos</a>
         <a href="#negociacoes">Negociações</a>
         <a href="#atividades">Atividades</a>
+        <a href="#visitas">Visitas</a>
       </nav>
 
       <section class="card" id="empresas">
@@ -1033,6 +989,25 @@
           <table>
             <thead><tr><th>Contato</th><th>Tipo</th><th>Descrição</th><th>Data</th><th></th></tr></thead>
             <tbody id="tabela-atividades"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card" id="visitas">
+        <h2><span class="icone-secao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.1 7-11a7 7 0 0 0-14 0c0 4.9 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg></span>Registrar visita</h2>
+        <form id="form-visita">
+          <div class="form-grid">
+            <div class="field"><label>Cliente</label><select name="contato_id" id="select-contato-visita" required></select></div>
+            <div class="field"><label>Data</label><input name="data" type="date" required /></div>
+            <div class="field"><label>Km rodados</label><input name="km" placeholder="0" type="number" step="0.1" min="0" /></div>
+            <div class="field"><label>Observações</label><input name="observacoes" placeholder="Opcional" /></div>
+            <button type="submit">Registrar visita</button>
+          </div>
+        </form>
+        <div class="tabela-wrap">
+          <table>
+            <thead><tr><th>Cliente</th><th>Data</th><th>Km</th><th>Observações</th></tr></thead>
+            <tbody id="tabela-visitas"></tbody>
           </table>
         </div>
       </section>
