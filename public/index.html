@@ -64,29 +64,44 @@
   }
   .logo { display: flex; flex-direction: column; align-items: flex-start; gap: 0.15rem; flex-shrink: 0; }
   .logo-img { height: 28px; width: auto; display: block; }
-  .logo .subtitulo { font-size: 0.7rem; color: var(--muted); font-weight: 500; }
+  .logo .subtitulo { font-size: 0.66rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.14em; }
 
   .header-direita { display: flex; align-items: center; gap: 0.5rem; }
 
-  nav.abas { display: flex; gap: 0.35rem; background: #f0f4f3; padding: 0.3rem; border-radius: 999px; }
+  nav.abas { display: flex; gap: 1rem; background: none; padding: 0; border-radius: 0; }
   nav.abas button {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 0.4rem;
+    gap: 0.3rem;
     background: none;
     border: none;
     cursor: pointer;
     font-family: 'Poppins', sans-serif;
     color: var(--muted);
-    font-size: 0.87rem;
+    font-size: 0.68rem;
     font-weight: 700;
-    padding: 0.45rem 0.9rem;
-    border-radius: 999px;
-    transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+    padding: 0;
+    border-radius: 0;
+    transition: color 0.2s;
+    width: 52px;
   }
-  nav.abas button svg { width: 16px; height: 16px; }
-  nav.abas button:hover { color: var(--teal); }
-  nav.abas button.ativa { background: #fff; color: var(--blue-dark); box-shadow: 0 2px 6px rgba(20,36,32,0.12); }
+  nav.abas button .icone-aba {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #eef2f1;
+    color: var(--muted);
+    transition: background 0.2s, color 0.2s;
+  }
+  nav.abas button .rotulo-aba { line-height: 1.15; text-align: center; }
+  nav.abas button svg { width: 18px; height: 18px; }
+  nav.abas button:hover .icone-aba { background: #e3f5f3; color: var(--teal); }
+  nav.abas button.ativa { color: var(--blue-dark); }
+  nav.abas button.ativa .icone-aba { background: var(--blue-dark); color: #fff; }
 
   .btn-icone {
     display: flex;
@@ -104,19 +119,35 @@
   .btn-icone:hover { background: #e3f5f3; color: var(--teal); transform: rotate(20deg); }
   .btn-icone svg { width: 18px; height: 18px; flex-shrink: 0; min-width: 18px; }
 
+  /* --- Meta geral (faixa fina no topo) --- */
+  .header-meta-geral {
+    background: #eef2f1;
+    color: var(--muted);
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-align: center;
+    padding: 0.4rem 1rem;
+  }
+  .header-meta-geral:empty { display: none; }
+
   /* --- Perfil (foto + cargo) --- */
-  .perfil-linha {
+  .perfil-card {
     max-width: 1080px;
     margin: 1.25rem auto 0;
-    padding: 0 1.25rem;
+    padding: 1.25rem;
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+  }
+  .perfil-linha {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 1.1rem;
     flex-wrap: wrap;
   }
   .avatar-img, .avatar-fallback {
-    width: 72px;
-    height: 72px;
+    width: 84px;
+    height: 84px;
     border-radius: 50%;
     border: 3px solid #fff;
     box-shadow: var(--shadow);
@@ -130,27 +161,106 @@
     background: linear-gradient(135deg, var(--teal), var(--green));
     color: #fff;
   }
-  .avatar-fallback svg { width: 32px; height: 32px; }
+  .avatar-fallback svg { width: 36px; height: 36px; }
   .avatar-img[hidden], .avatar-fallback[hidden] { display: none; }
-  .perfil-info-coluna { display: flex; flex-direction: column; gap: 0.15rem; }
-  .perfil-secao-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+  .perfil-info-coluna { display: flex; flex-direction: column; gap: 0.4rem; flex: 1; min-width: 220px; }
+  .perfil-secao-label { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin-bottom: -0.2rem; }
   .perfil-cargo-wrap { display: flex; align-items: center; gap: 0.5rem; }
-  .perfil-cargo-texto { font-size: 0.98rem; font-weight: 600; color: var(--ink); }
-  .perfil-regiao-wrap { display: flex; align-items: center; gap: 0.5rem; }
-  .perfil-regiao-texto { font-size: 0.8rem; color: var(--muted); }
-  .perfil-vendedor-wrap {
+  .perfil-cargo-texto { font-size: 1.05rem; font-weight: 700; color: var(--ink); }
+  .perfil-pill {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    background: #f3f7f6;
+    border-radius: 12px;
+    padding: 0.5rem 0.7rem;
+  }
+  .perfil-pill .pill-icone {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--blue-dark);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .perfil-pill .pill-icone svg { width: 16px; height: 16px; }
+  .perfil-pill .pill-corpo { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+  .perfil-pill .pill-label { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); }
+  .perfil-pill .pill-valor {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--ink);
+    white-space: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .perfil-pill .pill-valor::-webkit-scrollbar { display: none; }
+  .perfil-pill .btn-lapis { flex-shrink: 0; }
+
+  /* --- Tres cartoes de meta/vendido/pace, abaixo do perfil --- */
+  .kpi-mini-grid {
+    max-width: 1080px;
+    margin: 0.75rem auto 0;
+    padding: 0 1.25rem;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.6rem;
+  }
+  .kpi-mini-card {
+    background: var(--card);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    padding: 0.65rem 0.6rem;
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    max-width: 100%;
-    scrollbar-width: none;
   }
-  .perfil-vendedor-wrap::-webkit-scrollbar { display: none; }
-  .perfil-vendedor-texto { font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
-  .perfil-meta-wrap { display: flex; align-items: center; gap: 0.5rem; }
-  .perfil-meta-texto { font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .kpi-mini-icone {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: #fff;
+  }
+  .kpi-mini-icone svg { width: 15px; height: 15px; }
+  .kpi-mini-meta { background: var(--blue-dark); }
+  .kpi-mini-vendido { background: var(--teal); }
+  .kpi-mini-pace { background: var(--green); }
+  .kpi-mini-corpo { flex: 1; min-width: 0; }
+  .kpi-mini-label {
+    font-size: 0.6rem;
+    color: var(--muted);
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .kpi-mini-valor {
+    font-size: 0.82rem;
+    font-weight: 800;
+    font-family: 'Poppins', sans-serif;
+    color: var(--ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .kpi-mini-valor-muted { color: var(--muted); font-weight: 700; }
+  .kpi-mini-card .btn-lapis { flex-shrink: 0; }
+
+  @media (max-width: 400px) {
+    .kpi-mini-grid { gap: 0.4rem; padding: 0 0.85rem; }
+    .kpi-mini-card { padding: 0.55rem 0.45rem; gap: 0.35rem; }
+    .kpi-mini-icone { width: 26px; height: 26px; }
+    .kpi-mini-icone svg { width: 13px; height: 13px; }
+    .kpi-mini-valor { font-size: 0.74rem; }
+    .kpi-mini-label { font-size: 0.56rem; }
+  }
 
   /* --- Modal de configuracoes --- */
   .modal-overlay {
@@ -228,7 +338,20 @@
     box-shadow: 0 16px 40px -18px rgba(11, 111, 176, 0.55);
   }
   .hero h2 { color: #fff; margin: 0 0 0.2rem; font-size: 1.2rem; }
-  .hero .legenda { color: rgba(255,255,255,0.85); font-size: 0.85rem; margin: 0 0 1.1rem; }
+  .hero .legenda { color: rgba(255,255,255,0.85); font-size: 0.85rem; margin: 0; }
+  .hero-cabecalho { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.1rem; }
+  .seletor-periodo {
+    background: #fff;
+    color: var(--blue-dark);
+    border: none;
+    border-radius: 999px;
+    padding: 0.5rem 1rem;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 0.82rem;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(20,36,32,0.12);
+  }
   .resumo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.9rem; }
   .stat {
     position: relative;
@@ -249,7 +372,20 @@
   .stat:hover { transform: translateY(-2px); background: rgba(255, 255, 255, 0.2); }
   .stat.destaque { grid-column: span 2; }
   .stat .valor { font-family: 'Poppins', sans-serif; font-size: 1.5rem; font-weight: 700; }
-  .stat .label { font-size: 0.72rem; color: rgba(255,255,255,0.85); margin-top: 0.15rem; }
+  .stat .label { font-size: 0.72rem; color: rgba(255,255,255,0.85); margin-top: 0.15rem; overflow-wrap: break-word; }
+  .stat-corpo { display: flex; align-items: center; gap: 0.7rem; }
+  .stat-corpo > div:not(.stat-icone) { flex: 1; min-width: 0; }
+  .stat-icone {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    flex-shrink: 0;
+    background: rgba(255,255,255,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .stat-icone svg { width: 19px; height: 19px; }
   .barra-progresso {
     margin-top: 0.6rem;
     height: 6px;
@@ -527,18 +663,39 @@
   .status-rascunho { background: #f1f1f1; color: #6b7280; }
   .status-enviado { background: #e7f7ea; color: #1e7e34; }
 
+  .banner-marca {
+    margin-top: 1.5rem;
+    border-radius: var(--radius);
+    padding: 1.6rem 1.4rem;
+    background: linear-gradient(120deg, #0d3b2e 0%, var(--teal) 55%, var(--green) 100%);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    box-shadow: var(--shadow);
+  }
+  .banner-marca-texto { font-family: 'Poppins', sans-serif; font-size: 1.15rem; line-height: 1.35; }
+  .banner-marca-texto strong { color: #fff; }
+  .banner-marca-tag { display: flex; align-items: center; gap: 0.6rem; opacity: 0.92; }
+  .banner-marca-tag span { font-size: 0.62rem; font-weight: 700; letter-spacing: 0.04em; line-height: 1.35; }
+
   footer { text-align: center; color: var(--muted); font-size: 0.78rem; padding: 1.5rem 1rem 2rem; }
 
   @media (max-width: 640px) {
     header.top { padding: 0.7rem 1rem; }
     main { padding: 1rem 0.85rem; }
     .header-direita { flex-wrap: wrap; justify-content: flex-end; row-gap: 0.5rem; }
-    nav.abas { flex-wrap: wrap; justify-content: center; row-gap: 0.3rem; }
+    nav.abas { flex-wrap: wrap; justify-content: center; row-gap: 0.5rem; gap: 0.6rem; }
+    .perfil-card { padding: 1rem 0.85rem; margin-top: 1rem; }
+    .kpi-mini-grid { padding: 0 0.85rem; }
   }
 
   @media (max-width: 460px) {
-    nav.abas button { padding: 0.4rem 0.6rem; font-size: 0.78rem; }
-    nav.abas button svg { width: 14px; height: 14px; }
+    nav.abas button { width: 46px; font-size: 0.62rem; }
+    nav.abas button .icone-aba { width: 36px; height: 36px; }
+    nav.abas button svg { width: 16px; height: 16px; }
   }
 </style>
 </head>
@@ -550,12 +707,12 @@
     </div>
     <div class="header-direita">
       <nav class="abas">
-        <button class="ativa" data-aba="inicio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10"/></svg>Início</button>
-        <button data-aba="crm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>CRM</button>
-        <button data-aba="clientes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Carteira</button>
-        <button data-aba="mapa"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20 3 17V4l6 3m0 13 6-3m-6 3V7m6 10 6 3V7l-6-3m0 13V4m0 3L9 4"/></svg>Mapa</button>
-        <button data-aba="rdv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M9 15h6M9 11h2"/></svg>RDV</button>
-        <button data-aba="pedido"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>Criar pedido</button>
+        <button class="ativa" data-aba="inicio"><span class="icone-aba"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10"/></svg></span><span class="rotulo-aba">Início</span></button>
+        <button data-aba="crm"><span class="icone-aba"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span><span class="rotulo-aba">CRM</span></button>
+        <button data-aba="clientes"><span class="icone-aba"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="rotulo-aba">Carteira</span></button>
+        <button data-aba="mapa"><span class="icone-aba"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20 3 17V4l6 3m0 13 6-3m-6 3V7m6 10 6 3V7l-6-3m0 13V4m0 3L9 4"/></svg></span><span class="rotulo-aba">Mapa</span></button>
+        <button data-aba="rdv"><span class="icone-aba"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M9 15h6M9 11h2"/></svg></span><span class="rotulo-aba">RDV</span></button>
+        <button data-aba="pedido"><span class="icone-aba"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span><span class="rotulo-aba">Criar pedido</span></button>
       </nav>
       <button class="btn-icone" id="btn-config" type="button" title="Personalizar" aria-label="Personalizar">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>
@@ -563,20 +720,48 @@
     </div>
   </header>
 
-  <div class="perfil-linha">
-    <div class="avatar-editar-wrap">
-      <img class="avatar-img" id="avatar-img" alt="Foto de perfil" hidden />
-      <div class="avatar-fallback" id="avatar-fallback"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg></div>
-      <div class="avatar-editar-btn" id="btn-editar-avatar-app" title="Trocar foto">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2Z"/><circle cx="12" cy="13" r="4"/></svg>
+  <div class="header-meta-geral" id="perfil-meta-wrap"></div>
+
+  <div class="perfil-card">
+    <div class="perfil-linha">
+      <div class="avatar-editar-wrap">
+        <img class="avatar-img" id="avatar-img" alt="Foto de perfil" hidden />
+        <div class="avatar-fallback" id="avatar-fallback"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg></div>
+        <div class="avatar-editar-btn" id="btn-editar-avatar-app" title="Trocar foto">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2Z"/><circle cx="12" cy="13" r="4"/></svg>
+        </div>
+      </div>
+      <div class="perfil-info-coluna">
+        <div class="perfil-secao-label">Vendedor</div>
+        <div class="perfil-cargo-wrap" id="perfil-cargo-wrap"></div>
+        <div class="perfil-pill" id="perfil-regiao-wrap"></div>
+        <div class="perfil-pill" id="perfil-vendedor-wrap"></div>
       </div>
     </div>
-    <div class="perfil-info-coluna">
-      <div class="perfil-secao-label">Cargo</div>
-      <div class="perfil-cargo-wrap" id="perfil-cargo-wrap"></div>
-      <div class="perfil-regiao-wrap" id="perfil-regiao-wrap"></div>
-      <div class="perfil-vendedor-wrap" id="perfil-vendedor-wrap"></div>
-      <div class="perfil-meta-wrap" id="perfil-meta-wrap"></div>
+  </div>
+
+  <div class="kpi-mini-grid">
+    <div class="kpi-mini-card">
+      <div class="kpi-mini-icone kpi-mini-meta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>
+      <div class="kpi-mini-corpo">
+        <div class="kpi-mini-label">Meta anual (R$)</div>
+        <div class="kpi-mini-valor" id="kpi-meta-valor">—</div>
+      </div>
+      <button type="button" class="btn-lapis" id="btn-editar-meta-mini" title="Editar meta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
+    </div>
+    <div class="kpi-mini-card">
+      <div class="kpi-mini-icone kpi-mini-vendido"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-4"/></svg></div>
+      <div class="kpi-mini-corpo">
+        <div class="kpi-mini-label">Vendido (R$)</div>
+        <div class="kpi-mini-valor kpi-mini-valor-muted" id="kpi-vendido-valor">—</div>
+      </div>
+    </div>
+    <div class="kpi-mini-card">
+      <div class="kpi-mini-icone kpi-mini-pace"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m23 6-9.5 9.5-5-5L1 18"/><path d="M17 6h6v6"/></svg></div>
+      <div class="kpi-mini-corpo">
+        <div class="kpi-mini-label">Pace/mês (R$)</div>
+        <div class="kpi-mini-valor kpi-mini-valor-muted" id="kpi-pace-valor">—</div>
+      </div>
     </div>
   </div>
 
@@ -669,8 +854,16 @@
     <!-- ===== ABA INICIO ===== -->
     <div class="painel" id="painel-inicio">
       <section class="hero">
-        <h2>Seus números</h2>
-        <p class="legenda">Visão geral do mês — atualizado em tempo real.</p>
+        <div class="hero-cabecalho">
+          <div>
+            <h2>Seus números</h2>
+            <p class="legenda">Visão geral do mês — atualizado em tempo real.</p>
+          </div>
+          <select class="seletor-periodo" id="seletor-periodo-resumo">
+            <option value="mes">Este mês</option>
+            <option value="ano">Este ano</option>
+          </select>
+        </div>
         <div class="resumo-grid" id="resumo-stats">Carregando...</div>
         <button class="secundario" id="btn-meta">Definir meta do mês</button>
       </section>
@@ -693,6 +886,14 @@
           </table>
         </div>
       </section>
+
+      <div class="banner-marca">
+        <div class="banner-marca-texto">Do potencial<br/>da semente a<br/><strong>grandes resultados.</strong></div>
+        <div class="banner-marca-tag">
+          <svg viewBox="0 0 100 100" width="20" height="20"><path d="M50 8C22 24 14 58 50 92 86 58 78 24 50 8Z" fill="currentColor"/></svg>
+          <span>TECNOLOGIA<br/>QUE FAZ O AGRO<br/>IR MAIS LONGE</span>
+        </div>
+      </div>
     </div>
 
     <!-- ===== ABA CRM ===== -->
@@ -1263,7 +1464,11 @@ function ativarEdicaoCargo() {
 function renderizarRegiao() {
   const wrap = document.getElementById('perfil-regiao-wrap');
   wrap.innerHTML = `
-    <span class="perfil-regiao-texto">Região: ${regiaoAtual}</span>
+    <div class="pill-icone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></div>
+    <div class="pill-corpo">
+      <div class="pill-label">Região</div>
+      <div class="pill-valor">${regiaoAtual}</div>
+    </div>
     <button type="button" class="btn-lapis" id="btn-editar-regiao" title="Editar região">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
     </button>
@@ -1303,7 +1508,11 @@ function renderizarVendedor() {
     vendedorAtual.celular ? `Cel.: ${vendedorAtual.celular}` : null,
   ].filter(Boolean).join(' · ');
   wrap.innerHTML = `
-    <span class="perfil-vendedor-texto">${partes || 'Sem dados de vendedor'}</span>
+    <div class="pill-icone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M15 8h4M15 12h4M6 16h12"/></svg></div>
+    <div class="pill-corpo">
+      <div class="pill-label">Dados de vendedor</div>
+      <div class="pill-valor">${partes || 'Sem dados de vendedor'}</div>
+    </div>
     <button type="button" class="btn-lapis" id="btn-editar-vendedor" title="Editar dados de vendedor">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
     </button>
@@ -1526,20 +1735,41 @@ async function carregarResumo() {
     return;
   }
   resumoCache = r;
-  const progresso = r.valor_meta ? Math.min(100, Math.round((r.faturamento_mes / r.valor_meta) * 100)) : null;
+
+  const icone = (path) => `<div class="stat-icone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${path}</svg></div>`;
 
   document.getElementById('resumo-stats').innerHTML = `
-    <div class="stat destaque">
-      <div class="valor">${fmtMoeda(r.faturamento_mes)}</div>
-      <div class="label">Faturamento do mês${r.valor_meta != null ? ` · meta ${fmtMoeda(r.valor_meta)}` : ''}</div>
-      ${progresso != null ? `<div class="barra-progresso"><div style="width:${progresso}%"></div></div>` : ''}
+    <div class="stat destaque" id="stat-faturamento"></div>
+    <div class="stat">
+      <div class="stat-corpo">
+        ${icone('<path d="M17 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>')}
+        <div><div class="valor">${r.clientes_visitados_mes}</div><div class="label">Clientes visitados (mês)</div></div>
+      </div>
     </div>
-    <div class="stat"><div class="valor">${r.clientes_visitados_mes}</div><div class="label">Clientes visitados (mês)</div></div>
-    <div class="stat"><div class="valor">${fmtKm(r.km_rodados_mes)}</div><div class="label">Km rodados (mês)</div></div>
-    <div class="stat"><div class="valor">${r.clientes_ativos}</div><div class="label">Clientes ativos</div></div>
-    <div class="stat"><div class="valor">${r.clientes_inativos}</div><div class="label">Clientes inativos</div></div>
-    <div class="stat"><div class="valor">${r.clientes_desenvolvimento}</div><div class="label">Em desenvolvimento</div></div>
-    <div class="stat"><div class="valor">${r.clientes_convertidos}</div><div class="label">Convertidos</div></div>
+    <div class="stat">
+      <div class="stat-corpo">
+        ${icone('<path d="M4 19h16M4 19c0-6 2-13 4-13s2 5 4 5 2-8 4-8 2 9 4 16"/>')}
+        <div><div class="valor">${fmtKm(r.km_rodados_mes)}</div><div class="label">Km rodados (mês)</div></div>
+      </div>
+    </div>
+    <div class="stat">
+      <div class="stat-corpo">
+        ${icone('<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="m17 11 2 2 4-4"/>')}
+        <div><div class="valor">${r.clientes_ativos}</div><div class="label">Clientes ativos</div></div>
+      </div>
+    </div>
+    <div class="stat">
+      <div class="stat-corpo">
+        ${icone('<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>')}
+        <div><div class="valor">${r.clientes_desenvolvimento}</div><div class="label">Em desenvolvimento</div></div>
+      </div>
+    </div>
+    <div class="stat">
+      <div class="stat-corpo">
+        ${icone('<path d="M11 17H4a2 2 0 0 1-2-2v-1a4 4 0 0 1 4-4h2m6 0a4 4 0 0 1 4 4v1a2 2 0 0 1-2 2h-1"/><path d="m9 12 2 2 4-4"/>')}
+        <div><div class="valor">${r.clientes_convertidos}</div><div class="label">Convertidos</div></div>
+      </div>
+    </div>
     <div class="stat destaque stat-meta" id="stat-meta-anual" hidden>
       <div class="valor">R$ 0</div>
       <div class="label">da meta anual</div>
@@ -1551,8 +1781,46 @@ async function carregarResumo() {
       <div class="meta-svg-wrap"></div>
     </div>
   `;
+  renderizarTileFaturamento();
   renderizarMetaProgresso();
 }
+
+let periodoResumoAtual = 'mes';
+
+function renderizarTileFaturamento() {
+  const el = document.getElementById('stat-faturamento');
+  if (!el || !resumoCache) return;
+  const r = resumoCache;
+  const icone = '<div class="stat-icone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v6c0 1.66 3.58 3 8 3s8-1.34 8-3V5"/><path d="M4 11v6c0 1.66 3.58 3 8 3s8-1.34 8-3v-6"/></svg></div>';
+  if (periodoResumoAtual === 'ano') {
+    el.innerHTML = `
+      <div class="stat-corpo">
+        ${icone}
+        <div>
+          <div class="valor">${fmtMoeda(r.vendido_ano)}</div>
+          <div class="label">Faturamento do ano</div>
+        </div>
+      </div>
+    `;
+    return;
+  }
+  const progresso = r.valor_meta ? Math.min(100, Math.round((r.faturamento_mes / r.valor_meta) * 100)) : null;
+  el.innerHTML = `
+    <div class="stat-corpo">
+      ${icone}
+      <div>
+        <div class="valor">${fmtMoeda(r.faturamento_mes)}</div>
+        <div class="label">Faturamento do mês${r.valor_meta != null ? ` · meta ${fmtMoeda(r.valor_meta)}` : ''}</div>
+      </div>
+    </div>
+    ${progresso != null ? `<div class="barra-progresso"><div style="width:${progresso}%"></div></div>` : ''}
+  `;
+}
+
+document.getElementById('seletor-periodo-resumo').addEventListener('change', (e) => {
+  periodoResumoAtual = e.target.value;
+  renderizarTileFaturamento();
+});
 
 // Grafico de linha (um so ponto de chegada) com area preenchida embaixo. Quando
 // permiteUltrapassar=true (ritmo mensal), a linha pode subir acima da marca
@@ -1632,6 +1900,13 @@ function renderizarMetaProgresso() {
       elPace.querySelector('.meta-svg-wrap').innerHTML = svgBarraProgresso(percentual, true);
     }
   }
+
+  const elKpiMeta = document.getElementById('kpi-meta-valor');
+  if (elKpiMeta) elKpiMeta.textContent = metaAtual != null ? metaAtual.toLocaleString('pt-BR') : '—';
+  const elKpiVendido = document.getElementById('kpi-vendido-valor');
+  if (elKpiVendido) elKpiVendido.textContent = resumoCache?.vendido_ano != null ? Number(resumoCache.vendido_ano).toLocaleString('pt-BR') : '—';
+  const elKpiPace = document.getElementById('kpi-pace-valor');
+  if (elKpiPace) elKpiPace.textContent = resumoCache?.pace_mensal != null ? Number(resumoCache.pace_mensal).toLocaleString('pt-BR', { maximumFractionDigits: 0 }) : '—';
 }
 
 async function carregarVisitas() {
@@ -2310,6 +2585,19 @@ document.getElementById('btn-meta').addEventListener('click', async () => {
   try {
     await api('/metas', { method: 'POST', body: JSON.stringify({ mes, valor_meta: Number(valor) }) });
     await carregarResumo();
+  } catch (err) {
+    alert(err.message);
+  }
+});
+
+document.getElementById('btn-editar-meta-mini').addEventListener('click', async () => {
+  const valor = prompt('Meta anual (R$):', metaAtual ?? '');
+  if (!valor) return;
+  try {
+    const config = await api('/config', { method: 'PATCH', body: JSON.stringify({ meta_valor: Number(valor) }) });
+    metaAtual = config.meta_valor ?? metaAtual;
+    renderizarMetaGeral();
+    renderizarMetaProgresso();
   } catch (err) {
     alert(err.message);
   }
