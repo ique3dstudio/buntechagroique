@@ -151,17 +151,6 @@
   .perfil-vendedor-texto { font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
   .perfil-meta-wrap { display: flex; align-items: center; gap: 0.5rem; }
   .perfil-meta-texto { font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
-  .btn-olho {
-    background: none;
-    border: none;
-    padding: 2px;
-    cursor: pointer;
-    color: var(--muted);
-    display: inline-flex;
-    box-shadow: none;
-  }
-  .btn-olho:hover { color: var(--teal); transform: none; box-shadow: none; }
-  .btn-olho svg { width: 16px; height: 16px; }
 
   /* --- Modal de configuracoes --- */
   .modal-overlay {
@@ -1185,7 +1174,8 @@ let cargoAtual = 'Vendedor Júnior';
 let regiaoAtual = 'Minas Gerais';
 let vendedorAtual = { numero_vendedor: '', matricula: '', celular: '' };
 let metaAtual = null;
-let metaRevelada = false;
+let vendidoTotalAtual = null;
+let paceMensalAtual = null;
 
 function aplicarConfig(config) {
   if (config.foto_perfil_url) {
@@ -1206,6 +1196,8 @@ function aplicarConfig(config) {
     celular: config.celular || '',
   };
   metaAtual = config.meta_valor ?? null;
+  vendidoTotalAtual = config.vendido_total ?? null;
+  paceMensalAtual = config.pace_mensal ?? null;
   renderizarCargo();
   renderizarRegiao();
   renderizarVendedor();
@@ -1343,103 +1335,29 @@ function ativarEdicaoVendedor() {
   });
 }
 
-// Meta fica oculta por padrão; revelar (ou editar) exige biometria do aparelho
-// (Face ID/Touch ID via WebAuthn), igual ao saldo escondido de app de banco.
-// Isso é só uma trava de UX local — o valor já chega pro navegador na config,
-// então não substitui autenticação de servidor de verdade.
-async function autenticarComFaceId() {
-  if (!window.PublicKeyCredential || !navigator.credentials) return true;
-  try {
-    let credId = localStorage.getItem('meta_credential_id');
-    if (!credId) {
-      const cred = await navigator.credentials.create({
-        publicKey: {
-          challenge: crypto.getRandomValues(new Uint8Array(32)),
-          rp: { name: 'Buntech Agro' },
-          user: {
-            id: crypto.getRandomValues(new Uint8Array(16)),
-            name: 'vendedor',
-            displayName: 'Vendedor',
-          },
-          pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
-          authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required' },
-          timeout: 60000,
-        },
-      });
-      if (!cred) return false;
-      localStorage.setItem('meta_credential_id', btoa(String.fromCharCode(...new Uint8Array(cred.rawId))));
-      return true;
-    }
-    const rawId = Uint8Array.from(atob(credId), (c) => c.charCodeAt(0));
-    const assertion = await navigator.credentials.get({
-      publicKey: {
-        challenge: crypto.getRandomValues(new Uint8Array(32)),
-        allowCredentials: [{ id: rawId, type: 'public-key' }],
-        userVerification: 'required',
-        timeout: 60000,
-      },
-    });
-    return !!assertion;
-  } catch {
-    return false;
-  }
-}
-
 function renderizarMeta() {
   renderizarMetaProgresso();
   const wrap = document.getElementById('perfil-meta-wrap');
-  if (metaAtual == null) {
-    wrap.innerHTML = `
-      <span class="perfil-meta-texto">Meta: —</span>
-      <button type="button" class="btn-lapis" id="btn-editar-meta" title="Definir meta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
-    `;
-    document.getElementById('btn-editar-meta').addEventListener('click', () => desbloquearMeta(true));
-    return;
-  }
-
-  if (!metaRevelada) {
-    wrap.innerHTML = `
-      <span class="perfil-meta-texto">Meta: ••••••</span>
-      <button type="button" class="btn-olho" id="btn-revelar-meta" title="Ver meta (Face ID)">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>
-      </button>
-    `;
-    document.getElementById('btn-revelar-meta').addEventListener('click', () => desbloquearMeta(false));
-    return;
-  }
-
+  const partes = [
+    metaAtual != null ? `Meta: ${fmtMoeda(metaAtual)}` : null,
+    vendidoTotalAtual != null ? `Vendido: ${fmtMoeda(vendidoTotalAtual)}` : null,
+    paceMensalAtual != null ? `Ritmo necessário: ${fmtMoeda(paceMensalAtual)}/mês` : null,
+  ].filter(Boolean).join(' · ');
   wrap.innerHTML = `
-    <span class="perfil-meta-texto">Meta: ${fmtMoeda(metaAtual)}</span>
-    <button type="button" class="btn-olho" id="btn-ocultar-meta" title="Ocultar meta">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.6 21.6 0 0 1 5.06-6.06M9.9 4.24A10.94 10.94 0 0 1 12 4c7 0 11 8 11 8a21.6 21.6 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><path d="M1 1l22 22"/></svg>
-    </button>
+    <span class="perfil-meta-texto">${partes || 'Meta não definida'}</span>
     <button type="button" class="btn-lapis" id="btn-editar-meta" title="Editar meta">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
     </button>
   `;
-  document.getElementById('btn-ocultar-meta').addEventListener('click', () => {
-    metaRevelada = false;
-    renderizarMeta();
-  });
-  document.getElementById('btn-editar-meta').addEventListener('click', () => ativarEdicaoMeta());
-}
-
-async function desbloquearMeta(paraEditar) {
-  const ok = await autenticarComFaceId();
-  if (!ok) {
-    alert('Não foi possível confirmar sua identidade.');
-    return;
-  }
-  metaRevelada = true;
-  renderizarMeta();
-  if (paraEditar) ativarEdicaoMeta();
+  document.getElementById('btn-editar-meta').addEventListener('click', ativarEdicaoMeta);
 }
 
 function ativarEdicaoMeta() {
   const wrap = document.getElementById('perfil-meta-wrap');
   wrap.innerHTML = `
-    <span class="perfil-meta-texto">Meta: R$</span>
-    <input type="number" id="input-meta" step="0.01" min="0" value="${metaAtual ?? ''}" style="width: 140px" />
+    <input type="number" id="input-meta" step="0.01" min="0" placeholder="Meta (R$)" value="${metaAtual ?? ''}" style="width: 120px" />
+    <input type="number" id="input-vendido" step="0.01" min="0" placeholder="Vendido (R$)" value="${vendidoTotalAtual ?? ''}" style="width: 120px" />
+    <input type="number" id="input-pace" step="0.01" min="0" placeholder="Ritmo/mês (R$)" value="${paceMensalAtual ?? ''}" style="width: 130px" />
     <div class="campo-edicao-acoes">
       <button type="button" class="btn-confirmar" id="btn-confirmar-meta" title="Salvar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
       <button type="button" class="btn-cancelar" id="btn-cancelar-meta" title="Cancelar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
@@ -1448,11 +1366,16 @@ function ativarEdicaoMeta() {
   document.getElementById('input-meta').focus();
   document.getElementById('btn-cancelar-meta').addEventListener('click', renderizarMeta);
   document.getElementById('btn-confirmar-meta').addEventListener('click', async () => {
-    const novoValor = Number(document.getElementById('input-meta').value);
+    const body = {
+      meta_valor: document.getElementById('input-meta').value === '' ? null : Number(document.getElementById('input-meta').value),
+      vendido_total: document.getElementById('input-vendido').value === '' ? null : Number(document.getElementById('input-vendido').value),
+      pace_mensal: document.getElementById('input-pace').value === '' ? null : Number(document.getElementById('input-pace').value),
+    };
     try {
-      const config = await api('/config', { method: 'PATCH', body: JSON.stringify({ meta_valor: novoValor }) });
-      metaAtual = config.meta_valor ?? novoValor;
-      metaRevelada = true;
+      const config = await api('/config', { method: 'PATCH', body: JSON.stringify(body) });
+      metaAtual = config.meta_valor ?? null;
+      vendidoTotalAtual = config.vendido_total ?? null;
+      paceMensalAtual = config.pace_mensal ?? null;
       renderizarMeta();
     } catch (err) {
       alert(err.message);
@@ -1635,20 +1558,47 @@ async function carregarResumo() {
     <div class="stat"><div class="valor">${r.clientes_inativos}</div><div class="label">Clientes inativos</div></div>
     <div class="stat"><div class="valor">${r.clientes_desenvolvimento}</div><div class="label">Em desenvolvimento</div></div>
     <div class="stat"><div class="valor">${r.clientes_convertidos}</div><div class="label">Convertidos</div></div>
-    <div class="stat destaque stat-meta" id="stat-meta-progresso" hidden>
-      <div class="valor">0%</div>
-      <div class="label">Já feito da meta anual</div>
+    <div class="stat destaque stat-meta" id="stat-meta-anual" hidden>
+      <div class="valor">R$ 0</div>
+      <div class="label">da meta anual</div>
+      <div class="meta-svg-wrap"></div>
+    </div>
+    <div class="stat destaque stat-meta" id="stat-ritmo-mensal" hidden>
+      <div class="valor">R$ 0</div>
+      <div class="label">Vendido no mês</div>
       <div class="meta-svg-wrap"></div>
     </div>
   `;
   renderizarMetaProgresso();
 }
 
-function svgProgressoMeta(percentual) {
-  const p = Math.max(0, Math.min(100, percentual));
-  const w = 100, h = 40, margem = 3;
-  const yInicio = h - margem;
-  const yFim = h - margem - (p / 100) * (h - margem * 2);
+// Grafico de linha (um so ponto de chegada) com area preenchida embaixo. Quando
+// permiteUltrapassar=true (ritmo mensal), a linha pode subir acima da marca
+// tracejada de 100% e muda pra dourado - o vendedor pode vender mais que o ritmo.
+function svgBarraProgresso(percentual, permiteUltrapassar) {
+  const w = 100, h = 40;
+  const yBase = 37; // 0%
+  const yMeta = 10; // 100%
+  const yTopo = 3;  // teto visual (~150%), só usado se permiteUltrapassar
+
+  const p = Math.max(0, percentual);
+  let yFim;
+  if (p <= 100) {
+    yFim = yBase - (p / 100) * (yBase - yMeta);
+  } else if (permiteUltrapassar) {
+    const extra = Math.min((p - 100) / 50, 1);
+    yFim = yMeta - extra * (yMeta - yTopo);
+  } else {
+    yFim = yMeta;
+  }
+
+  const estourou = permiteUltrapassar && p >= 100;
+  const corFill = estourou ? 'url(#gradOuro)' : 'url(#gradMeta)';
+  const corLinha = estourou ? '#FFD166' : '#fff';
+  const linhaMeta = permiteUltrapassar
+    ? `<line x1="0" y1="${yMeta}" x2="${w}" y2="${yMeta}" stroke="rgba(255,255,255,0.6)" stroke-width="1" stroke-dasharray="3,2" />`
+    : '';
+
   return `
     <svg viewBox="0 0 ${w} ${h}" class="meta-svg" preserveAspectRatio="none">
       <defs>
@@ -1656,25 +1606,50 @@ function svgProgressoMeta(percentual) {
           <stop offset="0%" stop-color="rgba(255,255,255,0.55)" />
           <stop offset="100%" stop-color="rgba(255,255,255,0.05)" />
         </linearGradient>
+        <linearGradient id="gradOuro" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="rgba(255,209,102,0.85)" />
+          <stop offset="100%" stop-color="rgba(255,209,102,0.15)" />
+        </linearGradient>
       </defs>
-      <polygon points="0,${yInicio} ${w},${yFim} ${w},${h} 0,${h}" fill="url(#gradMeta)" />
-      <polyline points="0,${yInicio} ${w},${yFim}" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
-      <circle cx="${w}" cy="${yFim}" r="2.6" fill="#fff" />
+      <polygon points="0,${yBase} ${w},${yFim} ${w},${h} 0,${h}" fill="${corFill}" />
+      ${linhaMeta}
+      <polyline points="0,${yBase} ${w},${yFim}" fill="none" stroke="${corLinha}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+      <circle cx="${w}" cy="${yFim}" r="2.6" fill="${corLinha}" />
     </svg>
   `;
 }
 
 function renderizarMetaProgresso() {
-  const el = document.getElementById('stat-meta-progresso');
-  if (!el) return;
-  if (!resumoCache || metaAtual == null) {
-    el.hidden = true;
-    return;
+  const elMeta = document.getElementById('stat-meta-anual');
+  if (elMeta) {
+    if (metaAtual == null) {
+      elMeta.hidden = true;
+    } else {
+      const vendido = Number(vendidoTotalAtual) || 0;
+      const meta = Number(metaAtual) || 0;
+      const faltam = Math.max(0, meta - vendido);
+      const percentual = meta > 0 ? (vendido / meta) * 100 : 0;
+      elMeta.hidden = false;
+      elMeta.querySelector('.valor').textContent = fmtMoeda(vendido);
+      elMeta.querySelector('.label').textContent = `de ${fmtMoeda(meta)} · faltam ${fmtMoeda(faltam)}`;
+      elMeta.querySelector('.meta-svg-wrap').innerHTML = svgBarraProgresso(percentual, false);
+    }
   }
-  const percentual = (Number(resumoCache.faturamento_ano) || 0) / metaAtual * 100;
-  el.hidden = false;
-  el.querySelector('.valor').textContent = `${Math.round(Math.max(0, Math.min(100, percentual)))}%`;
-  el.querySelector('.meta-svg-wrap').innerHTML = svgProgressoMeta(percentual);
+
+  const elRitmo = document.getElementById('stat-ritmo-mensal');
+  if (elRitmo) {
+    if (paceMensalAtual == null || !resumoCache) {
+      elRitmo.hidden = true;
+    } else {
+      const vendidoMes = Number(resumoCache.faturamento_mes) || 0;
+      const pace = Number(paceMensalAtual) || 0;
+      const percentual = pace > 0 ? (vendidoMes / pace) * 100 : 0;
+      elRitmo.hidden = false;
+      elRitmo.querySelector('.valor').textContent = fmtMoeda(vendidoMes);
+      elRitmo.querySelector('.label').textContent = `Ritmo do mês · meta ${fmtMoeda(pace)}${percentual >= 100 ? ' · ritmo batido! 🎉' : ''}`;
+      elRitmo.querySelector('.meta-svg-wrap').innerHTML = svgBarraProgresso(percentual, true);
+    }
+  }
 }
 
 async function carregarVisitas() {
