@@ -557,6 +557,60 @@
   .filtro-pill:hover { background: #eef6f5; color: var(--teal); box-shadow: none; transform: none; }
   .filtro-pill.ativo { background: linear-gradient(90deg, var(--blue-dark), var(--teal)); color: #fff; border-color: transparent; box-shadow: none; }
 
+  /* --- Agenda (calendario mensal + compromissos do dia) --- */
+  .agenda-cabecalho { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1rem; }
+  .agenda-mes-titulo { flex: 1; text-align: center; font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 1.02rem; text-transform: capitalize; }
+  .agenda-grade-dias-semana {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    font-size: 0.66rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--muted);
+    text-align: center;
+    margin-bottom: 4px;
+  }
+  .agenda-grade { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .agenda-dia {
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #fff;
+    color: var(--ink);
+    font-weight: 700;
+    font-size: 0.8rem;
+    padding: 2px;
+    box-shadow: none;
+  }
+  .agenda-dia:hover { transform: none; box-shadow: none; border-color: var(--teal); }
+  .agenda-dia-vazio { visibility: hidden; border: none; background: none; cursor: default; }
+  .agenda-dia-hoje { border-color: var(--blue-dark); background: #eef6fb; }
+  .agenda-dia-selecionado { background: linear-gradient(135deg, var(--blue-dark), var(--teal)); color: #fff; border-color: transparent; }
+  .agenda-dia-pontos { display: flex; gap: 2px; }
+  .agenda-ponto { width: 5px; height: 5px; border-radius: 50%; background: var(--muted); }
+  .agenda-ponto.ponto-visita { background: var(--green); }
+  .agenda-dia-selecionado .agenda-ponto { background: rgba(255, 255, 255, 0.9); }
+
+  .compromisso-linha { display: flex; gap: 0.75rem; padding: 0.85rem 0; border-top: 1px solid var(--border); align-items: flex-start; }
+  .compromisso-linha:first-child { border-top: none; }
+  .compromisso-hora { font-family: 'Poppins', sans-serif; font-weight: 700; color: var(--blue-dark); min-width: 46px; flex-shrink: 0; }
+  .compromisso-corpo { flex: 1; min-width: 0; }
+  .compromisso-titulo { font-weight: 700; display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+  .compromisso-detalhe { font-size: 0.82rem; color: var(--muted); margin-top: 0.2rem; }
+  .compromisso-obs { font-size: 0.82rem; margin-top: 0.35rem; }
+  .compromisso-acoes { display: flex; gap: 0.3rem; flex-shrink: 0; }
+  .tipo-visita { background: #e7f7ea; color: #1e7e34; }
+  .tipo-reuniao { background: #e6f4fb; color: var(--blue-dark); }
+  .tipo-ligacao { background: #fff4e0; color: #b45309; }
+  .tipo-outro { background: #f1f1f1; color: #6b7280; }
+
   /* --- Aviso de integracao pendente --- */
   .aviso-integracao {
     background: #fff9e8;
@@ -733,6 +787,7 @@
     <div class="header-direita">
       <nav class="abas">
         <button class="ativa" data-aba="inicio"><span class="icone-aba"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10"/></svg></span><span class="rotulo-aba">Início</span></button>
+        <button data-aba="agenda"><span class="icone-aba"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg></span><span class="rotulo-aba">Agenda</span></button>
         <button data-aba="crm"><span class="icone-aba"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span><span class="rotulo-aba">CRM</span></button>
         <button data-aba="clientes"><span class="icone-aba"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="rotulo-aba">Carteira</span></button>
         <button data-aba="mapa"><span class="icone-aba"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20 3 17V4l6 3m0 13 6-3m-6 3V7m6 10 6 3V7l-6-3m0 13V4m0 3L9 4"/></svg></span><span class="rotulo-aba">Mapa</span></button>
@@ -830,6 +885,36 @@
     </div>
   </div>
 
+  <div class="modal-overlay" id="modal-compromisso" hidden>
+    <div class="modal-card" style="max-width: 560px; max-height: 85vh; overflow-y: auto;">
+      <div class="modal-header">
+        <h3 id="modal-compromisso-titulo">Novo compromisso</h3>
+        <button class="fechar-modal" id="btn-fechar-compromisso" type="button" aria-label="Fechar">&times;</button>
+      </div>
+      <form id="form-compromisso">
+        <div class="form-grid">
+          <div class="field"><label>Data</label><input type="date" name="data" required /></div>
+          <div class="field"><label>Hora</label><input type="time" name="hora" /></div>
+          <div class="field"><label>Tipo</label>
+            <select name="tipo">
+              <option value="visita">Visita</option>
+              <option value="reuniao">Reunião</option>
+              <option value="ligacao">Ligação</option>
+              <option value="outro">Outro</option>
+            </select>
+          </div>
+          <div class="field"><label>Título</label><input name="titulo" placeholder="Ex: Visita técnica" /></div>
+          <div class="field"><label>Cliente</label><select name="cliente_id" id="select-cliente-compromisso"><option value="">Sem cliente vinculado</option></select></div>
+          <div class="field"><label>Etapa do funil</label><select name="etapa_funil" id="select-funil-compromisso"><option value="">—</option></select></div>
+          <div class="field" style="grid-column: 1 / -1"><label>Localização</label><input name="localizacao" placeholder="Endereço da visita" /></div>
+          <div class="field" style="grid-column: 1 / -1"><label>Motivo</label><input name="motivo" placeholder="Ex: Negociação de contrato" /></div>
+          <div class="field" style="grid-column: 1 / -1"><label>Descrição / observações</label><textarea name="descricao"></textarea></div>
+        </div>
+        <button type="submit">Salvar compromisso</button>
+      </form>
+    </div>
+  </div>
+
   <main>
     <!-- ===== ABA INICIO ===== -->
     <div class="painel" id="painel-inicio">
@@ -891,6 +976,34 @@
         </div>
         <div class="resumo-grid" id="resumo-stats">Carregando...</div>
         <button class="secundario" id="btn-meta">Definir meta do mês</button>
+      </section>
+    </div>
+
+    <!-- ===== ABA AGENDA ===== -->
+    <div class="painel" id="painel-agenda" hidden>
+      <section class="card">
+        <h2><span class="icone-secao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>Agenda</h2>
+        <div class="agenda-cabecalho">
+          <button type="button" class="btn-icone" id="agenda-mes-anterior" aria-label="Mês anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
+          <div class="agenda-mes-titulo" id="agenda-mes-titulo">—</div>
+          <button type="button" class="btn-icone" id="agenda-mes-proximo" aria-label="Próximo mês"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
+          <button type="button" class="secundario" id="btn-hoje-agenda">Hoje</button>
+        </div>
+        <div class="agenda-grade-dias-semana">
+          <div>Dom</div><div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sáb</div>
+        </div>
+        <div class="agenda-grade" id="agenda-grade"></div>
+      </section>
+
+      <section class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom: 1rem;">
+          <h2 id="agenda-dia-titulo" style="margin:0;">Compromissos</h2>
+          <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+            <button type="button" class="secundario" id="btn-rota-dia" hidden>Traçar rota no mapa</button>
+            <button type="button" id="btn-novo-compromisso">+ Novo compromisso</button>
+          </div>
+        </div>
+        <div id="agenda-dia-lista"></div>
       </section>
     </div>
 
@@ -1397,6 +1510,219 @@ document.getElementById('btn-calcular-rota').addEventListener('click', async () 
   }
 });
 
+// --- Agenda ---
+
+const ROTULOS_TIPO_COMPROMISSO = { visita: 'Visita', reuniao: 'Reunião', ligacao: 'Ligação', outro: 'Outro' };
+
+function pad2(n) { return String(n).padStart(2, '0'); }
+function dataISO(ano, mes, dia) { return `${ano}-${pad2(mes + 1)}-${pad2(dia)}`; }
+function dataISOHoje() {
+  const hoje = new Date();
+  return dataISO(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
+}
+
+let agendaMesAtual = new Date();
+agendaMesAtual.setDate(1);
+let agendaCompromissosCache = [];
+let agendaDiaSelecionado = dataISOHoje();
+let compromissoEditandoId = null;
+
+async function carregarAgendaMes() {
+  const ano = agendaMesAtual.getFullYear();
+  const mes = agendaMesAtual.getMonth();
+  const inicio = dataISO(ano, mes, 1);
+  const fim = dataISO(ano, mes, new Date(ano, mes + 1, 0).getDate());
+  try {
+    agendaCompromissosCache = await api(`/agenda?inicio=${inicio}&fim=${fim}`);
+  } catch (err) {
+    document.getElementById('agenda-grade').innerHTML = `<p class="vazio">Não consegui carregar a agenda: ${err.message}</p>`;
+    return;
+  }
+  renderizarCalendarioAgenda();
+  renderizarDiaAgenda(agendaDiaSelecionado);
+}
+
+function renderizarCalendarioAgenda() {
+  const ano = agendaMesAtual.getFullYear();
+  const mes = agendaMesAtual.getMonth();
+  document.getElementById('agenda-mes-titulo').textContent = `${NOMES_MESES[mes]} ${ano}`;
+
+  const primeiroDiaSemana = new Date(ano, mes, 1).getDay();
+  const totalDias = new Date(ano, mes + 1, 0).getDate();
+  const porDia = {};
+  agendaCompromissosCache.forEach((c) => { (porDia[c.data] ??= []).push(c); });
+  const hojeIso = dataISOHoje();
+
+  let celulas = '';
+  for (let i = 0; i < primeiroDiaSemana; i++) celulas += `<div class="agenda-dia agenda-dia-vazio"></div>`;
+  for (let dia = 1; dia <= totalDias; dia++) {
+    const iso = dataISO(ano, mes, dia);
+    const itens = porDia[iso] || [];
+    celulas += `
+      <button type="button" class="agenda-dia ${iso === hojeIso ? 'agenda-dia-hoje' : ''} ${iso === agendaDiaSelecionado ? 'agenda-dia-selecionado' : ''}" data-dia="${iso}">
+        <span>${dia}</span>
+        ${itens.length ? `<span class="agenda-dia-pontos">${itens.slice(0, 4).map((c) => `<span class="agenda-ponto ${c.tipo === 'visita' ? 'ponto-visita' : ''}"></span>`).join('')}</span>` : ''}
+      </button>
+    `;
+  }
+  const grade = document.getElementById('agenda-grade');
+  grade.innerHTML = celulas;
+  grade.querySelectorAll('.agenda-dia[data-dia]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      agendaDiaSelecionado = btn.dataset.dia;
+      renderizarCalendarioAgenda();
+      renderizarDiaAgenda(agendaDiaSelecionado);
+    });
+  });
+}
+
+function renderizarDiaAgenda(iso) {
+  const itens = agendaCompromissosCache
+    .filter((c) => c.data === iso)
+    .sort((a, b) => (a.hora || '').localeCompare(b.hora || ''));
+  const [ano, mes, dia] = iso.split('-').map(Number);
+  document.getElementById('agenda-dia-titulo').textContent = `Compromissos de ${pad2(dia)}/${pad2(mes)}/${ano}`;
+
+  const listaEl = document.getElementById('agenda-dia-lista');
+  listaEl.innerHTML = itens.length
+    ? itens.map((c) => `
+        <div class="compromisso-linha">
+          <div class="compromisso-hora">${c.hora ? c.hora.slice(0, 5) : '—'}</div>
+          <div class="compromisso-corpo">
+            <div class="compromisso-titulo">
+              <span class="badge tipo-${c.tipo}">${ROTULOS_TIPO_COMPROMISSO[c.tipo] || c.tipo}</span>
+              ${c.titulo || c.clientes?.nome || 'Compromisso'}
+            </div>
+            <div class="compromisso-detalhe">${[c.clientes?.nome, c.motivo, c.etapa_funil, c.localizacao].filter(Boolean).join(' · ') || '—'}</div>
+            ${c.descricao ? `<div class="compromisso-obs">${c.descricao}</div>` : ''}
+          </div>
+          <div class="compromisso-acoes">
+            <button type="button" class="btn-lapis" data-editar-compromisso="${c.id}" title="Editar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
+            <button type="button" class="btn-lapis" data-excluir-compromisso="${c.id}" title="Excluir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
+          </div>
+        </div>
+      `).join('')
+    : '<p class="vazio">Nenhum compromisso nesse dia.</p>';
+
+  listaEl.querySelectorAll('[data-editar-compromisso]').forEach((btn) => {
+    btn.addEventListener('click', () => abrirModalCompromisso(itens.find((c) => c.id === btn.dataset.editarCompromisso)));
+  });
+  listaEl.querySelectorAll('[data-excluir-compromisso]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('Excluir esse compromisso?')) return;
+      try {
+        await api(`/agenda/${btn.dataset.excluirCompromisso}`, { method: 'DELETE' });
+        await carregarAgendaMes();
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+  });
+
+  const clientesComCoord = itens.filter((c) => c.cliente_id && c.clientes?.latitude != null && c.clientes?.longitude != null);
+  const btnRota = document.getElementById('btn-rota-dia');
+  btnRota.hidden = clientesComCoord.length < 1;
+  btnRota.onclick = () => tracarRotaDoDia(clientesComCoord);
+}
+
+function tracarRotaDoDia(itensComCliente) {
+  pontosRota = itensComCliente.map((c) => ({
+    id: c.cliente_id,
+    nome: c.clientes.nome,
+    latitude: c.clientes.latitude,
+    longitude: c.clientes.longitude,
+  }));
+  atualizarListaRota();
+  document.querySelector('nav.abas button[data-aba="mapa"]').click();
+  mapaPronto.then(() => {
+    if (pontosRota.length >= 2) {
+      document.getElementById('btn-calcular-rota').click();
+    } else {
+      mapa.setView([pontosRota[0].latitude, pontosRota[0].longitude], 13);
+    }
+  }).catch(() => {});
+}
+
+function preencherSelectClienteCompromisso(selecionadoId) {
+  const select = document.getElementById('select-cliente-compromisso');
+  select.innerHTML = '<option value="">Sem cliente vinculado</option>' +
+    clientesCache.map((c) => `<option value="${c.id}" ${c.id === selecionadoId ? 'selected' : ''}>${escaparAtributo(c.nome)}</option>`).join('');
+}
+
+function preencherSelectFunilCompromisso(valorSelecionado) {
+  const select = document.getElementById('select-funil-compromisso');
+  const campo = camposClientes.find((c) => c.chave === 'funil');
+  const opcoes = campo?.opcoes || [];
+  select.innerHTML = '<option value="">—</option>' +
+    opcoes.map((o) => `<option value="${escaparAtributo(o)}" ${o === valorSelecionado ? 'selected' : ''}>${o}</option>`).join('');
+}
+
+function abrirModalCompromisso(compromisso) {
+  compromissoEditandoId = compromisso?.id || null;
+  document.getElementById('modal-compromisso-titulo').textContent = compromisso ? 'Editar compromisso' : 'Novo compromisso';
+
+  const form = document.getElementById('form-compromisso');
+  form.reset();
+  preencherSelectClienteCompromisso(compromisso?.cliente_id || '');
+  preencherSelectFunilCompromisso(compromisso?.etapa_funil || '');
+  form.elements.data.value = compromisso?.data || agendaDiaSelecionado;
+  form.elements.hora.value = compromisso?.hora ? compromisso.hora.slice(0, 5) : '';
+  form.elements.tipo.value = compromisso?.tipo || 'visita';
+  form.elements.titulo.value = compromisso?.titulo || '';
+  form.elements.localizacao.value = compromisso?.localizacao || '';
+  form.elements.motivo.value = compromisso?.motivo || '';
+  form.elements.descricao.value = compromisso?.descricao || '';
+
+  document.getElementById('modal-compromisso').hidden = false;
+}
+
+document.getElementById('btn-novo-compromisso').addEventListener('click', () => abrirModalCompromisso(null));
+document.getElementById('btn-fechar-compromisso').addEventListener('click', () => { document.getElementById('modal-compromisso').hidden = true; });
+document.getElementById('modal-compromisso').addEventListener('click', (e) => {
+  if (e.target.id === 'modal-compromisso') document.getElementById('modal-compromisso').hidden = true;
+});
+
+document.getElementById('select-cliente-compromisso').addEventListener('change', (e) => {
+  const cliente = clientesCache.find((c) => c.id === e.target.value);
+  if (!cliente) return;
+  const form = document.getElementById('form-compromisso');
+  if (!form.elements.localizacao.value) form.elements.localizacao.value = cliente.endereco || '';
+  if (cliente.dados?.funil) preencherSelectFunilCompromisso(cliente.dados.funil);
+});
+
+document.getElementById('form-compromisso').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const body = Object.fromEntries(fd.entries());
+  try {
+    if (compromissoEditandoId) {
+      await api(`/agenda/${compromissoEditandoId}`, { method: 'PATCH', body: JSON.stringify(body) });
+    } else {
+      await api('/agenda', { method: 'POST', body: JSON.stringify(body) });
+    }
+    document.getElementById('modal-compromisso').hidden = true;
+    agendaDiaSelecionado = body.data;
+    await carregarAgendaMes();
+  } catch (err) {
+    alert(err.message);
+  }
+});
+
+document.getElementById('agenda-mes-anterior').addEventListener('click', () => {
+  agendaMesAtual.setMonth(agendaMesAtual.getMonth() - 1);
+  carregarAgendaMes();
+});
+document.getElementById('agenda-mes-proximo').addEventListener('click', () => {
+  agendaMesAtual.setMonth(agendaMesAtual.getMonth() + 1);
+  carregarAgendaMes();
+});
+document.getElementById('btn-hoje-agenda').addEventListener('click', () => {
+  agendaMesAtual = new Date();
+  agendaMesAtual.setDate(1);
+  agendaDiaSelecionado = dataISOHoje();
+  carregarAgendaMes();
+});
+
 // --- Configurações visuais (ícone, foto de perfil, cargo) ---
 
 let cargoAtual = 'Vendedor Júnior';
@@ -1761,6 +2087,7 @@ document.querySelectorAll('nav.abas button').forEach((btn) => {
     document.querySelectorAll('nav.abas button').forEach((b) => b.classList.remove('ativa'));
     btn.classList.add('ativa');
     document.getElementById('painel-inicio').hidden = btn.dataset.aba !== 'inicio';
+    document.getElementById('painel-agenda').hidden = btn.dataset.aba !== 'agenda';
     document.getElementById('painel-crm').hidden = btn.dataset.aba !== 'crm';
     document.getElementById('painel-clientes').hidden = btn.dataset.aba !== 'clientes';
     document.getElementById('painel-mapa').hidden = btn.dataset.aba !== 'mapa';
@@ -2762,7 +3089,7 @@ document.getElementById('btn-editar-meta-mini').addEventListener('click', async 
   carregarConfig();
   await Promise.all([carregarEmpresas(), carregarProdutos(), carregarCamposClientes()]);
   await Promise.all([carregarContatos(), carregarClientes()]);
-  await Promise.all([carregarResumo(), carregarVisitas(), carregarNegociacoes(), carregarAtividades(), carregarRdv()]);
+  await Promise.all([carregarResumo(), carregarVisitas(), carregarNegociacoes(), carregarAtividades(), carregarRdv(), carregarAgendaMes()]);
   ajustarAlturaInicio();
 })();
 </script>

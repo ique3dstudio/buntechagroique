@@ -389,6 +389,66 @@ router.get('/clientes/:id/historico-vendas', async (req, res) => {
   res.json(data);
 });
 
+// --- Agenda (compromissos/visitas, com cliente vinculado pra montar rota no mapa) ---
+
+const CAMPOS_COMPROMISSO = ['data', 'hora', 'tipo', 'titulo', 'cliente_id', 'localizacao', 'motivo', 'etapa_funil', 'descricao'];
+
+router.get('/agenda', async (req, res) => {
+  const { inicio, fim } = req.query;
+  let query = supabase
+    .from('agenda_compromissos')
+    .select('*, clientes(nome, latitude, longitude, endereco)')
+    .order('data', { ascending: true })
+    .order('hora', { ascending: true, nullsFirst: false });
+  if (inicio) query = query.gte('data', inicio);
+  if (fim) query = query.lte('data', fim);
+
+  const { data, error } = await query;
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
+router.post('/agenda', async (req, res) => {
+  const { data: dataCompromisso } = req.body;
+  if (!dataCompromisso) return res.status(400).json({ error: 'data é obrigatória' });
+
+  const registro = {};
+  for (const campo of CAMPOS_COMPROMISSO) {
+    if (req.body[campo] !== undefined) registro[campo] = req.body[campo] || null;
+  }
+  registro.data = dataCompromisso;
+
+  const { data, error } = await supabase
+    .from('agenda_compromissos')
+    .insert(registro)
+    .select('*, clientes(nome, latitude, longitude, endereco)')
+    .single();
+  if (error) return res.status(500).json({ error: error.message });
+  res.status(201).json(data);
+});
+
+router.patch('/agenda/:id', async (req, res) => {
+  const atualizacao = { updated_at: new Date().toISOString() };
+  for (const campo of CAMPOS_COMPROMISSO) {
+    if (req.body[campo] !== undefined) atualizacao[campo] = req.body[campo] || null;
+  }
+
+  const { data, error } = await supabase
+    .from('agenda_compromissos')
+    .update(atualizacao)
+    .eq('id', req.params.id)
+    .select('*, clientes(nome, latitude, longitude, endereco)')
+    .single();
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
+router.delete('/agenda/:id', async (req, res) => {
+  const { error } = await supabase.from('agenda_compromissos').delete().eq('id', req.params.id);
+  if (error) return res.status(500).json({ error: error.message });
+  res.status(204).end();
+});
+
 // --- Produtos ---
 
 router.get('/produtos', async (req, res) => {
