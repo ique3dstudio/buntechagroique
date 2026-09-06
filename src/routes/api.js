@@ -483,21 +483,87 @@ router.get('/clientes/:id/historico-vendas', async (req, res) => {
 
 // --- Agenda (compromissos/visitas, com cliente vinculado pra montar rota no mapa) ---
 
-const CAMPOS_COMPROMISSO = ['data', 'hora', 'hora_fim', 'tipo', 'titulo', 'cliente_id', 'localizacao', 'motivo', 'etapa_funil', 'descricao', 'status_confirmacao'];
+const CAMPOS_COMPROMISSO = ['data', 'hora', 'hora_fim', 'tipo', 'titulo', 'cliente_id', 'localizacao', 'motivo', 'etapa_funil', 'descricao', 'status_confirmacao', 'recorrencia', 'recorrencia_ate'];
+
+const PASSO_RECORRENCIA_DIAS = { semanal: 7, quinzenal: 14 };
+
+function isoDeData(d) {
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+}
+
+// Projeta as ocorrências de uma série recorrente dentro da janela pedida. Cada
+// ocorrência ganha um id virtual "<id da serie>::<data>" pra UI conseguir
+// diferenciar um dia específico da série inteira.
+function expandirRecorrencia(serie, inicio, fim) {
+  const limite = serie.recorrencia_ate && serie.recorrencia_ate < fim ? serie.recorrencia_ate : fim;
+  if (serie.data > limite) return [];
+
+  const excecoes = new Set(serie.recorrencia_excecoes || []);
+  const datas = [];
+  const passo = PASSO_RECORRENCIA_DIAS[serie.recorrencia];
+
+  if (passo) {
+    let atual = new Date(`${serie.data}T00:00:00Z`);
+    const dataInicio = new Date(`${inicio}T00:00:00Z`);
+    if (atual < dataInicio) {
+      const ciclos = Math.ceil((dataInicio - atual) / (86400000 * passo));
+      atual = new Date(atual.getTime() + ciclos * passo * 86400000);
+    }
+    while (isoDeData(atual) <= limite) {
+      datas.push(isoDeData(atual));
+      atual = new Date(atual.getTime() + passo * 86400000);
+    }
+  } else if (serie.recorrencia === 'mensal') {
+    const base = new Date(`${serie.data}T00:00:00Z`);
+    const diaDoMes = base.getUTCDate();
+    let ano = Number(inicio.slice(0, 4));
+    let mes = Number(inicio.slice(5, 7)) - 1;
+    if (`${inicio}` < serie.data) { ano = base.getUTCFullYear(); mes = base.getUTCMonth(); }
+    for (let i = 0; i < 24; i++) {
+      const d = new Date(Date.UTC(ano, mes + i, diaDoMes));
+      // pula meses que não têm esse dia (ex: 31 em fevereiro)
+      if (d.getUTCDate() !== diaDoMes) continue;
+      const iso = isoDeData(d);
+      if (iso > limite) break;
+      if (iso >= inicio && iso >= serie.data) datas.push(iso);
+    }
+  }
+
+  return datas
+    .filter((data) => !excecoes.has(data))
+    .map((data) => ({ ...serie, id: `${serie.id}::${data}`, data, serie_id: serie.id, recorrente: true }));
+}
 
 router.get('/agenda', async (req, res) => {
   const { inicio, fim } = req.query;
+
+  // Compromissos avulsos: filtra pela janela direto no banco.
   let query = supabase
     .from('agenda_compromissos')
     .select('*, clientes(nome, latitude, longitude, endereco)')
-    .order('data', { ascending: true })
-    .order('hora', { ascending: true, nullsFirst: false });
+    .is('recorrencia', null);
   if (inicio) query = query.gte('data', inicio);
   if (fim) query = query.lte('data', fim);
 
-  const { data, error } = await query;
+  const { data: avulsos, error } = await query;
   if (error) return res.status(500).json({ error: error.message });
-  res.json(data);
+
+  // Séries recorrentes: a data guardada é a da primeira ocorrência (pode ser
+  // bem antes da janela), então busca todas e projeta em memória. São poucas.
+  const { data: series, error: seriesError } = await supabase
+    .from('agenda_compromissos')
+    .select('*, clientes(nome, latitude, longitude, endereco)')
+    .not('recorrencia', 'is', null);
+  if (seriesError) return res.status(500).json({ error: seriesError.message });
+
+  const ocorrencias = (inicio && fim)
+    ? series.flatMap((serie) => expandirRecorrencia(serie, inicio, fim))
+    : series;
+
+  const todos = [...avulsos, ...ocorrencias].sort(
+    (a, b) => a.data.localeCompare(b.data) || (a.hora || '99').localeCompare(b.hora || '99')
+  );
+  res.json(todos);
 });
 
 router.post('/agenda', async (req, res) => {
@@ -519,7 +585,14 @@ router.post('/agenda', async (req, res) => {
   res.status(201).json(data);
 });
 
+// Ids de ocorrência de série vêm como "<id>::<data>" - separa as duas partes.
+function separarIdCompromisso(id) {
+  const [serieId, dataOcorrencia] = String(id).split('::');
+  return { serieId, dataOcorrencia: dataOcorrencia || null };
+}
+
 router.patch('/agenda/:id', async (req, res) => {
+  const { serieId } = separarIdCompromisso(req.params.id);
   const atualizacao = { updated_at: new Date().toISOString() };
   for (const campo of CAMPOS_COMPROMISSO) {
     if (req.body[campo] !== undefined) atualizacao[campo] = req.body[campo] || null;
@@ -528,7 +601,7 @@ router.patch('/agenda/:id', async (req, res) => {
   const { data, error } = await supabase
     .from('agenda_compromissos')
     .update(atualizacao)
-    .eq('id', req.params.id)
+    .eq('id', serieId)
     .select('*, clientes(nome, latitude, longitude, endereco)')
     .single();
   if (error) return res.status(500).json({ error: error.message });
@@ -536,7 +609,28 @@ router.patch('/agenda/:id', async (req, res) => {
 });
 
 router.delete('/agenda/:id', async (req, res) => {
-  const { error } = await supabase.from('agenda_compromissos').delete().eq('id', req.params.id);
+  const { serieId, dataOcorrencia } = separarIdCompromisso(req.params.id);
+
+  // "escopo=ocorrencia" cancela só aquele dia da série (vira exceção); sem isso
+  // apaga o compromisso/série inteira.
+  if (req.query.escopo === 'ocorrencia' && dataOcorrencia) {
+    const { data: serie, error: buscaError } = await supabase
+      .from('agenda_compromissos')
+      .select('recorrencia_excecoes')
+      .eq('id', serieId)
+      .single();
+    if (buscaError) return res.status(500).json({ error: buscaError.message });
+
+    const excecoes = [...new Set([...(serie.recorrencia_excecoes || []), dataOcorrencia])];
+    const { error } = await supabase
+      .from('agenda_compromissos')
+      .update({ recorrencia_excecoes: excecoes, updated_at: new Date().toISOString() })
+      .eq('id', serieId);
+    if (error) return res.status(500).json({ error: error.message });
+    return res.status(204).end();
+  }
+
+  const { error } = await supabase.from('agenda_compromissos').delete().eq('id', serieId);
   if (error) return res.status(500).json({ error: error.message });
   res.status(204).end();
 });

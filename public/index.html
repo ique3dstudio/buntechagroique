@@ -1108,6 +1108,20 @@
     </div>
   </div>
 
+  <div class="modal-overlay" id="modal-excluir-recorrente" hidden>
+    <div class="modal-card" style="max-width: 420px;">
+      <div class="modal-header">
+        <h3>Compromisso que se repete</h3>
+        <button class="fechar-modal" id="btn-fechar-excluir-recorrente" type="button" aria-label="Fechar">&times;</button>
+      </div>
+      <p class="vazio" id="excluir-recorrente-texto" style="margin: 0"></p>
+      <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:1.1rem;">
+        <button type="button" id="btn-excluir-so-este">Cancelar só este dia</button>
+        <button type="button" class="secundario" id="btn-excluir-serie">Apagar a série toda</button>
+      </div>
+    </div>
+  </div>
+
   <div class="modal-overlay" id="modal-matriz" hidden>
     <div class="modal-card">
       <div class="modal-header">
@@ -1161,12 +1175,25 @@
             </select>
           </div>
           <div class="field"><label>Título</label><input name="titulo" placeholder="Ex: Visita técnica" /></div>
+          <div class="field"><label>Repetir</label>
+            <select name="recorrencia" id="select-recorrencia-compromisso">
+              <option value="">Não repete</option>
+              <option value="semanal">Toda semana</option>
+              <option value="quinzenal">A cada 2 semanas</option>
+              <option value="mensal">Todo mês</option>
+            </select>
+          </div>
+          <div class="field" id="campo-recorrencia-ate" style="display:none"><label>Repetir até (opcional)</label><input type="date" name="recorrencia_ate" /></div>
           <div class="field"><label>Cliente</label><select name="cliente_id" id="select-cliente-compromisso"><option value="">Sem cliente vinculado</option></select></div>
           <div class="field"><label>Etapa do funil</label><select name="etapa_funil" id="select-funil-compromisso"><option value="">—</option></select></div>
           <div class="field" style="grid-column: 1 / -1"><label>Localização</label><input name="localizacao" placeholder="Endereço da visita" /></div>
           <div class="field" style="grid-column: 1 / -1"><label>Motivo</label><input name="motivo" placeholder="Ex: Negociação de contrato" /></div>
           <div class="field" style="grid-column: 1 / -1"><label>Descrição / observações</label><textarea name="descricao"></textarea></div>
         </div>
+        <p class="vazio" id="aviso-serie-compromisso" hidden style="margin: 0 0 0.75rem">
+          Esse compromisso se repete. O que você salvar aqui vale para <strong>toda a série</strong>.
+          Pra cancelar só um dia, use a lixeira naquele dia e escolha "só este dia".
+        </p>
         <button type="submit">Salvar compromisso</button>
       </form>
     </div>
@@ -2021,6 +2048,32 @@ function calcularLayoutColunas(itens) {
   return resultado;
 }
 
+// Pergunta se a exclusão vale só pra aquele dia ou pra série inteira.
+let resolverExclusaoRecorrente = null;
+
+function perguntarEscopoExclusao(compromisso) {
+  const d = dataDeISO(compromisso.data);
+  document.getElementById('excluir-recorrente-texto').textContent =
+    `"${rotuloCompromisso(compromisso)}" se repete. Você quer cancelar só o dia ${d.getDate()}/${pad2(d.getMonth() + 1)} ou apagar a série toda?`;
+  document.getElementById('modal-excluir-recorrente').hidden = false;
+  return new Promise((resolve) => { resolverExclusaoRecorrente = resolve; });
+}
+
+function fecharExclusaoRecorrente(resposta) {
+  document.getElementById('modal-excluir-recorrente').hidden = true;
+  if (resolverExclusaoRecorrente) {
+    resolverExclusaoRecorrente(resposta);
+    resolverExclusaoRecorrente = null;
+  }
+}
+
+document.getElementById('btn-excluir-so-este').addEventListener('click', () => fecharExclusaoRecorrente('ocorrencia'));
+document.getElementById('btn-excluir-serie').addEventListener('click', () => fecharExclusaoRecorrente('serie'));
+document.getElementById('btn-fechar-excluir-recorrente').addEventListener('click', () => fecharExclusaoRecorrente(null));
+document.getElementById('modal-excluir-recorrente').addEventListener('click', (e) => {
+  if (e.target.id === 'modal-excluir-recorrente') fecharExclusaoRecorrente(null);
+});
+
 function rotuloCompromisso(c) {
   return c.titulo || c.clientes?.nome || ROTULOS_TIPO_COMPROMISSO[c.tipo] || 'Compromisso';
 }
@@ -2039,7 +2092,7 @@ function blocoEventoHtml(ev, compacto) {
       style="top:${topo}px; height:${altura}px; left:calc(${esquerda}% + 1px); width:calc(${largura}% - 3px);"
       title="${escaparAtributo(`${horaLegivel(c.hora)}–${horaLegivel(c.hora_fim) || horaDeMinutos(ev.faixa.fim)} · ${rotuloCompromisso(c)} · ${ROTULOS_STATUS_CONFIRMACAO[status]}`)}">
       ${altura >= 34 ? `<div class="cal-evento-hora">${horaLegivel(c.hora)}</div>` : ''}
-      <div class="cal-evento-titulo">${altura < 34 ? `${horaLegivel(c.hora)} ` : ''}${rotuloCompromisso(c)}</div>
+      <div class="cal-evento-titulo">${altura < 34 ? `${horaLegivel(c.hora)} ` : ''}${c.recorrente ? '↻ ' : ''}${rotuloCompromisso(c)}</div>
       ${altura >= 56 && sub && !compacto ? `<div class="cal-evento-sub">${sub}</div>` : ''}
     </button>
   `;
@@ -2234,6 +2287,7 @@ function renderizarDiaAgenda(iso) {
             <div class="compromisso-titulo">
               <span class="badge tipo-${c.tipo}">${ROTULOS_TIPO_COMPROMISSO[c.tipo] || c.tipo}</span>
               <span class="badge confirmacao-${statusConfirmacaoCompromisso(c)}">${ROTULOS_STATUS_CONFIRMACAO[statusConfirmacaoCompromisso(c)]}</span>
+              ${c.recorrente ? '<span title="Se repete" style="color:var(--muted)">↻</span>' : ''}
               ${c.titulo || c.clientes?.nome || 'Compromisso'}
             </div>
             <div class="compromisso-detalhe">${[c.clientes?.nome, c.motivo, c.etapa_funil, c.localizacao].filter(Boolean).join(' · ') || '—'}</div>
@@ -2252,9 +2306,20 @@ function renderizarDiaAgenda(iso) {
   });
   listaEl.querySelectorAll('[data-excluir-compromisso]').forEach((btn) => {
     btn.addEventListener('click', async () => {
-      if (!confirm('Excluir esse compromisso?')) return;
+      const compromisso = itens.find((c) => c.id === btn.dataset.excluirCompromisso);
+      if (!compromisso) return;
+
+      let escopo = 'serie';
+      if (compromisso.recorrente) {
+        escopo = await perguntarEscopoExclusao(compromisso);
+        if (!escopo) return;
+      } else if (!confirm('Excluir esse compromisso?')) {
+        return;
+      }
+
       try {
-        await api(`/agenda/${btn.dataset.excluirCompromisso}`, { method: 'DELETE' });
+        const sufixo = escopo === 'ocorrencia' ? '?escopo=ocorrencia' : '';
+        await api(`/agenda/${compromisso.id}${sufixo}`, { method: 'DELETE' });
         await carregarAgenda();
       } catch (err) {
         alert(err.message);
@@ -2319,6 +2384,13 @@ function abrirModalCompromisso(compromisso, preset = {}) {
   form.elements.data.value = compromisso?.data || preset.data || agendaDiaSelecionado;
   form.elements.hora.value = horaLegivel(compromisso?.hora) || preset.hora || '';
   form.elements.hora_fim.value = horaLegivel(compromisso?.hora_fim) || preset.hora_fim || '';
+  form.elements.recorrencia.value = compromisso?.recorrencia || '';
+  form.elements.recorrencia_ate.value = compromisso?.recorrencia_ate || '';
+  atualizarCampoRecorrenciaAte();
+
+  // Editar uma ocorrência mexe na série toda - deixa isso explícito.
+  const avisoSerie = document.getElementById('aviso-serie-compromisso');
+  avisoSerie.hidden = !compromisso?.recorrente;
   form.elements.tipo.value = compromisso?.tipo || 'visita';
   form.elements.status_confirmacao.value = compromisso?.status_confirmacao || 'rascunho';
   form.elements.titulo.value = compromisso?.titulo || '';
@@ -2361,6 +2433,13 @@ document.getElementById('form-compromisso').addEventListener('submit', async (e)
     alert(err.message);
   }
 });
+
+function atualizarCampoRecorrenciaAte() {
+  const form = document.getElementById('form-compromisso');
+  document.getElementById('campo-recorrencia-ate').style.display =
+    form.elements.recorrencia.value ? '' : 'none';
+}
+document.getElementById('select-recorrencia-compromisso').addEventListener('change', atualizarCampoRecorrenciaAte);
 
 // Preenche a hora de fim sozinho (1h depois) quando só o início foi informado.
 document.getElementById('compromisso-hora-inicio').addEventListener('change', (e) => {
