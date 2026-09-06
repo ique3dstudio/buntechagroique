@@ -391,7 +391,7 @@ router.get('/clientes/:id/historico-vendas', async (req, res) => {
 
 // --- Agenda (compromissos/visitas, com cliente vinculado pra montar rota no mapa) ---
 
-const CAMPOS_COMPROMISSO = ['data', 'hora', 'tipo', 'titulo', 'cliente_id', 'localizacao', 'motivo', 'etapa_funil', 'descricao'];
+const CAMPOS_COMPROMISSO = ['data', 'hora', 'tipo', 'titulo', 'cliente_id', 'localizacao', 'motivo', 'etapa_funil', 'descricao', 'status_confirmacao'];
 
 router.get('/agenda', async (req, res) => {
   const { inicio, fim } = req.query;

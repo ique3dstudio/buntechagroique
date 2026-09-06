@@ -595,11 +595,38 @@
   .agenda-dia-selecionado { background: linear-gradient(135deg, var(--blue-dark), var(--teal)); color: #fff; border-color: transparent; }
   .agenda-dia-pontos { display: flex; gap: 2px; }
   .agenda-ponto { width: 5px; height: 5px; border-radius: 50%; background: var(--muted); }
-  .agenda-ponto.ponto-visita { background: var(--green); }
-  .agenda-dia-selecionado .agenda-ponto { background: rgba(255, 255, 255, 0.9); }
+  .agenda-dia-selecionado .agenda-ponto { background: rgba(255, 255, 255, 0.9) !important; }
 
-  .compromisso-linha { display: flex; gap: 0.75rem; padding: 0.85rem 0; border-top: 1px solid var(--border); align-items: flex-start; }
+  /* Cor por status de confirmacao - do rascunho (cinza claro, so um esboco
+     interno) ate confirmado (verde), passando por aguardando resposta do
+     cliente, remarcado ou cancelado. Usada tanto nos pontinhos do calendario
+     quanto na barra lateral e no badge de cada compromisso. */
+  .ponto-rascunho { background: #cbd3d1; }
+  .ponto-aguardando { background: #f2b134; }
+  .ponto-confirmado { background: var(--green); }
+  .ponto-remarcado { background: var(--blue-dark); }
+  .ponto-cancelado { background: #e5534b; }
+
+  .confirmacao-rascunho { background: #f1f1f1; color: #8a8f8d; }
+  .confirmacao-aguardando { background: #fff4e0; color: #b45309; }
+  .confirmacao-confirmado { background: #e7f7ea; color: #1e7e34; }
+  .confirmacao-remarcado { background: #e6f4fb; color: var(--blue-dark); }
+  .confirmacao-cancelado { background: #fdecec; color: #c0392b; }
+
+  .compromisso-linha {
+    display: flex;
+    gap: 0.75rem;
+    padding: 0.85rem 0 0.85rem 0.75rem;
+    border-top: 1px solid var(--border);
+    border-left: 4px solid transparent;
+    align-items: flex-start;
+  }
   .compromisso-linha:first-child { border-top: none; }
+  .compromisso-linha.confirmacao-rascunho { border-left-color: #cbd3d1; }
+  .compromisso-linha.confirmacao-aguardando { border-left-color: #f2b134; }
+  .compromisso-linha.confirmacao-confirmado { border-left-color: var(--green); }
+  .compromisso-linha.confirmacao-remarcado { border-left-color: var(--blue-dark); }
+  .compromisso-linha.confirmacao-cancelado { border-left-color: #e5534b; }
   .compromisso-hora { font-family: 'Poppins', sans-serif; font-weight: 700; color: var(--blue-dark); min-width: 46px; flex-shrink: 0; }
   .compromisso-corpo { flex: 1; min-width: 0; }
   .compromisso-titulo { font-weight: 700; display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
@@ -901,6 +928,15 @@
               <option value="reuniao">Reunião</option>
               <option value="ligacao">Ligação</option>
               <option value="outro">Outro</option>
+            </select>
+          </div>
+          <div class="field"><label>Status</label>
+            <select name="status_confirmacao">
+              <option value="rascunho">Rascunho (esboço)</option>
+              <option value="aguardando">Aguardando confirmação</option>
+              <option value="confirmado">Confirmado</option>
+              <option value="remarcado">Remarcado</option>
+              <option value="cancelado">Cancelado</option>
             </select>
           </div>
           <div class="field"><label>Título</label><input name="titulo" placeholder="Ex: Visita técnica" /></div>
@@ -1513,6 +1549,14 @@ document.getElementById('btn-calcular-rota').addEventListener('click', async () 
 // --- Agenda ---
 
 const ROTULOS_TIPO_COMPROMISSO = { visita: 'Visita', reuniao: 'Reunião', ligacao: 'Ligação', outro: 'Outro' };
+const ROTULOS_STATUS_CONFIRMACAO = {
+  rascunho: 'Rascunho',
+  aguardando: 'Aguardando confirmação',
+  confirmado: 'Confirmado',
+  remarcado: 'Remarcado',
+  cancelado: 'Cancelado',
+};
+function statusConfirmacaoCompromisso(c) { return c.status_confirmacao || 'rascunho'; }
 
 function pad2(n) { return String(n).padStart(2, '0'); }
 function dataISO(ano, mes, dia) { return `${ano}-${pad2(mes + 1)}-${pad2(dia)}`; }
@@ -1561,7 +1605,7 @@ function renderizarCalendarioAgenda() {
     celulas += `
       <button type="button" class="agenda-dia ${iso === hojeIso ? 'agenda-dia-hoje' : ''} ${iso === agendaDiaSelecionado ? 'agenda-dia-selecionado' : ''}" data-dia="${iso}">
         <span>${dia}</span>
-        ${itens.length ? `<span class="agenda-dia-pontos">${itens.slice(0, 4).map((c) => `<span class="agenda-ponto ${c.tipo === 'visita' ? 'ponto-visita' : ''}"></span>`).join('')}</span>` : ''}
+        ${itens.length ? `<span class="agenda-dia-pontos">${itens.slice(0, 4).map((c) => `<span class="agenda-ponto ponto-${statusConfirmacaoCompromisso(c)}"></span>`).join('')}</span>` : ''}
       </button>
     `;
   }
@@ -1586,11 +1630,12 @@ function renderizarDiaAgenda(iso) {
   const listaEl = document.getElementById('agenda-dia-lista');
   listaEl.innerHTML = itens.length
     ? itens.map((c) => `
-        <div class="compromisso-linha">
+        <div class="compromisso-linha confirmacao-${statusConfirmacaoCompromisso(c)}">
           <div class="compromisso-hora">${c.hora ? c.hora.slice(0, 5) : '—'}</div>
           <div class="compromisso-corpo">
             <div class="compromisso-titulo">
               <span class="badge tipo-${c.tipo}">${ROTULOS_TIPO_COMPROMISSO[c.tipo] || c.tipo}</span>
+              <span class="badge confirmacao-${statusConfirmacaoCompromisso(c)}">${ROTULOS_STATUS_CONFIRMACAO[statusConfirmacaoCompromisso(c)]}</span>
               ${c.titulo || c.clientes?.nome || 'Compromisso'}
             </div>
             <div class="compromisso-detalhe">${[c.clientes?.nome, c.motivo, c.etapa_funil, c.localizacao].filter(Boolean).join(' · ') || '—'}</div>
@@ -1668,6 +1713,7 @@ function abrirModalCompromisso(compromisso) {
   form.elements.data.value = compromisso?.data || agendaDiaSelecionado;
   form.elements.hora.value = compromisso?.hora ? compromisso.hora.slice(0, 5) : '';
   form.elements.tipo.value = compromisso?.tipo || 'visita';
+  form.elements.status_confirmacao.value = compromisso?.status_confirmacao || 'rascunho';
   form.elements.titulo.value = compromisso?.titulo || '';
   form.elements.localizacao.value = compromisso?.localizacao || '';
   form.elements.motivo.value = compromisso?.motivo || '';
