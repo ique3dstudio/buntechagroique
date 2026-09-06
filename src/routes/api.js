@@ -211,6 +211,46 @@ router.get('/mapa/clientes', async (req, res) => {
     });
   }
 
+  // Matriz (Buntech Agro, Indaiatuba/SP) - ponto de partida das rotas, nao e
+  // cliente nem empresa. Geocodifica uma unica vez e guarda o resultado.
+  const { data: config } = await supabase
+    .from('configuracoes')
+    .select('matriz_nome, matriz_endereco, matriz_latitude, matriz_longitude')
+    .eq('id', 1)
+    .maybeSingle();
+
+  if (config?.matriz_endereco) {
+    let { matriz_latitude: matrizLat, matriz_longitude: matrizLng } = config;
+    if (matrizLat == null || matrizLng == null) {
+      const coords = await geocodificarEndereco(`${config.matriz_endereco}, Brasil`).catch(() => null);
+      if (coords) {
+        matrizLat = coords.latitude;
+        matrizLng = coords.longitude;
+        await supabase
+          .from('configuracoes')
+          .update({ matriz_latitude: matrizLat, matriz_longitude: matrizLng })
+          .eq('id', 1);
+      }
+    }
+    if (matrizLat != null && matrizLng != null) {
+      resultado.unshift({
+        id: 'matriz',
+        origem: 'matriz',
+        nome: config.matriz_nome || 'Buntech Agro (matriz)',
+        cnpj: null,
+        funil: null,
+        foto_url: null,
+        endereco: config.matriz_endereco,
+        cidade: null,
+        latitude: Number(matrizLat),
+        longitude: Number(matrizLng),
+        faturamento: 0,
+        ultimo_pedido: null,
+        produtos: [],
+      });
+    }
+  }
+
   res.json(resultado);
 });
 

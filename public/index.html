@@ -1388,7 +1388,28 @@ function iniciaisNome(nome) {
   return (nome || '?').trim().split(/\s+/).slice(0, 2).map((p) => p[0]).join('').toUpperCase();
 }
 
+function construirIconeMatriz(nome) {
+  const html = `
+    <div style="position:relative; width:100%; height:100%;">
+      <div style="width:100%; height:100%; border-radius:14px; background:#fff; display:flex; align-items:center; justify-content:center; border:3px solid #0B6FB0; box-shadow:0 4px 14px rgba(11,111,176,0.5); overflow:hidden;">
+        <img src="/logo.png" alt="${escaparAtributo(nome || 'Buntech')}" style="width:80%; height:80%; object-fit:contain;" />
+      </div>
+      <div style="position:absolute; bottom:-6px; right:-6px; width:20px; height:20px; border-radius:50%; background:#0B6FB0; border:2px solid #fff; display:flex; align-items:center; justify-content:center;">
+        <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/></svg>
+      </div>
+    </div>
+  `;
+  return L.divIcon({
+    html,
+    className: 'marcador-matriz',
+    iconSize: [52, 52],
+    iconAnchor: [26, 26],
+    popupAnchor: [0, -26],
+  });
+}
+
 function construirIconeCliente(cliente) {
+  if (cliente.origem === 'matriz') return construirIconeMatriz(cliente.nome);
   const conteudo = cliente.foto_url
     ? `<img src="${cliente.foto_url}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;border:2px solid #fff;box-shadow:0 2px 6px rgba(20,36,32,0.35);" />`
     : `<div style="width:100%;height:100%;border-radius:50%;background:linear-gradient(135deg,#14A098,#4CAF50);color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Poppins',sans-serif;font-weight:700;font-size:0.85rem;border:2px solid #fff;box-shadow:0 2px 6px rgba(20,36,32,0.35);">${iniciaisNome(cliente.nome)}</div>`;
@@ -1474,7 +1495,7 @@ function renderizarMarcadoresMapa() {
         ${cliente.origem === 'cliente' ? `<button type="button" data-ver-cliente="${cliente.id}">Ver cliente</button>` : ''}
       </div>
     `);
-    marcador.on('click', () => mostrarInfoCliente(cliente));
+    marcador.on('click', () => { if (cliente.origem !== 'matriz') mostrarInfoCliente(cliente); });
     marcador.on('popupopen', () => {
       const btnRota = document.querySelector(`button[data-add-rota="${cliente.id}"]`);
       if (btnRota) btnRota.addEventListener('click', () => adicionarPontoRota(cliente));
@@ -1671,12 +1692,20 @@ function renderizarDiaAgenda(iso) {
 }
 
 function tracarRotaDoDia(itensComCliente) {
-  pontosRota = itensComCliente.map((c) => ({
-    id: c.cliente_id,
-    nome: c.clientes.nome,
-    latitude: c.clientes.latitude,
-    longitude: c.clientes.longitude,
-  }));
+  // Toda rota de visitas parte da matriz (Buntech, Indaiatuba) quando ela já
+  // foi carregada no mapa - assim o trajeto já sai de onde o vendedor sai de
+  // verdade, sem precisar adicionar isso na mão toda vez.
+  const matriz = clientesMapaCache.find((c) => c.origem === 'matriz');
+
+  pontosRota = [
+    ...(matriz ? [{ id: matriz.id, nome: matriz.nome, latitude: matriz.latitude, longitude: matriz.longitude }] : []),
+    ...itensComCliente.map((c) => ({
+      id: c.cliente_id,
+      nome: c.clientes.nome,
+      latitude: c.clientes.latitude,
+      longitude: c.clientes.longitude,
+    })),
+  ];
   atualizarListaRota();
   document.querySelector('nav.abas button[data-aba="mapa"]').click();
   mapaPronto.then(() => {
