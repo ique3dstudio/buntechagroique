@@ -577,10 +577,21 @@ router.get('/resumo', async (req, res) => {
   const mes = inicioMesAtual();
   const proximoMes = inicioProximoMes(mes);
 
+  // O mes usado pro card de faturamento pode ser escolhido pelo seletor de
+  // periodo (setembro a dezembro do ano atual) - as demais estatisticas
+  // (visitas, km, status de clientes) continuam sempre olhando pro mes real.
+  const anoAtual = new Date().getFullYear();
+  const mesAtualNumero = new Date().getMonth() + 1;
+  const mesFaturamentoNumero = req.query.mes
+    ? Math.min(12, Math.max(1, Number(req.query.mes) || mesAtualNumero))
+    : mesAtualNumero;
+  const mesFaturamento = `${anoAtual}-${String(mesFaturamentoNumero).padStart(2, '0')}-01`;
+  const proximoMesFaturamento = inicioProximoMes(mesFaturamento);
+
   const { data: meta, error: metaError } = await supabase
     .from('metas')
     .select('*')
-    .eq('mes', mes)
+    .eq('mes', mesFaturamento)
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -590,8 +601,8 @@ router.get('/resumo', async (req, res) => {
     .from('negociacoes')
     .select('valor')
     .eq('etapa', 'ganha')
-    .gte('updated_at', mes)
-    .lt('updated_at', proximoMes);
+    .gte('updated_at', mesFaturamento)
+    .lt('updated_at', proximoMesFaturamento);
   if (negociacoesError) return res.status(500).json({ error: negociacoesError.message });
   const faturamentoMes = negociacoesGanhas.reduce((soma, n) => soma + Number(n.valor || 0), 0);
 
@@ -614,7 +625,6 @@ router.get('/resumo', async (req, res) => {
     statusContagens[status] = count ?? 0;
   }
 
-  const anoAtual = new Date().getFullYear();
   const inicioAno = `${anoAtual}-01-01`;
   const inicioProximoAno = `${anoAtual + 1}-01-01`;
   const { data: negociacoesGanhasAno, error: negociacoesAnoError } = await supabase
@@ -647,6 +657,7 @@ router.get('/resumo', async (req, res) => {
 
   res.json({
     mes,
+    mes_faturamento_numero: mesFaturamentoNumero,
     valor_meta: meta?.valor_meta ?? null,
     faturamento_mes: faturamentoMes,
     vendido_ano: vendidoAno,
