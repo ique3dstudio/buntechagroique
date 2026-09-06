@@ -91,13 +91,14 @@ router.get('/config', async (req, res) => {
 router.patch('/config', async (req, res) => {
   // meta_geral e vendido_base continuam fixos (so mudam via SQL direto). meta_valor
   // voltou a ser editavel pelo app, com um lapis dedicado no card "Meta anual".
-  const { cargo, regiao, numero_vendedor, matricula, celular, meta_valor } = req.body;
+  const { cargo, regiao, numero_vendedor, matricula, celular, email, meta_valor } = req.body;
   const atualizacao = { updated_at: new Date().toISOString() };
   if (cargo !== undefined) atualizacao.cargo = cargo;
   if (regiao !== undefined) atualizacao.regiao = regiao;
   if (numero_vendedor !== undefined) atualizacao.numero_vendedor = numero_vendedor;
   if (matricula !== undefined) atualizacao.matricula = matricula;
   if (celular !== undefined) atualizacao.celular = celular;
+  if (email !== undefined) atualizacao.email = email;
   if (meta_valor !== undefined) atualizacao.meta_valor = meta_valor;
 
   const { data, error } = await supabase.from('configuracoes').update(atualizacao).eq('id', 1).select().single();
