@@ -805,6 +805,19 @@
   .tipo-ligacao { background: #fff4e0; color: #b45309; }
   .tipo-outro { background: #f1f1f1; color: #6b7280; }
 
+  .matriz-linha {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    padding: 0.6rem 0.75rem;
+    margin-bottom: 0.75rem;
+    background: #f3f7f6;
+    border-radius: 10px;
+  }
+  .matriz-corpo { flex: 1; min-width: 180px; }
+
   /* --- Aviso de integracao pendente --- */
   .aviso-integracao {
     background: #fff9e8;
@@ -960,15 +973,31 @@
   @media (max-width: 640px) {
     header.top { padding: 0.7rem 1rem; align-items: flex-start; }
     main { padding: 1rem 0.85rem; }
-    .header-direita { flex-direction: column; align-items: flex-end; gap: 0.5rem; }
-    nav.abas { flex-wrap: wrap; justify-content: flex-end; row-gap: 0.5rem; gap: 0.6rem; }
+    /* No celular as abas viram uma grade compacta de 3 colunas ancorada no
+       canto superior direito (a engrenagem entra na mesma grade), em vez de
+       ocupar várias linhas soltas embaixo da logo. */
+    .header-direita {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      justify-items: center;
+      align-items: start;
+      gap: 0.3rem 0.25rem;
+      width: 186px;
+      margin-left: auto;
+    }
+    nav.abas { display: contents; }
+    nav.abas button { width: 100%; font-size: 0.56rem; gap: 0.15rem; }
+    nav.abas button .icone-aba { width: 32px; height: 32px; }
+    nav.abas button svg { width: 15px; height: 15px; }
+    .btn-icone { width: 32px; height: 32px; }
+    .btn-icone svg { width: 15px; height: 15px; min-width: 15px; }
     .perfil-card { padding: 0.85rem 0.7rem; }
   }
 
-  @media (max-width: 460px) {
-    nav.abas button { width: 46px; font-size: 0.62rem; }
-    nav.abas button .icone-aba { width: 36px; height: 36px; }
-    nav.abas button svg { width: 16px; height: 16px; }
+  @media (max-width: 400px) {
+    /* telas bem estreitas: grade um pouco menor, ainda em 3 colunas */
+    .header-direita { width: 168px; }
+    nav.abas button .icone-aba { width: 30px; height: 30px; }
   }
 </style>
 </head>
@@ -1075,6 +1104,30 @@
           </div>
           <button type="submit">Adicionar campo</button>
         </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modal-matriz" hidden>
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Matriz (ponto de partida)</h3>
+        <button class="fechar-modal" id="btn-fechar-matriz" type="button" aria-label="Fechar">&times;</button>
+      </div>
+      <form id="form-matriz">
+        <div class="form-grid">
+          <div class="field" style="grid-column: 1 / -1"><label>Nome</label><input name="matriz_nome" placeholder="Buntech Agro (matriz)" /></div>
+          <div class="field" style="grid-column: 1 / -1"><label>Endereço</label><input name="matriz_endereco" placeholder="Rua, número, bairro, cidade - UF" /></div>
+          <div class="field" style="grid-column: 1 / -1">
+            <label>Coordenadas (opcional, mais preciso)</label>
+            <input name="matriz_coordenadas" placeholder="-23.0903, -47.2181" />
+          </div>
+        </div>
+        <p class="vazio" style="margin: 0 0 0.75rem">
+          No Google Maps, segure o dedo no ponto exato da empresa e copie os números que aparecem — cole aqui.
+          Deixando as coordenadas em branco, o mapa tenta localizar pelo endereço.
+        </p>
+        <button type="submit">Salvar matriz</button>
       </form>
     </div>
   </div>
@@ -1437,6 +1490,14 @@
           <div class="filtro-label">Etapa do funil</div>
           <div class="filtro-clientes" id="filtro-mapa-funil"></div>
         </div>
+        <div class="matriz-linha">
+          <div class="matriz-corpo">
+            <div class="filtro-label" style="margin-bottom:0.15rem">Matriz (ponto de partida das rotas)</div>
+            <div class="vazio" id="mapa-matriz-info" style="margin:0"></div>
+          </div>
+          <button type="button" class="secundario" id="btn-editar-matriz">Editar matriz</button>
+        </div>
+        <p class="aviso-integracao" id="mapa-aviso-matriz" hidden style="margin-bottom:0.75rem"></p>
         <div id="mapa" style="height: 520px; border-radius: 10px; overflow: hidden; border: 1px solid var(--border);"></div>
 
         <div class="rota-painel" style="margin-top: 1rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem;">
@@ -1645,9 +1706,27 @@ function renderizarFiltroMapa() {
 }
 
 async function carregarClientesMapa() {
-  clientesMapaCache = await api('/mapa/clientes');
+  const resposta = await api('/mapa/clientes');
+  clientesMapaCache = Array.isArray(resposta) ? resposta : (resposta.pontos || []);
+  const aviso = Array.isArray(resposta) ? null : resposta.matriz_aviso;
+
+  const avisoEl = document.getElementById('mapa-aviso-matriz');
+  if (avisoEl) {
+    avisoEl.textContent = aviso || '';
+    avisoEl.hidden = !aviso;
+  }
+  renderizarInfoMatriz();
   renderizarFiltroMapa();
   renderizarMarcadoresMapa();
+}
+
+function renderizarInfoMatriz() {
+  const el = document.getElementById('mapa-matriz-info');
+  if (!el) return;
+  const matriz = clientesMapaCache.find((c) => c.origem === 'matriz');
+  el.textContent = matriz
+    ? `${matriz.nome} · ${matriz.endereco || ''} (${Number(matriz.latitude).toFixed(5)}, ${Number(matriz.longitude).toFixed(5)})`
+    : 'Matriz não posicionada no mapa.';
 }
 
 function renderizarMarcadoresMapa() {
@@ -1694,6 +1773,50 @@ const mapaPronto = (async function iniciarMapa() {
 })();
 
 document.getElementById('btn-add-cliente-mapa').addEventListener('click', () => abrirModalCliente(null));
+
+// --- Matriz (ponto de partida das rotas) ---
+
+document.getElementById('btn-editar-matriz').addEventListener('click', async () => {
+  const form = document.getElementById('form-matriz');
+  form.reset();
+  const matriz = clientesMapaCache.find((c) => c.origem === 'matriz');
+  try {
+    const config = await api('/config');
+    form.elements.matriz_nome.value = config.matriz_nome || '';
+    form.elements.matriz_endereco.value = config.matriz_endereco || '';
+    form.elements.matriz_coordenadas.value =
+      config.matriz_latitude != null && config.matriz_longitude != null
+        ? `${config.matriz_latitude}, ${config.matriz_longitude}`
+        : '';
+  } catch {
+    if (matriz) {
+      form.elements.matriz_nome.value = matriz.nome || '';
+      form.elements.matriz_endereco.value = matriz.endereco || '';
+    }
+  }
+  document.getElementById('modal-matriz').hidden = false;
+});
+
+document.getElementById('btn-fechar-matriz').addEventListener('click', () => {
+  document.getElementById('modal-matriz').hidden = true;
+});
+document.getElementById('modal-matriz').addEventListener('click', (e) => {
+  if (e.target.id === 'modal-matriz') document.getElementById('modal-matriz').hidden = true;
+});
+
+document.getElementById('form-matriz').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const body = Object.fromEntries(new FormData(e.target).entries());
+  try {
+    await api('/config', { method: 'PATCH', body: JSON.stringify(body) });
+    document.getElementById('modal-matriz').hidden = true;
+    await carregarClientesMapa();
+    const matriz = clientesMapaCache.find((c) => c.origem === 'matriz');
+    if (matriz) mapa.setView([matriz.latitude, matriz.longitude], 14);
+  } catch (err) {
+    alert(err.message);
+  }
+});
 
 function irParaClienteNoMapa(id) {
   document.querySelector('nav.abas button[data-aba="clientes"]').click();

@@ -30,6 +30,27 @@ const ETAPAS = [
   'perdida',
 ];
 
+// Geocodifica o endereço da matriz tentando do mais específico pro mais amplo:
+// CEP e número costumam derrubar a busca do Nominatim, então vale insistir com
+// rua+cidade e, no pior caso, só a cidade - melhor um pino aproximado do que
+// nenhum pino.
+async function geocodificarMatriz(endereco) {
+  const semCep = endereco.replace(/,?\s*\d{5}-?\d{3}\s*$/, '').trim();
+  const partes = semCep.split(',').map((p) => p.trim()).filter(Boolean);
+  const cidade = partes[partes.length - 1];
+  const rua = partes[0];
+
+  const tentativas = [endereco, semCep];
+  if (rua && cidade && rua !== cidade) tentativas.push(`${rua}, ${cidade}`);
+  if (cidade) tentativas.push(cidade);
+
+  for (const consulta of [...new Set(tentativas)]) {
+    const coords = await geocodificarEndereco(`${consulta}, Brasil`).catch(() => null);
+    if (coords) return coords;
+  }
+  return null;
+}
+
 function inicioMesAtual() {
   const agora = new Date();
   const ano = agora.getUTCFullYear();
@@ -91,8 +112,27 @@ router.get('/config', async (req, res) => {
 router.patch('/config', async (req, res) => {
   // meta_geral e vendido_base continuam fixos (so mudam via SQL direto). meta_valor
   // voltou a ser editavel pelo app, com um lapis dedicado no card "Meta anual".
-  const { cargo, regiao, numero_vendedor, matricula, celular, email, meta_valor } = req.body;
+  const { cargo, regiao, numero_vendedor, matricula, celular, email, meta_valor,
+    matriz_nome, matriz_endereco, matriz_coordenadas } = req.body;
   const atualizacao = { updated_at: new Date().toISOString() };
+
+  if (matriz_nome !== undefined) atualizacao.matriz_nome = matriz_nome || null;
+  // Endereço novo zera as coordenadas: o mapa regeocodifica no próximo
+  // carregamento. Coordenadas informadas na mão vencem (vêm depois).
+  if (matriz_endereco !== undefined) {
+    atualizacao.matriz_endereco = matriz_endereco || null;
+    atualizacao.matriz_latitude = null;
+    atualizacao.matriz_longitude = null;
+  }
+  if (matriz_coordenadas) {
+    const coords = tentarParsearCoordenadas(matriz_coordenadas);
+    if (!coords) {
+      return res.status(400).json({ error: 'Coordenadas da matriz inválidas. Use o formato "latitude, longitude", ex: -23.0903, -47.2181.' });
+    }
+    atualizacao.matriz_latitude = coords.latitude;
+    atualizacao.matriz_longitude = coords.longitude;
+  }
+
   if (cargo !== undefined) atualizacao.cargo = cargo;
   if (regiao !== undefined) atualizacao.regiao = regiao;
   if (numero_vendedor !== undefined) atualizacao.numero_vendedor = numero_vendedor;
@@ -213,16 +253,25 @@ router.get('/mapa/clientes', async (req, res) => {
 
   // Matriz (Buntech Agro, Indaiatuba/SP) - ponto de partida das rotas, nao e
   // cliente nem empresa. Geocodifica uma unica vez e guarda o resultado.
-  const { data: config } = await supabase
+  // Quando nao da pra mostrar, devolve o motivo em matriz_aviso - antes isso
+  // falhava calado e o pino simplesmente sumia do mapa.
+  let matrizAviso = null;
+  const { data: config, error: configError } = await supabase
     .from('configuracoes')
     .select('matriz_nome, matriz_endereco, matriz_latitude, matriz_longitude')
     .eq('id', 1)
     .maybeSingle();
 
-  if (config?.matriz_endereco) {
-    let { matriz_latitude: matrizLat, matriz_longitude: matrizLng } = config;
-    if (matrizLat == null || matrizLng == null) {
-      const coords = await geocodificarEndereco(`${config.matriz_endereco}, Brasil`).catch(() => null);
+  if (configError) {
+    matrizAviso = 'A matriz ainda não existe no banco: rode a migração 027 (colunas matriz_* em configuracoes) no SQL Editor do Supabase.';
+  } else if (!config?.matriz_endereco && config?.matriz_latitude == null) {
+    matrizAviso = 'Matriz sem endereço cadastrado. Use "Editar matriz" pra informar o endereço ou as coordenadas.';
+  } else {
+    let matrizLat = config.matriz_latitude;
+    let matrizLng = config.matriz_longitude;
+
+    if ((matrizLat == null || matrizLng == null) && config.matriz_endereco) {
+      const coords = await geocodificarMatriz(config.matriz_endereco);
       if (coords) {
         matrizLat = coords.latitude;
         matrizLng = coords.longitude;
@@ -230,8 +279,11 @@ router.get('/mapa/clientes', async (req, res) => {
           .from('configuracoes')
           .update({ matriz_latitude: matrizLat, matriz_longitude: matrizLng })
           .eq('id', 1);
+      } else {
+        matrizAviso = `Não consegui localizar "${config.matriz_endereco}" no mapa. Use "Editar matriz" pra corrigir o endereço ou colar as coordenadas (latitude, longitude).`;
       }
     }
+
     if (matrizLat != null && matrizLng != null) {
       resultado.unshift({
         id: 'matriz',
@@ -251,7 +303,7 @@ router.get('/mapa/clientes', async (req, res) => {
     }
   }
 
-  res.json(resultado);
+  res.json({ pontos: resultado, matriz_aviso: matrizAviso });
 });
 
 // --- Clientes (planilha, com campos dinâmicos) ---
