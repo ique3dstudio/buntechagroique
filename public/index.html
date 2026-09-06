@@ -818,6 +818,122 @@
   }
   .matriz-corpo { flex: 1; min-width: 180px; }
 
+  /* --- Orçamento: formulário + folha A4 que vira o PDF --- */
+  .orcamento-item {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr auto;
+    gap: 0.5rem;
+    align-items: end;
+    padding: 0.6rem 0;
+    border-top: 1px solid var(--border);
+  }
+  .orcamento-item:first-child { border-top: none; }
+  .orcamento-item .btn-lapis { margin-bottom: 0.35rem; }
+  .orcamento-item-total { font-size: 0.72rem; color: var(--muted); grid-column: 1 / -1; margin-top: -0.2rem; }
+  @media (max-width: 560px) {
+    .orcamento-item { grid-template-columns: 1fr 1fr auto; }
+    .orcamento-item .campo-produto { grid-column: 1 / -1; }
+  }
+
+  .orcamento-acoes {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+  }
+  .orcamento-total-resumo { display: flex; flex-direction: column; }
+  .orcamento-total-resumo span { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); font-weight: 700; }
+  .orcamento-total-resumo strong { font-family: 'Poppins', sans-serif; font-size: 1.3rem; color: var(--blue-dark); }
+
+  .folha-wrap { overflow-x: auto; }
+  .folha-a4 {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 0 auto;
+    padding: 14mm 13mm;
+    background: #fff;
+    color: #142420;
+    box-shadow: 0 4px 20px rgba(20, 36, 32, 0.15);
+    font-size: 10pt;
+    line-height: 1.45;
+  }
+  /* No celular a folha é reduzida pra caber na tela; o PDF sai em A4 real. */
+  @media (max-width: 820px) {
+    .folha-wrap { display: flex; justify-content: center; }
+    .folha-a4 { transform: scale(0.42); transform-origin: top center; margin-bottom: -160mm; }
+  }
+
+  .orc-cabecalho { display: flex; justify-content: space-between; align-items: flex-start; gap: 10mm; border-bottom: 2px solid var(--blue-dark); padding-bottom: 5mm; }
+  .orc-cabecalho img { height: 16mm; width: auto; }
+  .orc-emitente { font-size: 8.5pt; color: #4b5b57; line-height: 1.4; }
+  .orc-emitente strong { color: #142420; font-size: 10pt; display: block; }
+  .orc-titulo { text-align: right; flex-shrink: 0; }
+  .orc-titulo h1 { font-family: 'Poppins', sans-serif; font-size: 14pt; margin: 0; color: var(--blue-dark); letter-spacing: 0.02em; }
+  .orc-titulo .orc-numero { font-size: 11pt; font-weight: 700; margin-top: 1mm; }
+  .orc-titulo .orc-data { font-size: 8.5pt; color: #4b5b57; }
+
+  .orc-blocos { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; margin-top: 6mm; }
+  .orc-bloco { border: 1px solid #dfe7e5; border-radius: 2mm; padding: 3.5mm 4mm; }
+  .orc-bloco h2 { font-size: 8pt; text-transform: uppercase; letter-spacing: 0.08em; color: #6c7f7a; margin: 0 0 1.5mm; font-family: 'Inter', sans-serif; }
+  .orc-bloco .orc-linha { font-size: 9pt; }
+  .orc-bloco .orc-linha strong { font-size: 10pt; }
+
+  table.orc-tabela { width: 100%; border-collapse: collapse; margin-top: 6mm; font-size: 9pt; }
+  table.orc-tabela th {
+    background: var(--blue-dark);
+    color: #fff;
+    text-align: left;
+    padding: 2.5mm 3mm;
+    font-size: 8pt;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border: none;
+  }
+  table.orc-tabela th.num, table.orc-tabela td.num { text-align: right; }
+  table.orc-tabela td { padding: 2.5mm 3mm; border-bottom: 1px solid #e6edeb; }
+  table.orc-tabela tbody tr:nth-child(even) { background: #f7faf9; }
+
+  .orc-totais { margin-top: 4mm; margin-left: auto; width: 80mm; font-size: 9.5pt; }
+  .orc-totais div { display: flex; justify-content: space-between; padding: 1.5mm 0; }
+  .orc-totais .orc-total-geral {
+    border-top: 2px solid var(--blue-dark);
+    margin-top: 1.5mm;
+    padding-top: 2.5mm;
+    font-family: 'Poppins', sans-serif;
+    font-size: 12pt;
+    font-weight: 700;
+    color: var(--blue-dark);
+  }
+
+  .orc-condicoes { margin-top: 7mm; display: grid; grid-template-columns: repeat(2, 1fr); gap: 3mm 6mm; font-size: 9pt; }
+  .orc-condicoes .rotulo { font-size: 7.5pt; text-transform: uppercase; letter-spacing: 0.06em; color: #6c7f7a; font-weight: 700; }
+  .orc-observacoes { margin-top: 6mm; font-size: 9pt; white-space: pre-wrap; }
+  .orc-observacoes .rotulo { font-size: 7.5pt; text-transform: uppercase; letter-spacing: 0.06em; color: #6c7f7a; font-weight: 700; }
+  .orc-rodape { margin-top: 10mm; padding-top: 4mm; border-top: 1px solid #dfe7e5; font-size: 8.5pt; color: #4b5b57; display: flex; justify-content: space-between; gap: 6mm; }
+
+  /* Impressão: só a folha vai pro papel/PDF. */
+  @media print {
+    body * { visibility: hidden !important; }
+    #orcamento-preview, #orcamento-preview * { visibility: visible !important; }
+    #orcamento-preview {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      min-height: 0;
+      margin: 0;
+      padding: 0;
+      transform: none !important;
+      box-shadow: none;
+    }
+    .folha-wrap { overflow: visible; }
+    @page { size: A4; margin: 12mm; }
+  }
+
   /* --- Aviso de integracao pendente --- */
   .aviso-integracao {
     background: #fff9e8;
@@ -1015,6 +1131,7 @@
         <button data-aba="clientes"><span class="icone-aba"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="rotulo-aba">Carteira</span></button>
         <button data-aba="mapa"><span class="icone-aba"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20 3 17V4l6 3m0 13 6-3m-6 3V7m6 10 6 3V7l-6-3m0 13V4m0 3L9 4"/></svg></span><span class="rotulo-aba">Mapa</span></button>
         <button data-aba="rdv"><span class="icone-aba"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M9 15h6M9 11h2"/></svg></span><span class="rotulo-aba">RDV</span></button>
+        <button data-aba="orcamento"><span class="icone-aba"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M12 11v6M9.5 12.5h3.2a1.5 1.5 0 0 1 0 3h-2.4a1.5 1.5 0 0 0 0 3h3.2"/></svg></span><span class="rotulo-aba">Orçamento</span></button>
         <button data-aba="pedido"><span class="icone-aba"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span><span class="rotulo-aba">Criar pedido</span></button>
       </nav>
       <button class="btn-icone" id="btn-config" type="button" title="Personalizar" aria-label="Personalizar">
@@ -1590,6 +1707,62 @@
           </table>
         </div>
         <input type="file" id="input-rdv-comprovante" accept="image/*,.pdf" hidden />
+      </section>
+    </div>
+
+    <!-- ===== ABA GERAR ORÇAMENTO ===== -->
+    <div class="painel" id="painel-orcamento" hidden>
+      <section class="card">
+        <h2><span class="icone-secao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M12 11v6M9.5 12.5h3.2a1.5 1.5 0 0 1 0 3h-2.4a1.5 1.5 0 0 0 0 3h3.2"/></svg></span>Gerar orçamento</h2>
+        <p class="vazio" style="margin: -0.5rem 0 1rem">Preencha o cliente e os itens — a proposta é montada embaixo e sai em PDF.</p>
+
+        <form id="form-orcamento">
+          <div class="form-grid">
+            <div class="field" style="grid-column: 1 / -1"><label>Cliente</label>
+              <select id="orcamento-cliente"><option value="">Selecionar da carteira…</option></select>
+            </div>
+            <div class="field"><label>Nome no orçamento</label><input id="orcamento-cliente-nome" placeholder="Razão social" /></div>
+            <div class="field"><label>CNPJ</label><input id="orcamento-cliente-cnpj" placeholder="00.000.000/0000-00" /></div>
+            <div class="field"><label>Contato</label><input id="orcamento-cliente-contato" placeholder="Nome / telefone" /></div>
+            <div class="field"><label>Cidade / UF</label><input id="orcamento-cliente-cidade" placeholder="Cidade - UF" /></div>
+            <div class="field" style="grid-column: 1 / -1"><label>Endereço</label><input id="orcamento-cliente-endereco" placeholder="Rua, número, bairro" /></div>
+          </div>
+
+          <h3 class="detalhe-subtitulo">Itens</h3>
+          <div id="orcamento-itens"></div>
+          <button type="button" class="secundario" id="btn-add-item-orcamento" style="margin-top:0.5rem">+ Adicionar item</button>
+
+          <h3 class="detalhe-subtitulo">Condições</h3>
+          <div class="form-grid">
+            <div class="field"><label>Frete</label>
+              <select id="orcamento-frete">
+                <option value="CIF">CIF (frete por nossa conta)</option>
+                <option value="FOB">FOB (frete por conta do cliente)</option>
+              </select>
+            </div>
+            <div class="field" id="orcamento-frete-valor-wrap"><label>Valor do frete (R$)</label><input type="number" step="0.01" min="0" id="orcamento-frete-valor" placeholder="0,00" /></div>
+            <div class="field"><label>Condição de pagamento</label><input id="orcamento-pagamento" placeholder="Ex: 28 DDL" /></div>
+            <div class="field"><label>Prazo de entrega</label><input id="orcamento-entrega" placeholder="Ex: 10 dias úteis" /></div>
+            <div class="field"><label>Validade da proposta (dias)</label><input type="number" min="1" id="orcamento-validade" value="15" /></div>
+            <div class="field"><label>Nº do orçamento</label><input id="orcamento-numero" /></div>
+            <div class="field"><label>Seu nome (sai no PDF)</label><input id="orcamento-vendedor-nome" placeholder="Nome completo" /></div>
+            <div class="field" style="grid-column: 1 / -1"><label>Observações</label><textarea id="orcamento-observacoes" placeholder="Impostos inclusos, condições especiais, etc."></textarea></div>
+          </div>
+        </form>
+
+        <div class="orcamento-acoes">
+          <div class="orcamento-total-resumo">
+            <span>Total do orçamento</span>
+            <strong id="orcamento-total-resumo">R$ 0,00</strong>
+          </div>
+          <button type="button" id="btn-baixar-orcamento">Baixar PDF</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2><span class="icone-secao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6h20v12H2z"/><path d="M6 10h8M6 14h5"/></svg></span>Pré-visualização</h2>
+        <p class="vazio" style="margin: -0.5rem 0 1rem">É exatamente isso que sai no PDF.</p>
+        <div class="folha-wrap"><div class="folha-a4" id="orcamento-preview"></div></div>
       </section>
     </div>
 
@@ -2479,6 +2652,279 @@ document.querySelectorAll('#agenda-visoes button').forEach((btn) => {
   });
 });
 
+// --- Gerar orçamento ---
+//
+// A proposta é montada como uma folha A4 em HTML (#orcamento-preview) e o
+// "Baixar PDF" manda essa folha pra impressão, onde tanto o iPhone quanto o
+// desktop oferecem "Salvar em PDF". Sem depender de biblioteca externa, e o
+// layout é CSS puro - fácil de trocar quando você mandar o modelo de vocês.
+
+const EMITENTE_PADRAO = {
+  nome: 'Buntech Tecnologia em Insumos Ltda.',
+  cnpj: '56.998.438/0007-50',
+  endereco: 'Rua Roque Medaldo Frias, 1341 — Recreio Campestre Jóia, Indaiatuba - SP',
+  telefone: '(19) 3936-1779',
+};
+
+let itensOrcamento = [{ produto: '', quantidade: '', preco: '' }];
+let produtosCache = [];
+
+function emitenteOrcamento() {
+  let salvo = {};
+  try { salvo = JSON.parse(localStorage.getItem('emitenteOrcamento') || '{}'); } catch { salvo = {}; }
+  return { ...EMITENTE_PADRAO, ...salvo };
+}
+
+function proximoNumeroOrcamento() {
+  const hoje = new Date();
+  const prefixo = `${hoje.getFullYear()}${pad2(hoje.getMonth() + 1)}`;
+  let seq = 1;
+  try {
+    const salvo = JSON.parse(localStorage.getItem('sequenciaOrcamento') || '{}');
+    if (salvo.prefixo === prefixo) seq = Number(salvo.seq) + 1;
+  } catch { /* começa do 1 */ }
+  return { numero: `ORC-${prefixo}-${String(seq).padStart(3, '0')}`, prefixo, seq };
+}
+
+function registrarNumeroUsado() {
+  const numero = document.getElementById('orcamento-numero').value;
+  const partes = numero.match(/^ORC-(\d{6})-(\d+)$/);
+  if (partes) localStorage.setItem('sequenciaOrcamento', JSON.stringify({ prefixo: partes[1], seq: Number(partes[2]) }));
+}
+
+function renderizarItensOrcamento() {
+  const wrap = document.getElementById('orcamento-itens');
+  const sugestoes = produtosCache.map((p) => `<option value="${escaparAtributo(p.nome)}"></option>`).join('');
+
+  wrap.innerHTML = `<datalist id="lista-produtos-orcamento">${sugestoes}</datalist>` + itensOrcamento.map((item, i) => {
+    const total = (Number(item.quantidade) || 0) * (Number(item.preco) || 0);
+    return `
+      <div class="orcamento-item" data-item="${i}">
+        <div class="field campo-produto"><label>Produto</label>
+          <input list="lista-produtos-orcamento" data-campo="produto" value="${escaparAtributo(item.produto)}" placeholder="Ex: Seedgel FR" />
+        </div>
+        <div class="field"><label>Qtd (ton)</label>
+          <input type="number" step="0.01" min="0" data-campo="quantidade" value="${escaparAtributo(item.quantidade)}" placeholder="0" />
+        </div>
+        <div class="field"><label>Preço / ton</label>
+          <input type="number" step="0.01" min="0" data-campo="preco" value="${escaparAtributo(item.preco)}" placeholder="0,00" />
+        </div>
+        <button type="button" class="btn-lapis" data-remover-item="${i}" title="Remover item" ${itensOrcamento.length === 1 ? 'disabled style="opacity:.4"' : ''}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+        </button>
+        <div class="orcamento-item-total">${total > 0 ? `Subtotal: ${fmtMoeda(total)}` : '&nbsp;'}</div>
+      </div>
+    `;
+  }).join('');
+
+  wrap.querySelectorAll('[data-campo]').forEach((input) => {
+    input.addEventListener('input', () => {
+      const i = Number(input.closest('[data-item]').dataset.item);
+      itensOrcamento[i][input.dataset.campo] = input.value;
+      atualizarPreviewOrcamento();
+      const linha = input.closest('.orcamento-item').querySelector('.orcamento-item-total');
+      const total = (Number(itensOrcamento[i].quantidade) || 0) * (Number(itensOrcamento[i].preco) || 0);
+      linha.innerHTML = total > 0 ? `Subtotal: ${fmtMoeda(total)}` : '&nbsp;';
+    });
+  });
+
+  wrap.querySelectorAll('[data-remover-item]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      if (itensOrcamento.length === 1) return;
+      itensOrcamento.splice(Number(btn.dataset.removerItem), 1);
+      renderizarItensOrcamento();
+      atualizarPreviewOrcamento();
+    });
+  });
+}
+
+function dadosOrcamento() {
+  const v = (id) => document.getElementById(id).value.trim();
+  const itens = itensOrcamento
+    .map((i) => ({
+      produto: i.produto.trim(),
+      quantidade: Number(i.quantidade) || 0,
+      preco: Number(i.preco) || 0,
+      total: (Number(i.quantidade) || 0) * (Number(i.preco) || 0),
+    }))
+    .filter((i) => i.produto || i.total > 0);
+
+  const subtotal = itens.reduce((s, i) => s + i.total, 0);
+  const frete = v('orcamento-frete');
+  const freteValor = frete === 'CIF' ? Number(v('orcamento-frete-valor')) || 0 : 0;
+
+  const validadeDias = Number(v('orcamento-validade')) || 0;
+  const validadeData = new Date();
+  validadeData.setDate(validadeData.getDate() + validadeDias);
+
+  return {
+    numero: v('orcamento-numero'),
+    vendedorNome: v('orcamento-vendedor-nome'),
+    cliente: {
+      nome: v('orcamento-cliente-nome'),
+      cnpj: v('orcamento-cliente-cnpj'),
+      contato: v('orcamento-cliente-contato'),
+      cidade: v('orcamento-cliente-cidade'),
+      endereco: v('orcamento-cliente-endereco'),
+    },
+    itens,
+    subtotal,
+    frete,
+    freteValor,
+    total: subtotal + freteValor,
+    pagamento: v('orcamento-pagamento'),
+    entrega: v('orcamento-entrega'),
+    validadeDias,
+    validadeData,
+    observacoes: v('orcamento-observacoes'),
+  };
+}
+
+function atualizarPreviewOrcamento() {
+  const d = dadosOrcamento();
+  const emitente = emitenteOrcamento();
+  const hoje = new Date();
+  const fmtData = (data) => data.toLocaleDateString('pt-BR');
+
+  document.getElementById('orcamento-total-resumo').textContent = fmtMoeda(d.total);
+
+  const linhas = d.itens.length
+    ? d.itens.map((i) => `
+        <tr>
+          <td>${i.produto || '—'}</td>
+          <td class="num">${i.quantidade.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</td>
+          <td class="num">${fmtMoeda(i.preco)}</td>
+          <td class="num">${fmtMoeda(i.total)}</td>
+        </tr>
+      `).join('')
+    : '<tr><td colspan="4" style="text-align:center; color:#8a938f">Adicione os itens do orçamento</td></tr>';
+
+  document.getElementById('orcamento-preview').innerHTML = `
+    <div class="orc-cabecalho">
+      <div style="display:flex; gap:5mm; align-items:flex-start;">
+        <img src="/logo.png" alt="Buntech" />
+        <div class="orc-emitente">
+          <strong>${emitente.nome}</strong>
+          CNPJ ${emitente.cnpj}<br/>
+          ${emitente.endereco}<br/>
+          ${emitente.telefone}
+        </div>
+      </div>
+      <div class="orc-titulo">
+        <h1>PROPOSTA COMERCIAL</h1>
+        <div class="orc-numero">${d.numero || '—'}</div>
+        <div class="orc-data">Emitida em ${fmtData(hoje)}</div>
+      </div>
+    </div>
+
+    <div class="orc-blocos">
+      <div class="orc-bloco">
+        <h2>Cliente</h2>
+        <div class="orc-linha"><strong>${d.cliente.nome || '—'}</strong></div>
+        ${d.cliente.cnpj ? `<div class="orc-linha">CNPJ ${d.cliente.cnpj}</div>` : ''}
+        ${d.cliente.endereco ? `<div class="orc-linha">${d.cliente.endereco}</div>` : ''}
+        ${d.cliente.cidade ? `<div class="orc-linha">${d.cliente.cidade}</div>` : ''}
+        ${d.cliente.contato ? `<div class="orc-linha">A/C ${d.cliente.contato}</div>` : ''}
+      </div>
+      <div class="orc-bloco">
+        <h2>Vendedor responsável</h2>
+        <div class="orc-linha"><strong>${d.vendedorNome || cargoAtual || '—'}</strong></div>
+        ${d.vendedorNome && cargoAtual ? `<div class="orc-linha">${cargoAtual}</div>` : ''}
+        ${vendedorAtual.numero_vendedor ? `<div class="orc-linha">Nº ${vendedorAtual.numero_vendedor}${vendedorAtual.matricula ? ` · Matrícula ${vendedorAtual.matricula}` : ''}</div>` : ''}
+        ${vendedorAtual.celular ? `<div class="orc-linha">${vendedorAtual.celular}</div>` : ''}
+        ${vendedorAtual.email ? `<div class="orc-linha">${vendedorAtual.email}</div>` : ''}
+        ${regiaoAtual ? `<div class="orc-linha">Região: ${regiaoAtual}</div>` : ''}
+      </div>
+    </div>
+
+    <table class="orc-tabela">
+      <thead>
+        <tr>
+          <th>Produto</th>
+          <th class="num">Qtd (ton)</th>
+          <th class="num">Preço / ton</th>
+          <th class="num">Total</th>
+        </tr>
+      </thead>
+      <tbody>${linhas}</tbody>
+    </table>
+
+    <div class="orc-totais">
+      <div><span>Subtotal</span><span>${fmtMoeda(d.subtotal)}</span></div>
+      <div><span>Frete (${d.frete})</span><span>${d.frete === 'CIF' ? (d.freteValor > 0 ? fmtMoeda(d.freteValor) : 'Incluso') : 'Por conta do cliente'}</span></div>
+      <div class="orc-total-geral"><span>Total</span><span>${fmtMoeda(d.total)}</span></div>
+    </div>
+
+    <div class="orc-condicoes">
+      <div><div class="rotulo">Condição de pagamento</div>${d.pagamento || '—'}</div>
+      <div><div class="rotulo">Prazo de entrega</div>${d.entrega || '—'}</div>
+      <div><div class="rotulo">Frete</div>${d.frete}</div>
+      <div><div class="rotulo">Validade da proposta</div>${d.validadeDias ? `${d.validadeDias} dias (até ${fmtData(d.validadeData)})` : '—'}</div>
+    </div>
+
+    ${d.observacoes ? `<div class="orc-observacoes"><div class="rotulo">Observações</div>${d.observacoes}</div>` : ''}
+
+    <div class="orc-rodape">
+      <div>${emitente.nome} · CNPJ ${emitente.cnpj}</div>
+      <div>${d.vendedorNome || cargoAtual || ''}${vendedorAtual.celular ? ` · ${vendedorAtual.celular}` : ''}</div>
+    </div>
+  `;
+
+  // o nome do vendedor fica salvo no aparelho pro próximo orçamento
+  if (d.vendedorNome) localStorage.setItem('vendedorNomeOrcamento', d.vendedorNome);
+}
+
+function preencherClientesOrcamento() {
+  const select = document.getElementById('orcamento-cliente');
+  if (!select) return;
+  select.innerHTML = '<option value="">Selecionar da carteira…</option>' +
+    clientesCache.map((c) => `<option value="${c.id}">${escaparAtributo(c.nome)}</option>`).join('');
+}
+
+document.getElementById('orcamento-cliente').addEventListener('change', (e) => {
+  const cliente = clientesCache.find((c) => c.id === e.target.value);
+  if (!cliente) return;
+  const d = cliente.dados || {};
+  document.getElementById('orcamento-cliente-nome').value = d.nome_fantasia || cliente.nome;
+  document.getElementById('orcamento-cliente-cnpj').value = d.cnpj || '';
+  document.getElementById('orcamento-cliente-contato').value = [d.responsavel, d.contato].filter(Boolean).join(' · ');
+  document.getElementById('orcamento-cliente-cidade').value = d.cidade || '';
+  document.getElementById('orcamento-cliente-endereco').value = cliente.endereco || '';
+  atualizarPreviewOrcamento();
+});
+
+document.getElementById('orcamento-frete').addEventListener('change', (e) => {
+  document.getElementById('orcamento-frete-valor-wrap').style.display = e.target.value === 'CIF' ? '' : 'none';
+  atualizarPreviewOrcamento();
+});
+
+document.getElementById('btn-add-item-orcamento').addEventListener('click', () => {
+  itensOrcamento.push({ produto: '', quantidade: '', preco: '' });
+  renderizarItensOrcamento();
+});
+
+document.getElementById('form-orcamento').addEventListener('input', (e) => {
+  if (!e.target.closest('#orcamento-itens')) atualizarPreviewOrcamento();
+});
+document.getElementById('form-orcamento').addEventListener('submit', (e) => e.preventDefault());
+
+document.getElementById('btn-baixar-orcamento').addEventListener('click', () => {
+  const d = dadosOrcamento();
+  if (!d.cliente.nome) { alert('Preencha o cliente antes de gerar o PDF.'); return; }
+  if (!d.itens.length) { alert('Adicione pelo menos um item ao orçamento.'); return; }
+  atualizarPreviewOrcamento();
+  registrarNumeroUsado();
+  window.print();
+});
+
+function iniciarOrcamento() {
+  document.getElementById('orcamento-numero').value = proximoNumeroOrcamento().numero;
+  document.getElementById('orcamento-vendedor-nome').value = localStorage.getItem('vendedorNomeOrcamento') || '';
+  preencherClientesOrcamento();
+  renderizarItensOrcamento();
+  atualizarPreviewOrcamento();
+}
+
 // --- Configurações visuais (ícone, foto de perfil, cargo) ---
 
 let cargoAtual = 'Vendedor Júnior';
@@ -2848,6 +3294,7 @@ document.querySelectorAll('nav.abas button').forEach((btn) => {
     document.getElementById('painel-clientes').hidden = btn.dataset.aba !== 'clientes';
     document.getElementById('painel-mapa').hidden = btn.dataset.aba !== 'mapa';
     document.getElementById('painel-rdv').hidden = btn.dataset.aba !== 'rdv';
+    document.getElementById('painel-orcamento').hidden = btn.dataset.aba !== 'orcamento';
     document.getElementById('painel-pedido').hidden = btn.dataset.aba !== 'pedido';
     if (btn.dataset.aba === 'mapa') {
       mapaPronto.then(() => {
@@ -2857,6 +3304,7 @@ document.querySelectorAll('nav.abas button').forEach((btn) => {
     }
     if (btn.dataset.aba === 'inicio') { window.scrollTo(0, 0); ajustarAlturaInicio(); }
     if (btn.dataset.aba === 'agenda') posicionarScrollGrade();
+    if (btn.dataset.aba === 'orcamento') { preencherClientesOrcamento(); atualizarPreviewOrcamento(); }
   });
 });
 
@@ -3177,6 +3625,7 @@ async function carregarEmpresas() {
 
 async function carregarProdutos() {
   const produtos = await api('/produtos');
+  produtosCache = produtos;
   const tbody = document.getElementById('tabela-produtos');
   tbody.innerHTML = produtos.length
     ? produtos.map((p) => `<tr><td>${p.nome}</td><td>${fmtMoeda(p.preco)}</td></tr>`).join('')
@@ -3847,6 +4296,7 @@ document.getElementById('btn-editar-meta-mini').addEventListener('click', async 
   await Promise.all([carregarEmpresas(), carregarProdutos(), carregarCamposClientes()]);
   await Promise.all([carregarContatos(), carregarClientes()]);
   await Promise.all([carregarResumo(), carregarVisitas(), carregarNegociacoes(), carregarAtividades(), carregarRdv(), carregarAgenda()]);
+  iniciarOrcamento();
   ajustarAlturaInicio();
 })();
 </script>

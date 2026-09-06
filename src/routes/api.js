@@ -534,18 +534,43 @@ function expandirRecorrencia(serie, inicio, fim) {
     .map((data) => ({ ...serie, id: `${serie.id}::${data}`, data, serie_id: serie.id, recorrente: true }));
 }
 
+// Enquanto a migração de recorrência (028) não roda no banco, as colunas
+// recorrencia/recorrencia_ate/recorrencia_excecoes não existem. Em vez de
+// derrubar a agenda inteira, o código detecta isso e trabalha sem recorrência.
+const CAMPOS_RECORRENCIA = ['recorrencia', 'recorrencia_ate', 'recorrencia_excecoes'];
+
+function erroDeRecorrenciaAusente(error) {
+  return !!error && /recorrencia/i.test(error.message || '');
+}
+
+function semCamposDeRecorrencia(registro) {
+  const copia = { ...registro };
+  for (const campo of CAMPOS_RECORRENCIA) delete copia[campo];
+  return copia;
+}
+
 router.get('/agenda', async (req, res) => {
   const { inicio, fim } = req.query;
 
-  // Compromissos avulsos: filtra pela janela direto no banco.
-  let query = supabase
-    .from('agenda_compromissos')
-    .select('*, clientes(nome, latitude, longitude, endereco)')
-    .is('recorrencia', null);
-  if (inicio) query = query.gte('data', inicio);
-  if (fim) query = query.lte('data', fim);
+  const consultaNaJanela = () => {
+    let q = supabase
+      .from('agenda_compromissos')
+      .select('*, clientes(nome, latitude, longitude, endereco)');
+    if (inicio) q = q.gte('data', inicio);
+    if (fim) q = q.lte('data', fim);
+    return q;
+  };
 
-  const { data: avulsos, error } = await query;
+  // Compromissos avulsos: filtra pela janela direto no banco.
+  const { data: avulsos, error } = await consultaNaJanela().is('recorrencia', null);
+
+  if (erroDeRecorrenciaAusente(error)) {
+    const { data, error: erroSimples } = await consultaNaJanela()
+      .order('data', { ascending: true })
+      .order('hora', { ascending: true, nullsFirst: false });
+    if (erroSimples) return res.status(500).json({ error: erroSimples.message });
+    return res.json(data);
+  }
   if (error) return res.status(500).json({ error: error.message });
 
   // Séries recorrentes: a data guardada é a da primeira ocorrência (pode ser
@@ -576,11 +601,14 @@ router.post('/agenda', async (req, res) => {
   }
   registro.data = dataCompromisso;
 
-  const { data, error } = await supabase
+  const inserir = (dados) => supabase
     .from('agenda_compromissos')
-    .insert(registro)
+    .insert(dados)
     .select('*, clientes(nome, latitude, longitude, endereco)')
     .single();
+
+  let { data, error } = await inserir(registro);
+  if (erroDeRecorrenciaAusente(error)) ({ data, error } = await inserir(semCamposDeRecorrencia(registro)));
   if (error) return res.status(500).json({ error: error.message });
   res.status(201).json(data);
 });
@@ -598,12 +626,15 @@ router.patch('/agenda/:id', async (req, res) => {
     if (req.body[campo] !== undefined) atualizacao[campo] = req.body[campo] || null;
   }
 
-  const { data, error } = await supabase
+  const atualizar = (dados) => supabase
     .from('agenda_compromissos')
-    .update(atualizacao)
+    .update(dados)
     .eq('id', serieId)
     .select('*, clientes(nome, latitude, longitude, endereco)')
     .single();
+
+  let { data, error } = await atualizar(atualizacao);
+  if (erroDeRecorrenciaAusente(error)) ({ data, error } = await atualizar(semCamposDeRecorrencia(atualizacao)));
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);
 });
