@@ -557,55 +557,222 @@
   .filtro-pill:hover { background: #eef6f5; color: var(--teal); box-shadow: none; transform: none; }
   .filtro-pill.ativo { background: linear-gradient(90deg, var(--blue-dark), var(--teal)); color: #fff; border-color: transparent; box-shadow: none; }
 
-  /* --- Agenda (calendario mensal + compromissos do dia) --- */
-  .agenda-cabecalho { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 1rem; }
-  .agenda-mes-titulo { flex: 1; text-align: center; font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 1.02rem; text-transform: capitalize; }
-  .agenda-grade-dias-semana {
+  /* --- Agenda: calendario com visao de dia / semana / mes ---
+     Estrutura inspirada no Google Calendar e no calendario do Teams: cabecalho
+     de dias fixo, faixa de "dia todo", grade de 24 horas com 48px por hora e
+     os compromissos posicionados por horario/duracao (inclusive lado a lado
+     quando se sobrepoem). */
+  .cal-toolbar { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.9rem; }
+  .cal-nav { display: flex; align-items: center; gap: 0.3rem; }
+  .cal-btn-hoje { padding: 0.4rem 0.85rem; font-size: 0.8rem; }
+  .cal-titulo {
+    flex: 1;
+    min-width: 140px;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 700;
+    font-size: 0.95rem;
+  }
+  .cal-visoes { display: flex; background: #eef2f1; border-radius: 999px; padding: 3px; gap: 2px; }
+  .cal-visoes button {
+    padding: 0.3rem 0.7rem;
+    border-radius: 999px;
+    background: none;
+    color: var(--muted);
+    font-size: 0.76rem;
+    font-weight: 700;
+    box-shadow: none;
+  }
+  .cal-visoes button:hover { background: rgba(255, 255, 255, 0.6); transform: none; box-shadow: none; filter: none; }
+  .cal-visoes button.ativa { background: #fff; color: var(--blue-dark); box-shadow: 0 1px 3px rgba(20, 36, 32, 0.16); }
+
+  /* Cores por status de confirmacao, usadas nos blocos e chips do calendario.
+     --cor-status pinta a barrinha lateral de cada bloco. */
+  .st-rascunho { --cor-status: #b6c0bd; background: #f2f4f4; color: #5f6b68; }
+  .st-aguardando { --cor-status: #f2b134; background: #fff6e6; color: #9a5b09; }
+  .st-confirmado { --cor-status: #4CAF50; background: #e9f7ec; color: #1e7e34; }
+  .st-remarcado { --cor-status: #0B6FB0; background: #e8f2fa; color: #0b6fb0; }
+  .st-cancelado { --cor-status: #e5534b; background: #fdeeee; color: #c0392b; }
+
+  /* Em tela estreita a semana rola na horizontal (cabeçalho junto com o corpo),
+     em vez de espremer 7 colunas ilegíveis. */
+  .cal-scroll-x { overflow-x: auto; }
+  .cal-grade { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: #fff; }
+  .cal-cabecalho { display: grid; border-bottom: 1px solid var(--border); background: #fafcfb; }
+  .cal-canto { border-right: 1px solid var(--border); }
+  .cal-dia-cab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+    padding: 0.4rem 0.15rem;
+    background: none;
+    border: none;
+    border-right: 1px solid var(--border);
+    border-radius: 0;
+    color: var(--muted);
+    font-size: 0.58rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    box-shadow: none;
+  }
+  .cal-dia-cab:hover { background: #f2f9fd; transform: none; box-shadow: none; filter: none; }
+  .cal-dia-cab:last-child { border-right: none; }
+  .cal-dia-cab .cal-num {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.85rem;
+    color: var(--ink);
+  }
+  .cal-dia-cab.hoje .cal-num { background: var(--blue-dark); color: #fff; }
+  .cal-dia-cab.sel { background: #eef6fb; }
+  .cal-dia-cab.sel .cal-num { box-shadow: 0 0 0 2px var(--teal); }
+  .cal-dia-cab.fds { background: #f7faf9; }
+
+  .cal-todo-dia { display: grid; border-bottom: 1px solid var(--border); background: #fcfdfd; }
+  .cal-todo-dia-label {
+    border-right: 1px solid var(--border);
+    font-size: 0.55rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    font-weight: 700;
+    padding: 0.3rem 4px;
+    text-align: right;
+  }
+  .cal-todo-dia-col { border-right: 1px solid var(--border); padding: 3px; display: flex; flex-direction: column; gap: 2px; min-height: 24px; }
+  .cal-todo-dia-col:last-child { border-right: none; }
+
+  .cal-corpo { position: relative; max-height: min(58vh, 560px); overflow-y: auto; }
+  .cal-corpo-grid { display: grid; position: relative; }
+  .cal-gutter { border-right: 1px solid var(--border); }
+  .cal-hora-marca { height: 48px; position: relative; }
+  .cal-hora-marca span {
+    position: absolute;
+    top: -6px;
+    right: 5px;
+    font-size: 0.58rem;
+    color: var(--muted);
+    background: #fff;
+    padding: 0 1px;
+  }
+  .cal-coluna { position: relative; border-right: 1px solid var(--border); }
+  .cal-coluna:last-child { border-right: none; }
+  .cal-coluna.fds { background: #fbfdfc; }
+  .cal-slot { height: 48px; border-bottom: 1px solid #eef2f1; cursor: pointer; position: relative; }
+  .cal-slot::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; border-top: 1px dashed #f2f5f4; }
+  .cal-slot:hover { background: #f2f9fd; }
+
+  .cal-evento {
+    position: absolute;
+    border-radius: 6px;
+    border: none;
+    border-left: 3px solid var(--cor-status);
+    padding: 2px 4px;
+    font-size: 0.62rem;
+    line-height: 1.15;
+    text-align: left;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(20, 36, 32, 0.14);
+    z-index: 2;
+  }
+  .cal-evento:hover { transform: none; filter: brightness(0.97); box-shadow: 0 2px 6px rgba(20, 36, 32, 0.2); }
+  .cal-evento-hora { font-weight: 700; opacity: 0.85; font-size: 0.58rem; }
+  .cal-evento-titulo { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .cal-evento-sub { opacity: 0.85; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .st-cancelado .cal-evento-titulo, .cal-evento.st-cancelado .cal-evento-titulo { text-decoration: line-through; }
+
+  .cal-agora { position: absolute; left: 0; right: 0; height: 2px; background: #e5534b; z-index: 5; pointer-events: none; }
+  .cal-agora::before {
+    content: '';
+    position: absolute;
+    left: -4px;
+    top: -3px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #e5534b;
+  }
+
+  /* Visao de mes: celulas com os compromissos escritos (hora + titulo), nao so
+     bolinhas - da pra ler a semana inteira de bate-pronto. */
+  .cal-mes-cabecalho {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 4px;
-    font-size: 0.66rem;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    font-size: 0.58rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.03em;
     color: var(--muted);
     text-align: center;
-    margin-bottom: 4px;
+    padding-bottom: 4px;
   }
-  .agenda-grade { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
-  .agenda-dia {
-    aspect-ratio: 1;
+  .cal-mes-grade {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--border);
+    gap: 1px;
+  }
+  .cal-mes-dia {
+    min-height: 76px;
+    background: #fff;
+    border: none;
+    border-radius: 0;
+    padding: 3px;
     display: flex;
     flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+    box-shadow: none;
+    text-align: left;
+  }
+  .cal-mes-dia:hover { background: #f7fbfa; transform: none; box-shadow: none; filter: none; }
+  .cal-mes-dia.fora { background: #fafbfb; }
+  .cal-mes-dia.fora .cal-mes-num { color: #b9c3c0; }
+  .cal-mes-dia.sel { background: #eef6fb; box-shadow: inset 0 0 0 2px var(--teal); }
+  .cal-mes-num {
+    align-self: flex-end;
+    width: 21px;
+    height: 21px;
+    display: flex;
     align-items: center;
     justify-content: center;
-    gap: 3px;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    background: #fff;
-    color: var(--ink);
+    border-radius: 50%;
+    font-size: 0.72rem;
     font-weight: 700;
-    font-size: 0.8rem;
-    padding: 2px;
-    box-shadow: none;
+    font-family: 'Poppins', sans-serif;
+    color: var(--ink);
+    flex-shrink: 0;
   }
-  .agenda-dia:hover { transform: none; box-shadow: none; border-color: var(--teal); }
-  .agenda-dia-vazio { visibility: hidden; border: none; background: none; cursor: default; }
-  .agenda-dia-hoje { border-color: var(--blue-dark); background: #eef6fb; }
-  .agenda-dia-selecionado { background: linear-gradient(135deg, var(--blue-dark), var(--teal)); color: #fff; border-color: transparent; }
-  .agenda-dia-pontos { display: flex; gap: 2px; }
-  .agenda-ponto { width: 5px; height: 5px; border-radius: 50%; background: var(--muted); }
-  .agenda-dia-selecionado .agenda-ponto { background: rgba(255, 255, 255, 0.9) !important; }
+  .cal-mes-dia.hoje .cal-mes-num { background: var(--blue-dark); color: #fff; }
+  .cal-chip {
+    font-size: 0.56rem;
+    line-height: 1.25;
+    padding: 1px 3px;
+    border-radius: 4px;
+    border-left: 3px solid var(--cor-status);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: left;
+    font-weight: 600;
+  }
+  .cal-mes-mais { font-size: 0.55rem; color: var(--muted); font-weight: 700; padding-left: 3px; }
 
-  /* Cor por status de confirmacao - do rascunho (cinza claro, so um esboco
-     interno) ate confirmado (verde), passando por aguardando resposta do
-     cliente, remarcado ou cancelado. Usada tanto nos pontinhos do calendario
-     quanto na barra lateral e no badge de cada compromisso. */
-  .ponto-rascunho { background: #cbd3d1; }
-  .ponto-aguardando { background: #f2b134; }
-  .ponto-confirmado { background: var(--green); }
-  .ponto-remarcado { background: var(--blue-dark); }
-  .ponto-cancelado { background: #e5534b; }
+  @media (max-width: 480px) {
+    .cal-titulo { font-size: 0.85rem; order: -1; width: 100%; flex-basis: 100%; }
+    .cal-mes-dia { min-height: 62px; }
+    .cal-evento { font-size: 0.55rem; padding: 1px 3px; }
+    /* no mês estreito o nome do compromisso rende mais que a hora cortada */
+    .cal-chip-hora { display: none; }
+  }
 
   .confirmacao-rascunho { background: #f1f1f1; color: #8a8f8d; }
   .confirmacao-aguardando { background: #fff4e0; color: #b45309; }
@@ -921,7 +1088,8 @@
       <form id="form-compromisso">
         <div class="form-grid">
           <div class="field"><label>Data</label><input type="date" name="data" required /></div>
-          <div class="field"><label>Hora</label><input type="time" name="hora" /></div>
+          <div class="field"><label>Início</label><input type="time" name="hora" id="compromisso-hora-inicio" /></div>
+          <div class="field"><label>Fim</label><input type="time" name="hora_fim" /></div>
           <div class="field"><label>Tipo</label>
             <select name="tipo">
               <option value="visita">Visita</option>
@@ -1019,16 +1187,20 @@
     <div class="painel" id="painel-agenda" hidden>
       <section class="card">
         <h2><span class="icone-secao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>Agenda</h2>
-        <div class="agenda-cabecalho">
-          <button type="button" class="btn-icone" id="agenda-mes-anterior" aria-label="Mês anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
-          <div class="agenda-mes-titulo" id="agenda-mes-titulo">—</div>
-          <button type="button" class="btn-icone" id="agenda-mes-proximo" aria-label="Próximo mês"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
-          <button type="button" class="secundario" id="btn-hoje-agenda">Hoje</button>
+        <div class="cal-toolbar">
+          <div class="cal-nav">
+            <button type="button" class="btn-icone" id="agenda-anterior" aria-label="Anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
+            <button type="button" class="btn-icone" id="agenda-proximo" aria-label="Próximo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
+            <button type="button" class="secundario cal-btn-hoje" id="btn-hoje-agenda">Hoje</button>
+          </div>
+          <div class="cal-titulo" id="agenda-titulo">—</div>
+          <div class="cal-visoes" id="agenda-visoes">
+            <button type="button" data-visao="dia">Dia</button>
+            <button type="button" data-visao="semana" class="ativa">Semana</button>
+            <button type="button" data-visao="mes">Mês</button>
+          </div>
         </div>
-        <div class="agenda-grade-dias-semana">
-          <div>Dom</div><div>Seg</div><div>Ter</div><div>Qua</div><div>Qui</div><div>Sex</div><div>Sáb</div>
-        </div>
-        <div class="agenda-grade" id="agenda-grade"></div>
+        <div id="agenda-visao"></div>
       </section>
 
       <section class="card">
@@ -1586,73 +1758,355 @@ function dataISOHoje() {
   return dataISO(hoje.getFullYear(), hoje.getMonth(), hoje.getDate());
 }
 
-let agendaMesAtual = new Date();
-agendaMesAtual.setDate(1);
+const PIXELS_POR_HORA = 48;
+const HORA_ROLAGEM_INICIAL = 7; // abre a grade já na faixa de trabalho
+const DURACAO_PADRAO_MIN = 60;
+const NOMES_DIAS_CURTOS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+const NOMES_DIAS_LONGOS = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+
+let agendaVisao = 'semana'; // 'dia' | 'semana' | 'mes'
+let agendaReferencia = new Date(); // data âncora da visão atual
 let agendaCompromissosCache = [];
 let agendaDiaSelecionado = dataISOHoje();
 let compromissoEditandoId = null;
+let timerLinhaAgora = null;
 
-async function carregarAgendaMes() {
-  const ano = agendaMesAtual.getFullYear();
-  const mes = agendaMesAtual.getMonth();
-  const inicio = dataISO(ano, mes, 1);
-  const fim = dataISO(ano, mes, new Date(ano, mes + 1, 0).getDate());
+function dataISOde(date) { return dataISO(date.getFullYear(), date.getMonth(), date.getDate()); }
+function dataDeISO(iso) { const [a, m, d] = iso.split('-').map(Number); return new Date(a, m - 1, d); }
+function somarDias(date, n) { const d = new Date(date); d.setDate(d.getDate() + n); return d; }
+function inicioDaSemana(date) { const d = new Date(date); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - d.getDay()); return d; }
+function minutosDaHora(hora) {
+  if (!hora) return null;
+  const [h, m] = hora.split(':').map(Number);
+  return h * 60 + (m || 0);
+}
+function horaDeMinutos(min) { return `${pad2(Math.floor(min / 60) % 24)}:${pad2(min % 60)}`; }
+function horaLegivel(hora) { return hora ? hora.slice(0, 5) : ''; }
+
+// Início e fim (em minutos do dia) de um compromisso, já com a duração padrão
+// de 1h pra quem não tem hora de término.
+function faixaCompromisso(c) {
+  const inicio = minutosDaHora(c.hora);
+  if (inicio == null) return null;
+  let fim = minutosDaHora(c.hora_fim);
+  if (fim == null || fim <= inicio) fim = inicio + DURACAO_PADRAO_MIN;
+  return { inicio, fim: Math.min(fim, 24 * 60) };
+}
+
+function intervaloVisivel() {
+  if (agendaVisao === 'dia') {
+    const iso = dataISOde(agendaReferencia);
+    return { inicio: iso, fim: iso };
+  }
+  if (agendaVisao === 'semana') {
+    const ini = inicioDaSemana(agendaReferencia);
+    return { inicio: dataISOde(ini), fim: dataISOde(somarDias(ini, 6)) };
+  }
+  const ano = agendaReferencia.getFullYear();
+  const mes = agendaReferencia.getMonth();
+  const inicioGrade = inicioDaSemana(new Date(ano, mes, 1));
+  const fimGrade = somarDias(inicioDaSemana(new Date(ano, mes + 1, 0)), 6);
+  return { inicio: dataISOde(inicioGrade), fim: dataISOde(fimGrade) };
+}
+
+async function carregarAgenda() {
+  const { inicio, fim } = intervaloVisivel();
   try {
     agendaCompromissosCache = await api(`/agenda?inicio=${inicio}&fim=${fim}`);
   } catch (err) {
-    document.getElementById('agenda-grade').innerHTML = `<p class="vazio">Não consegui carregar a agenda: ${err.message}</p>`;
+    document.getElementById('agenda-visao').innerHTML = `<p class="vazio">Não consegui carregar a agenda: ${err.message}</p>`;
     return;
   }
-  renderizarCalendarioAgenda();
+  renderizarAgenda();
+}
+
+function compromissosDoDia(iso) {
+  return agendaCompromissosCache
+    .filter((c) => c.data === iso)
+    .sort((a, b) => (a.hora || '99').localeCompare(b.hora || '99'));
+}
+
+function tituloAgenda() {
+  if (agendaVisao === 'dia') {
+    const d = agendaReferencia;
+    return `${NOMES_DIAS_LONGOS[d.getDay()]}, ${d.getDate()} de ${NOMES_MESES[d.getMonth()].toLowerCase()} de ${d.getFullYear()}`;
+  }
+  if (agendaVisao === 'semana') {
+    const ini = inicioDaSemana(agendaReferencia);
+    const fim = somarDias(ini, 6);
+    const mesIni = NOMES_MESES[ini.getMonth()].toLowerCase();
+    const mesFim = NOMES_MESES[fim.getMonth()].toLowerCase();
+    if (ini.getMonth() === fim.getMonth()) {
+      return `${ini.getDate()} – ${fim.getDate()} de ${mesIni} de ${fim.getFullYear()}`;
+    }
+    return `${ini.getDate()} de ${mesIni} – ${fim.getDate()} de ${mesFim} de ${fim.getFullYear()}`;
+  }
+  return `${NOMES_MESES[agendaReferencia.getMonth()]} ${agendaReferencia.getFullYear()}`;
+}
+
+function renderizarAgenda() {
+  document.getElementById('agenda-titulo').textContent = tituloAgenda();
+  document.querySelectorAll('#agenda-visoes button').forEach((btn) => {
+    btn.classList.toggle('ativa', btn.dataset.visao === agendaVisao);
+  });
+
+  if (timerLinhaAgora) { clearInterval(timerLinhaAgora); timerLinhaAgora = null; }
+
+  if (agendaVisao === 'mes') renderizarVisaoMes();
+  else renderizarVisaoGrade();
+
   renderizarDiaAgenda(agendaDiaSelecionado);
 }
 
-function renderizarCalendarioAgenda() {
-  const ano = agendaMesAtual.getFullYear();
-  const mes = agendaMesAtual.getMonth();
-  document.getElementById('agenda-mes-titulo').textContent = `${NOMES_MESES[mes]} ${ano}`;
+// Distribui compromissos que se sobrepõem em colunas lado a lado, do mesmo
+// jeito que o Google Calendar faz: agrupa os que se cruzam no tempo e divide a
+// largura da coluna do dia entre eles.
+function calcularLayoutColunas(itens) {
+  const eventos = itens
+    .map((c) => ({ compromisso: c, faixa: faixaCompromisso(c) }))
+    .filter((e) => e.faixa)
+    .sort((a, b) => a.faixa.inicio - b.faixa.inicio || a.faixa.fim - b.faixa.fim);
 
-  const primeiroDiaSemana = new Date(ano, mes, 1).getDay();
-  const totalDias = new Date(ano, mes + 1, 0).getDate();
-  const porDia = {};
-  agendaCompromissosCache.forEach((c) => { (porDia[c.data] ??= []).push(c); });
+  const resultado = [];
+  let grupo = [];
+  let fimDoGrupo = -1;
+
+  const fecharGrupo = () => {
+    if (!grupo.length) return;
+    const fimPorColuna = [];
+    grupo.forEach((ev) => {
+      let coluna = fimPorColuna.findIndex((fim) => fim <= ev.faixa.inicio);
+      if (coluna === -1) {
+        fimPorColuna.push(ev.faixa.fim);
+        coluna = fimPorColuna.length - 1;
+      } else {
+        fimPorColuna[coluna] = ev.faixa.fim;
+      }
+      ev.coluna = coluna;
+    });
+    grupo.forEach((ev) => { ev.totalColunas = fimPorColuna.length; resultado.push(ev); });
+    grupo = [];
+    fimDoGrupo = -1;
+  };
+
+  eventos.forEach((ev) => {
+    if (grupo.length && ev.faixa.inicio >= fimDoGrupo) fecharGrupo();
+    grupo.push(ev);
+    fimDoGrupo = Math.max(fimDoGrupo, ev.faixa.fim);
+  });
+  fecharGrupo();
+  return resultado;
+}
+
+function rotuloCompromisso(c) {
+  return c.titulo || c.clientes?.nome || ROTULOS_TIPO_COMPROMISSO[c.tipo] || 'Compromisso';
+}
+
+function blocoEventoHtml(ev, compacto) {
+  const c = ev.compromisso;
+  const status = statusConfirmacaoCompromisso(c);
+  const altura = Math.max(20, ((ev.faixa.fim - ev.faixa.inicio) / 60) * PIXELS_POR_HORA - 2);
+  const topo = (ev.faixa.inicio / 60) * PIXELS_POR_HORA;
+  const largura = 100 / ev.totalColunas;
+  const esquerda = ev.coluna * largura;
+  const sub = c.clientes?.nome && c.titulo ? c.clientes.nome : (c.localizacao || c.motivo || '');
+
+  return `
+    <button type="button" class="cal-evento st-${status}" data-evento="${c.id}"
+      style="top:${topo}px; height:${altura}px; left:calc(${esquerda}% + 1px); width:calc(${largura}% - 3px);"
+      title="${escaparAtributo(`${horaLegivel(c.hora)}–${horaLegivel(c.hora_fim) || horaDeMinutos(ev.faixa.fim)} · ${rotuloCompromisso(c)} · ${ROTULOS_STATUS_CONFIRMACAO[status]}`)}">
+      ${altura >= 34 ? `<div class="cal-evento-hora">${horaLegivel(c.hora)}</div>` : ''}
+      <div class="cal-evento-titulo">${altura < 34 ? `${horaLegivel(c.hora)} ` : ''}${rotuloCompromisso(c)}</div>
+      ${altura >= 56 && sub && !compacto ? `<div class="cal-evento-sub">${sub}</div>` : ''}
+    </button>
+  `;
+}
+
+function chipTodoDiaHtml(c) {
+  const status = statusConfirmacaoCompromisso(c);
+  return `<button type="button" class="cal-chip st-${status}" data-evento="${c.id}">${rotuloCompromisso(c)}</button>`;
+}
+
+function renderizarVisaoGrade() {
+  const dias = agendaVisao === 'dia'
+    ? [new Date(agendaReferencia)]
+    : Array.from({ length: 7 }, (_, i) => somarDias(inicioDaSemana(agendaReferencia), i));
+
   const hojeIso = dataISOHoje();
+  const colunas = `44px repeat(${dias.length}, minmax(0, 1fr))`;
 
-  let celulas = '';
-  for (let i = 0; i < primeiroDiaSemana; i++) celulas += `<div class="agenda-dia agenda-dia-vazio"></div>`;
-  for (let dia = 1; dia <= totalDias; dia++) {
-    const iso = dataISO(ano, mes, dia);
-    const itens = porDia[iso] || [];
-    celulas += `
-      <button type="button" class="agenda-dia ${iso === hojeIso ? 'agenda-dia-hoje' : ''} ${iso === agendaDiaSelecionado ? 'agenda-dia-selecionado' : ''}" data-dia="${iso}">
-        <span>${dia}</span>
-        ${itens.length ? `<span class="agenda-dia-pontos">${itens.slice(0, 4).map((c) => `<span class="agenda-ponto ponto-${statusConfirmacaoCompromisso(c)}"></span>`).join('')}</span>` : ''}
+  const cabecalho = dias.map((d) => {
+    const iso = dataISOde(d);
+    const fds = d.getDay() === 0 || d.getDay() === 6;
+    return `
+      <button type="button" class="cal-dia-cab ${iso === hojeIso ? 'hoje' : ''} ${iso === agendaDiaSelecionado ? 'sel' : ''} ${fds ? 'fds' : ''}" data-dia="${iso}">
+        <span>${NOMES_DIAS_CURTOS[d.getDay()]}</span>
+        <span class="cal-num">${d.getDate()}</span>
       </button>
     `;
-  }
-  const grade = document.getElementById('agenda-grade');
-  grade.innerHTML = celulas;
-  grade.querySelectorAll('.agenda-dia[data-dia]').forEach((btn) => {
+  }).join('');
+
+  const todoDia = dias.map((d) => {
+    const iso = dataISOde(d);
+    const semHora = compromissosDoDia(iso).filter((c) => !c.hora);
+    return `<div class="cal-todo-dia-col">${semHora.map(chipTodoDiaHtml).join('')}</div>`;
+  }).join('');
+
+  const gutter = Array.from({ length: 24 }, (_, h) =>
+    `<div class="cal-hora-marca">${h ? `<span>${pad2(h)}:00</span>` : ''}</div>`
+  ).join('');
+
+  const colunasDias = dias.map((d) => {
+    const iso = dataISOde(d);
+    const fds = d.getDay() === 0 || d.getDay() === 6;
+    const slots = Array.from({ length: 24 }, (_, h) => `<div class="cal-slot" data-novo="${iso}" data-hora="${h}"></div>`).join('');
+    const eventos = calcularLayoutColunas(compromissosDoDia(iso).filter((c) => c.hora))
+      .map((ev) => blocoEventoHtml(ev, dias.length > 1))
+      .join('');
+    const linhaAgora = iso === hojeIso ? `<div class="cal-agora" data-linha-agora></div>` : '';
+    return `<div class="cal-coluna ${fds ? 'fds' : ''}">${slots}${eventos}${linhaAgora}</div>`;
+  }).join('');
+
+  const larguraMinima = dias.length > 1 ? 'min-width:520px;' : '';
+
+  document.getElementById('agenda-visao').innerHTML = `
+    <div class="cal-scroll-x">
+      <div class="cal-grade" style="${larguraMinima}">
+        <div class="cal-cabecalho" style="grid-template-columns:${colunas}">
+          <div class="cal-canto"></div>
+          ${cabecalho}
+        </div>
+        <div class="cal-todo-dia" style="grid-template-columns:${colunas}">
+          <div class="cal-todo-dia-label">Dia todo</div>
+          ${todoDia}
+        </div>
+        <div class="cal-corpo" id="cal-corpo">
+          <div class="cal-corpo-grid" style="grid-template-columns:${colunas}">
+            <div class="cal-gutter">${gutter}</div>
+            ${colunasDias}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  ligarEventosGrade();
+  atualizarLinhaAgora();
+  timerLinhaAgora = setInterval(atualizarLinhaAgora, 60000);
+  posicionarScrollGrade();
+}
+
+// Abre a grade já na faixa útil do dia: perto do horário atual quando hoje está
+// à vista, senão nas 7h. Precisa rodar também quando a aba fica visível - com o
+// painel escondido o navegador ignora o scrollTop.
+function posicionarScrollGrade() {
+  const corpo = document.getElementById('cal-corpo');
+  if (!corpo || !corpo.offsetHeight) return;
+  const { inicio, fim } = intervaloVisivel();
+  const hojeIso = dataISOHoje();
+
+  let hora = hojeIso >= inicio && hojeIso <= fim
+    ? Math.max(0, new Date().getHours() - 1)
+    : HORA_ROLAGEM_INICIAL;
+
+  // Se tem compromisso mais cedo que isso no período, começa nele - o primeiro
+  // compromisso do dia é o que interessa ver ao abrir a agenda.
+  const inicios = agendaCompromissosCache
+    .filter((c) => c.hora && c.data >= inicio && c.data <= fim)
+    .map((c) => minutosDaHora(c.hora) / 60);
+  if (inicios.length) hora = Math.min(hora, Math.max(0, Math.floor(Math.min(...inicios)) - 1));
+
+  corpo.scrollTop = hora * PIXELS_POR_HORA;
+}
+
+function atualizarLinhaAgora() {
+  const agora = new Date();
+  const topo = ((agora.getHours() * 60 + agora.getMinutes()) / 60) * PIXELS_POR_HORA;
+  document.querySelectorAll('[data-linha-agora]').forEach((el) => { el.style.top = `${topo}px`; });
+}
+
+function ligarEventosGrade() {
+  const raiz = document.getElementById('agenda-visao');
+
+  raiz.querySelectorAll('.cal-dia-cab[data-dia]').forEach((btn) => {
     btn.addEventListener('click', () => {
       agendaDiaSelecionado = btn.dataset.dia;
-      renderizarCalendarioAgenda();
-      renderizarDiaAgenda(agendaDiaSelecionado);
+      if (agendaVisao === 'semana') {
+        agendaReferencia = dataDeISO(btn.dataset.dia);
+        agendaVisao = 'dia';
+        carregarAgenda();
+      } else {
+        renderizarAgenda();
+      }
+    });
+  });
+
+  raiz.querySelectorAll('.cal-slot[data-novo]').forEach((slot) => {
+    slot.addEventListener('click', () => {
+      const hora = Number(slot.dataset.hora);
+      agendaDiaSelecionado = slot.dataset.novo;
+      abrirModalCompromisso(null, { data: slot.dataset.novo, hora: `${pad2(hora)}:00`, hora_fim: `${pad2((hora + 1) % 24)}:00` });
+    });
+  });
+
+  raiz.querySelectorAll('[data-evento]').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const compromisso = agendaCompromissosCache.find((c) => c.id === btn.dataset.evento);
+      if (compromisso) abrirModalCompromisso(compromisso);
+    });
+  });
+}
+
+function renderizarVisaoMes() {
+  const ano = agendaReferencia.getFullYear();
+  const mes = agendaReferencia.getMonth();
+  const inicioGrade = inicioDaSemana(new Date(ano, mes, 1));
+  const fimGrade = somarDias(inicioDaSemana(new Date(ano, mes + 1, 0)), 6);
+  const totalCelulas = Math.round((fimGrade - inicioGrade) / 86400000) + 1;
+  const hojeIso = dataISOHoje();
+
+  const celulas = Array.from({ length: totalCelulas }, (_, i) => {
+    const d = somarDias(inicioGrade, i);
+    const iso = dataISOde(d);
+    const itens = compromissosDoDia(iso);
+    const visiveis = itens.slice(0, 3);
+    const restantes = itens.length - visiveis.length;
+    return `
+      <button type="button" class="cal-mes-dia ${d.getMonth() !== mes ? 'fora' : ''} ${iso === hojeIso ? 'hoje' : ''} ${iso === agendaDiaSelecionado ? 'sel' : ''}" data-dia="${iso}">
+        <span class="cal-mes-num">${d.getDate()}</span>
+        ${visiveis.map((c) => `
+          <span class="cal-chip st-${statusConfirmacaoCompromisso(c)}">${c.hora ? `<span class="cal-chip-hora">${horaLegivel(c.hora)} </span>` : ''}${rotuloCompromisso(c)}</span>
+        `).join('')}
+        ${restantes > 0 ? `<span class="cal-mes-mais">+${restantes} mais</span>` : ''}
+      </button>
+    `;
+  }).join('');
+
+  document.getElementById('agenda-visao').innerHTML = `
+    <div class="cal-mes-cabecalho">${NOMES_DIAS_CURTOS.map((d) => `<div>${d}</div>`).join('')}</div>
+    <div class="cal-mes-grade">${celulas}</div>
+  `;
+
+  document.querySelectorAll('#agenda-visao .cal-mes-dia[data-dia]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      agendaDiaSelecionado = btn.dataset.dia;
+      renderizarAgenda();
     });
   });
 }
 
 function renderizarDiaAgenda(iso) {
-  const itens = agendaCompromissosCache
-    .filter((c) => c.data === iso)
-    .sort((a, b) => (a.hora || '').localeCompare(b.hora || ''));
-  const [ano, mes, dia] = iso.split('-').map(Number);
-  document.getElementById('agenda-dia-titulo').textContent = `Compromissos de ${pad2(dia)}/${pad2(mes)}/${ano}`;
+  const itens = compromissosDoDia(iso);
+  const d = dataDeISO(iso);
+  document.getElementById('agenda-dia-titulo').textContent =
+    `${NOMES_DIAS_LONGOS[d.getDay()]}, ${d.getDate()}/${pad2(d.getMonth() + 1)}`;
 
   const listaEl = document.getElementById('agenda-dia-lista');
   listaEl.innerHTML = itens.length
     ? itens.map((c) => `
         <div class="compromisso-linha confirmacao-${statusConfirmacaoCompromisso(c)}">
-          <div class="compromisso-hora">${c.hora ? c.hora.slice(0, 5) : '—'}</div>
+          <div class="compromisso-hora">${c.hora ? horaLegivel(c.hora) : 'Dia<br>todo'}${c.hora && c.hora_fim ? `<div style="font-weight:600; font-size:0.72rem; color:var(--muted)">${horaLegivel(c.hora_fim)}</div>` : ''}</div>
           <div class="compromisso-corpo">
             <div class="compromisso-titulo">
               <span class="badge tipo-${c.tipo}">${ROTULOS_TIPO_COMPROMISSO[c.tipo] || c.tipo}</span>
@@ -1678,7 +2132,7 @@ function renderizarDiaAgenda(iso) {
       if (!confirm('Excluir esse compromisso?')) return;
       try {
         await api(`/agenda/${btn.dataset.excluirCompromisso}`, { method: 'DELETE' });
-        await carregarAgendaMes();
+        await carregarAgenda();
       } catch (err) {
         alert(err.message);
       }
@@ -1731,7 +2185,7 @@ function preencherSelectFunilCompromisso(valorSelecionado) {
     opcoes.map((o) => `<option value="${escaparAtributo(o)}" ${o === valorSelecionado ? 'selected' : ''}>${o}</option>`).join('');
 }
 
-function abrirModalCompromisso(compromisso) {
+function abrirModalCompromisso(compromisso, preset = {}) {
   compromissoEditandoId = compromisso?.id || null;
   document.getElementById('modal-compromisso-titulo').textContent = compromisso ? 'Editar compromisso' : 'Novo compromisso';
 
@@ -1739,8 +2193,9 @@ function abrirModalCompromisso(compromisso) {
   form.reset();
   preencherSelectClienteCompromisso(compromisso?.cliente_id || '');
   preencherSelectFunilCompromisso(compromisso?.etapa_funil || '');
-  form.elements.data.value = compromisso?.data || agendaDiaSelecionado;
-  form.elements.hora.value = compromisso?.hora ? compromisso.hora.slice(0, 5) : '';
+  form.elements.data.value = compromisso?.data || preset.data || agendaDiaSelecionado;
+  form.elements.hora.value = horaLegivel(compromisso?.hora) || preset.hora || '';
+  form.elements.hora_fim.value = horaLegivel(compromisso?.hora_fim) || preset.hora_fim || '';
   form.elements.tipo.value = compromisso?.tipo || 'visita';
   form.elements.status_confirmacao.value = compromisso?.status_confirmacao || 'rascunho';
   form.elements.titulo.value = compromisso?.titulo || '';
@@ -1777,25 +2232,49 @@ document.getElementById('form-compromisso').addEventListener('submit', async (e)
     }
     document.getElementById('modal-compromisso').hidden = true;
     agendaDiaSelecionado = body.data;
-    await carregarAgendaMes();
+    if (!dentroDoIntervaloVisivel(body.data)) agendaReferencia = dataDeISO(body.data);
+    await carregarAgenda();
   } catch (err) {
     alert(err.message);
   }
 });
 
-document.getElementById('agenda-mes-anterior').addEventListener('click', () => {
-  agendaMesAtual.setMonth(agendaMesAtual.getMonth() - 1);
-  carregarAgendaMes();
+// Preenche a hora de fim sozinho (1h depois) quando só o início foi informado.
+document.getElementById('compromisso-hora-inicio').addEventListener('change', (e) => {
+  const form = document.getElementById('form-compromisso');
+  const inicio = minutosDaHora(e.target.value);
+  if (inicio == null) return;
+  const fim = minutosDaHora(form.elements.hora_fim.value);
+  if (fim == null || fim <= inicio) form.elements.hora_fim.value = horaDeMinutos(inicio + DURACAO_PADRAO_MIN);
 });
-document.getElementById('agenda-mes-proximo').addEventListener('click', () => {
-  agendaMesAtual.setMonth(agendaMesAtual.getMonth() + 1);
-  carregarAgendaMes();
-});
+
+function dentroDoIntervaloVisivel(iso) {
+  const { inicio, fim } = intervaloVisivel();
+  return iso >= inicio && iso <= fim;
+}
+
+function navegarAgenda(passo) {
+  if (agendaVisao === 'dia') agendaReferencia = somarDias(agendaReferencia, passo);
+  else if (agendaVisao === 'semana') agendaReferencia = somarDias(agendaReferencia, passo * 7);
+  else agendaReferencia = new Date(agendaReferencia.getFullYear(), agendaReferencia.getMonth() + passo, 1);
+  carregarAgenda();
+}
+
+document.getElementById('agenda-anterior').addEventListener('click', () => navegarAgenda(-1));
+document.getElementById('agenda-proximo').addEventListener('click', () => navegarAgenda(1));
 document.getElementById('btn-hoje-agenda').addEventListener('click', () => {
-  agendaMesAtual = new Date();
-  agendaMesAtual.setDate(1);
+  agendaReferencia = new Date();
   agendaDiaSelecionado = dataISOHoje();
-  carregarAgendaMes();
+  carregarAgenda();
+});
+
+document.querySelectorAll('#agenda-visoes button').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    agendaVisao = btn.dataset.visao;
+    // ao trocar de visão, ancora no dia que já estava selecionado
+    agendaReferencia = dataDeISO(agendaDiaSelecionado);
+    carregarAgenda();
+  });
 });
 
 // --- Configurações visuais (ícone, foto de perfil, cargo) ---
@@ -2175,6 +2654,7 @@ document.querySelectorAll('nav.abas button').forEach((btn) => {
       }).catch(() => {});
     }
     if (btn.dataset.aba === 'inicio') { window.scrollTo(0, 0); ajustarAlturaInicio(); }
+    if (btn.dataset.aba === 'agenda') posicionarScrollGrade();
   });
 });
 
@@ -3164,7 +3644,7 @@ document.getElementById('btn-editar-meta-mini').addEventListener('click', async 
   carregarConfig();
   await Promise.all([carregarEmpresas(), carregarProdutos(), carregarCamposClientes()]);
   await Promise.all([carregarContatos(), carregarClientes()]);
-  await Promise.all([carregarResumo(), carregarVisitas(), carregarNegociacoes(), carregarAtividades(), carregarRdv(), carregarAgendaMes()]);
+  await Promise.all([carregarResumo(), carregarVisitas(), carregarNegociacoes(), carregarAtividades(), carregarRdv(), carregarAgenda()]);
   ajustarAlturaInicio();
 })();
 </script>
