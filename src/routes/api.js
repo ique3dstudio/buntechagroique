@@ -2,6 +2,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import { supabase } from '../services/supabase.js';
 import { geocodificarEndereco } from '../services/geocode.js';
+import { gerarOrcamentoPdf, nomeArquivoOrcamento } from '../services/orcamento-pdf.js';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024 } });
@@ -479,6 +480,44 @@ router.get('/clientes/:id/historico-vendas', async (req, res) => {
     .order('produto', { ascending: true });
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);
+});
+
+// --- Orçamento em PDF ---
+
+router.post('/orcamento/pdf', (req, res) => {
+  const corpo = req.body || {};
+  const itens = Array.isArray(corpo.itens) ? corpo.itens.slice(0, 60) : [];
+  if (!itens.length) return res.status(400).json({ error: 'Adicione pelo menos um item ao orçamento.' });
+
+  const dados = {
+    numero: corpo.numero || '',
+    emitidaEm: corpo.emitidaEm || new Date().toLocaleDateString('pt-BR'),
+    emitente: corpo.emitente || {},
+    vendedor: corpo.vendedor || {},
+    cliente: corpo.cliente || {},
+    itens: itens.map((i) => ({
+      produto: i.produto,
+      quantidade: Number(i.quantidade) || 0,
+      preco: Number(i.preco) || 0,
+      total: Number(i.total) || 0,
+    })),
+    subtotal: Number(corpo.subtotal) || 0,
+    frete: corpo.frete === 'FOB' ? 'FOB' : 'CIF',
+    freteValor: Number(corpo.freteValor) || 0,
+    total: Number(corpo.total) || 0,
+    pagamento: corpo.pagamento || '',
+    entrega: corpo.entrega || '',
+    validadeTexto: corpo.validadeTexto || '',
+    observacoes: corpo.observacoes || '',
+  };
+
+  try {
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${nomeArquivoOrcamento(dados)}"`);
+    gerarOrcamentoPdf(dados).pipe(res);
+  } catch (err) {
+    res.status(500).json({ error: `Não consegui gerar o PDF: ${err.message}` });
+  }
 });
 
 // --- Agenda (compromissos/visitas, com cliente vinculado pra montar rota no mapa) ---

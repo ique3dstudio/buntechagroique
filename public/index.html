@@ -2908,13 +2908,64 @@ document.getElementById('form-orcamento').addEventListener('input', (e) => {
 });
 document.getElementById('form-orcamento').addEventListener('submit', (e) => e.preventDefault());
 
-document.getElementById('btn-baixar-orcamento').addEventListener('click', () => {
+document.getElementById('btn-baixar-orcamento').addEventListener('click', async () => {
   const d = dadosOrcamento();
   if (!d.cliente.nome) { alert('Preencha o cliente antes de gerar o PDF.'); return; }
   if (!d.itens.length) { alert('Adicione pelo menos um item ao orçamento.'); return; }
-  atualizarPreviewOrcamento();
-  registrarNumeroUsado();
-  window.print();
+
+  const botao = document.getElementById('btn-baixar-orcamento');
+  const rotuloOriginal = botao.textContent;
+  botao.disabled = true;
+  botao.textContent = 'Gerando…';
+
+  const corpo = {
+    ...d,
+    emitidaEm: new Date().toLocaleDateString('pt-BR'),
+    validadeTexto: d.validadeDias ? `${d.validadeDias} dias (até ${d.validadeData.toLocaleDateString('pt-BR')})` : '',
+    emitente: emitenteOrcamento(),
+    vendedor: {
+      nome: d.vendedorNome,
+      cargo: cargoAtual,
+      registro: vendedorAtual.numero_vendedor
+        ? `Nº ${vendedorAtual.numero_vendedor}${vendedorAtual.matricula ? ` · Matrícula ${vendedorAtual.matricula}` : ''}`
+        : '',
+      celular: vendedorAtual.celular,
+      email: vendedorAtual.email,
+      regiao: regiaoAtual,
+    },
+  };
+
+  try {
+    const resposta = await fetch('/api/orcamento/pdf', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(corpo),
+    });
+    if (!resposta.ok) {
+      const erro = await resposta.json().catch(() => ({}));
+      throw new Error(erro.error || 'Não consegui gerar o PDF.');
+    }
+
+    const arquivo = await resposta.blob();
+    const nome = (resposta.headers.get('Content-Disposition') || '').match(/filename="(.+?)"/)?.[1] || 'orcamento.pdf';
+    const url = URL.createObjectURL(arquivo);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = nome;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+
+    registrarNumeroUsado();
+    document.getElementById('orcamento-numero').value = proximoNumeroOrcamento().numero;
+    atualizarPreviewOrcamento();
+  } catch (err) {
+    alert(err.message);
+  } finally {
+    botao.disabled = false;
+    botao.textContent = rotuloOriginal;
+  }
 });
 
 function iniciarOrcamento() {
