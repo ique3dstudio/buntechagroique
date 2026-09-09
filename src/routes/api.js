@@ -3,6 +3,7 @@ import multer from 'multer';
 import { supabase } from '../services/supabase.js';
 import { geocodificarEndereco } from '../services/geocode.js';
 import { gerarOrcamentoPdf, nomeArquivoOrcamento } from '../services/orcamento-pdf.js';
+import { gerarRelatorioVisitaPdf, nomeArquivoRelatorio } from '../services/visita-pdf.js';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024 } });
@@ -852,29 +853,141 @@ router.patch('/atividades/:id/concluir', async (req, res) => {
 
 // --- Visitas ---
 
+const SELECT_VISITA = '*, contatos(nome), clientes(nome, endereco, dados)';
+const CAMPOS_VISITA = ['cliente_id', 'contato_id', 'data', 'km', 'observacoes', 'objetivo', 'participantes', 'relato', 'proximos_passos'];
+
+// A visita passou a apontar pra Carteira (clientes). Se a migração 031 ainda
+// não rodou, avisa direito em vez de estourar um erro cru de coluna.
+function erroDeMigracaoVisita(error) {
+  return !!error && /cliente_id|relato|objetivo|participantes|proximos_passos|anexo_/i.test(error.message || '');
+}
+const AVISO_MIGRACAO_VISITA =
+  'A migração 031 das visitas ainda não rodou no banco (colunas cliente_id/relato em "visitas"). Rode o SQL no Supabase e tente de novo.';
+
 router.get('/visitas', async (req, res) => {
   const { data, error } = await supabase
     .from('visitas')
-    .select('*, contatos(nome)')
+    .select(SELECT_VISITA)
     .order('data', { ascending: false })
-    .limit(20);
+    .limit(30);
+
+  if (erroDeMigracaoVisita(error)) {
+    const { data: simples, error: erroSimples } = await supabase
+      .from('visitas')
+      .select('*, contatos(nome)')
+      .order('data', { ascending: false })
+      .limit(30);
+    if (erroSimples) return res.status(500).json({ error: erroSimples.message });
+    return res.json(simples);
+  }
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);
 });
 
 router.post('/visitas', async (req, res) => {
-  const { contato_id, data: dataVisita, km, observacoes } = req.body;
-  if (!contato_id || !dataVisita) {
-    return res.status(400).json({ error: 'contato_id e data são obrigatórios' });
+  const { cliente_id, contato_id, data: dataVisita } = req.body;
+  if (!dataVisita) return res.status(400).json({ error: 'data é obrigatória' });
+  if (!cliente_id && !contato_id) return res.status(400).json({ error: 'escolha o cliente da visita' });
+
+  const registro = {};
+  for (const campo of CAMPOS_VISITA) {
+    if (req.body[campo] !== undefined) registro[campo] = req.body[campo] || null;
+  }
+  registro.data = dataVisita;
+
+  const { data, error } = await supabase.from('visitas').insert(registro).select(SELECT_VISITA).single();
+  if (erroDeMigracaoVisita(error)) return res.status(400).json({ error: AVISO_MIGRACAO_VISITA });
+  if (error) return res.status(500).json({ error: error.message });
+  res.status(201).json(data);
+});
+
+router.patch('/visitas/:id', async (req, res) => {
+  const atualizacao = {};
+  for (const campo of CAMPOS_VISITA) {
+    if (req.body[campo] !== undefined) atualizacao[campo] = req.body[campo] || null;
   }
 
   const { data, error } = await supabase
     .from('visitas')
-    .insert({ contato_id, data: dataVisita, km, observacoes })
-    .select('*, contatos(nome)')
+    .update(atualizacao)
+    .eq('id', req.params.id)
+    .select(SELECT_VISITA)
     .single();
+  if (erroDeMigracaoVisita(error)) return res.status(400).json({ error: AVISO_MIGRACAO_VISITA });
   if (error) return res.status(500).json({ error: error.message });
-  res.status(201).json(data);
+  res.json(data);
+});
+
+router.delete('/visitas/:id', async (req, res) => {
+  const { error } = await supabase.from('visitas').delete().eq('id', req.params.id);
+  if (error) return res.status(500).json({ error: error.message });
+  res.status(204).end();
+});
+
+// Anexo da visita (PDF, Word, foto do relatório assinado, etc.)
+router.post('/visitas/:id/anexo', upload.single('arquivo'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'arquivo é obrigatório' });
+
+  const extensao = (req.file.originalname.split('.').pop() || 'pdf').toLowerCase();
+  const caminho = `visita-${req.params.id}-${Date.now()}.${extensao}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from('app-assets')
+    .upload(caminho, req.file.buffer, { contentType: req.file.mimetype, upsert: true });
+  if (uploadError) return res.status(500).json({ error: uploadError.message });
+
+  const { data: urlData } = supabase.storage.from('app-assets').getPublicUrl(caminho);
+
+  const { data, error } = await supabase
+    .from('visitas')
+    .update({ anexo_url: urlData.publicUrl, anexo_nome: req.file.originalname })
+    .eq('id', req.params.id)
+    .select(SELECT_VISITA)
+    .single();
+  if (erroDeMigracaoVisita(error)) return res.status(400).json({ error: AVISO_MIGRACAO_VISITA });
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
+// Relatório de visita em PDF, montado com o que foi preenchido no app.
+router.post('/visitas/:id/relatorio-pdf', async (req, res) => {
+  const { data: visita, error } = await supabase
+    .from('visitas')
+    .select(SELECT_VISITA)
+    .eq('id', req.params.id)
+    .single();
+  if (erroDeMigracaoVisita(error)) return res.status(400).json({ error: AVISO_MIGRACAO_VISITA });
+  if (error) return res.status(500).json({ error: error.message });
+
+  const dadosCliente = visita.clientes?.dados || {};
+  const dados = {
+    emitente: req.body?.emitente || {},
+    vendedor: req.body?.vendedor || {},
+    cliente: {
+      nome: visita.clientes?.nome || visita.contatos?.nome || 'Cliente',
+      cnpj: dadosCliente.cnpj,
+      endereco: visita.clientes?.endereco,
+      cidade: dadosCliente.cidade,
+      contato: [dadosCliente.responsavel, dadosCliente.contato].filter(Boolean).join(' · '),
+    },
+    dataVisita: visita.data ? new Date(`${visita.data}T00:00:00`).toLocaleDateString('pt-BR') : '',
+    km: visita.km,
+    participantes: visita.participantes,
+    objetivo: visita.objetivo,
+    relato: visita.relato,
+    proximosPassos: visita.proximos_passos,
+    observacoes: visita.observacoes,
+    anexoNome: visita.anexo_nome,
+    anexoUrl: visita.anexo_url,
+  };
+
+  try {
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${nomeArquivoRelatorio(dados)}"`);
+    gerarRelatorioVisitaPdf(dados).pipe(res);
+  } catch (err) {
+    res.status(500).json({ error: `Não consegui gerar o relatório: ${err.message}` });
+  }
 });
 
 // --- Metas e resumo do mês ---
@@ -923,13 +1036,20 @@ router.get('/resumo', async (req, res) => {
   if (negociacoesError) return res.status(500).json({ error: negociacoesError.message });
   const faturamentoMes = negociacoesGanhas.reduce((soma, n) => soma + Number(n.valor || 0), 0);
 
-  const { data: visitas, error: visitasError } = await supabase
+  const consultaVisitas = (colunas) => supabase
     .from('visitas')
-    .select('contato_id, km')
+    .select(colunas)
     .gte('data', mes)
     .lt('data', proximoMes);
+
+  let { data: visitas, error: visitasError } = await consultaVisitas('contato_id, cliente_id, km');
+  // Antes da migração 031 a coluna cliente_id não existe: não derruba o
+  // dashboard inteiro por causa disso.
+  if (erroDeMigracaoVisita(visitasError)) ({ data: visitas, error: visitasError } = await consultaVisitas('contato_id, km'));
   if (visitasError) return res.status(500).json({ error: visitasError.message });
-  const clientesVisitadosMes = new Set(visitas.map((v) => v.contato_id)).size;
+  // Conta clientes distintos visitados, seja pela Carteira (cliente_id) ou
+  // pelas visitas antigas ligadas a contatos do CRM.
+  const clientesVisitadosMes = new Set(visitas.map((v) => v.cliente_id || v.contato_id).filter(Boolean)).size;
   const kmRodadosMes = visitas.reduce((soma, v) => soma + Number(v.km || 0), 0);
 
   const statusContagens = {};

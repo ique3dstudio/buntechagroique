@@ -1558,19 +1558,24 @@
         <h2><span class="icone-secao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.1 7-11a7 7 0 0 0-14 0c0 4.9 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg></span>Registrar visita</h2>
         <form id="form-visita">
           <div class="form-grid">
-            <div class="field"><label>Cliente</label><select name="contato_id" id="select-contato-visita" required></select></div>
+            <div class="field"><label>Cliente</label><select name="cliente_id" id="select-cliente-visita" required></select></div>
             <div class="field"><label>Data</label><input name="data" type="date" required /></div>
             <div class="field"><label>Km rodados</label><input name="km" placeholder="0" type="number" step="0.1" min="0" /></div>
-            <div class="field"><label>Observações</label><input name="observacoes" placeholder="Opcional" /></div>
+            <div class="field"><label>Quem participou</label><input name="participantes" placeholder="Ex: Paulinho (comprador)" /></div>
+            <div class="field" style="grid-column: 1 / -1"><label>Objetivo da visita</label><input name="objetivo" placeholder="Ex: Apresentar o Seedgel Black" /></div>
+            <div class="field" style="grid-column: 1 / -1"><label>Como foi a visita</label><textarea name="relato" placeholder="O que foi tratado, o que o cliente falou, situação encontrada…"></textarea></div>
+            <div class="field" style="grid-column: 1 / -1"><label>Próximos passos</label><textarea name="proximos_passos" placeholder="O que ficou combinado, pendências, quando retornar…"></textarea></div>
+            <div class="field" style="grid-column: 1 / -1"><label>Observações</label><input name="observacoes" placeholder="Opcional" /></div>
             <button type="submit">Registrar visita</button>
           </div>
         </form>
         <div class="tabela-wrap">
           <table>
-            <thead><tr><th>Cliente</th><th>Data</th><th>Km</th><th>Observações</th></tr></thead>
+            <thead><tr><th>Cliente</th><th>Data</th><th>Km</th><th>Relato</th><th>Relatório</th></tr></thead>
             <tbody id="tabela-visitas"></tbody>
           </table>
         </div>
+        <input type="file" id="input-anexo-visita" accept=".pdf,.doc,.docx,image/*" hidden />
       </section>
     </div>
 
@@ -3646,20 +3651,110 @@ function renderizarMetaProgresso() {
   if (elKpiPace) elKpiPace.textContent = resumoCache?.pace_mensal != null ? Number(resumoCache.pace_mensal).toLocaleString('pt-BR', { maximumFractionDigits: 0 }) : '—';
 }
 
+let visitasCache = [];
+let visitaAnexoId = null;
+
+function preencherSelectClienteVisita() {
+  const select = document.getElementById('select-cliente-visita');
+  if (!select) return;
+  const escolhido = select.value;
+  select.innerHTML = '<option value="">Selecionar cliente…</option>' +
+    clientesCache.map((c) => `<option value="${c.id}">${escaparAtributo(c.nome)}</option>`).join('');
+  if (escolhido) select.value = escolhido;
+}
+
 async function carregarVisitas() {
-  const visitas = await api('/visitas');
+  visitasCache = await api('/visitas');
   const tbody = document.getElementById('tabela-visitas');
-  tbody.innerHTML = visitas.length
-    ? visitas.map((v) => `
+
+  tbody.innerHTML = visitasCache.length
+    ? visitasCache.map((v) => {
+        const resumo = [v.objetivo, v.relato, v.observacoes].filter(Boolean).join(' — ');
+        return `
         <tr>
-          <td>${v.contatos?.nome ?? '—'}</td>
+          <td>${v.clientes?.nome ?? v.contatos?.nome ?? '—'}</td>
           <td>${new Date(v.data + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
           <td>${v.km != null ? fmtKm(v.km) : '—'}</td>
-          <td>${v.observacoes ?? '—'}</td>
-        </tr>
-      `).join('')
-    : '<tr><td class="vazio" colspan="4">Nenhuma visita registrada ainda.</td></tr>';
+          <td class="celula-truncada" title="${escaparAtributo(resumo)}">${resumo || '—'}</td>
+          <td style="white-space:nowrap">
+            <button type="button" class="btn-lapis" data-relatorio-visita="${v.id}" title="Baixar relatório em PDF">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+            </button>
+            <button type="button" class="btn-lapis" data-anexo-visita="${v.id}" title="${v.anexo_nome ? `Trocar anexo (${escaparAtributo(v.anexo_nome)})` : 'Anexar arquivo'}">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05 12.25 20.24a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.5 3.5 0 0 1 4.95 4.95l-9.2 9.19a1.5 1.5 0 0 1-2.12-2.12l8.49-8.49"/></svg>
+            </button>
+            ${v.anexo_url ? `<a href="${escaparAtributo(v.anexo_url)}" target="_blank" rel="noopener" class="btn-lapis" style="display:inline-flex" title="Abrir anexo">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3h7v7"/><path d="M10 14 21 3"/><path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/></svg>
+            </a>` : ''}
+          </td>
+        </tr>`;
+      }).join('')
+    : '<tr><td class="vazio" colspan="5">Nenhuma visita registrada ainda.</td></tr>';
+
+  tbody.querySelectorAll('[data-relatorio-visita]').forEach((btn) => {
+    btn.addEventListener('click', () => baixarRelatorioVisita(btn.dataset.relatorioVisita));
+  });
+  tbody.querySelectorAll('[data-anexo-visita]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      visitaAnexoId = btn.dataset.anexoVisita;
+      document.getElementById('input-anexo-visita').click();
+    });
+  });
 }
+
+async function baixarRelatorioVisita(id) {
+  const corpo = {
+    emitente: emitenteOrcamento(),
+    vendedor: {
+      nome: localStorage.getItem('vendedorNomeOrcamento') || '',
+      cargo: cargoAtual,
+      celular: vendedorAtual.celular,
+    },
+  };
+  try {
+    const resposta = await fetch(`/api/visitas/${id}/relatorio-pdf`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(corpo),
+    });
+    if (!resposta.ok) {
+      const erro = await resposta.json().catch(() => ({}));
+      throw new Error(erro.error || 'Não consegui gerar o relatório.');
+    }
+    const arquivo = await resposta.blob();
+    const nome = (resposta.headers.get('Content-Disposition') || '').match(/filename="(.+?)"/)?.[1] || 'relatorio-visita.pdf';
+    const url = URL.createObjectURL(arquivo);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = nome;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+document.getElementById('input-anexo-visita').addEventListener('change', async (e) => {
+  const arquivo = e.target.files[0];
+  if (!arquivo || !visitaAnexoId) return;
+  const formData = new FormData();
+  formData.append('arquivo', arquivo);
+  try {
+    const res = await fetch(`/api/visitas/${visitaAnexoId}/anexo`, { method: 'POST', body: formData });
+    if (!res.ok) {
+      const erro = await res.json().catch(() => ({}));
+      throw new Error(erro.error || 'Não consegui anexar o arquivo.');
+    }
+    await carregarVisitas();
+  } catch (err) {
+    alert(err.message);
+  } finally {
+    e.target.value = '';
+    visitaAnexoId = null;
+  }
+});
 
 // --- Aba CRM ---
 
@@ -3703,7 +3798,6 @@ async function carregarContatos() {
   const opcoes = contatos.map((c) => `<option value="${c.id}">${c.nome}</option>`).join('');
   document.getElementById('select-contato-negociacao').innerHTML = opcoes;
   document.getElementById('select-contato-atividade').innerHTML = opcoes;
-  document.getElementById('select-contato-visita').innerHTML = opcoes;
 }
 
 async function carregarNegociacoes() {
@@ -3796,6 +3890,7 @@ let filtroFunilAtual = null;
 
 async function carregarClientes() {
   clientesCache = await api('/clientes');
+  preencherSelectClienteVisita();
   renderizarFiltroClientes();
   renderizarGradeClientes();
   renderizarFunilVendas();

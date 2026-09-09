@@ -1,77 +1,12 @@
 import PDFDocument from 'pdfkit';
-import path from 'node:path';
-import fs from 'node:fs';
+import {
+  AZUL, TINTA, MARGEM, LARGURA_CONTEUDO, DIREITA, RODAPE_Y,
+  moeda, numero, texto, rotulo, cabecalhoDocumento, blocoDocumento, rodapeDocumento, nomeArquivo,
+} from './pdf-comum.js';
 
 // Gera a proposta comercial em PDF no servidor, pra o app baixar o arquivo
 // direto (sem passar pela caixa de impressão do navegador). O desenho abaixo
 // espelha a pré-visualização em tela do app.
-
-const AZUL = '#0B6FB0';
-const CINZA_TEXTO = '#4b5b57';
-const CINZA_ROTULO = '#6c7f7a';
-const BORDA = '#dfe7e5';
-const TINTA = '#142420';
-
-const MARGEM = 40;
-const LARGURA_CONTEUDO = 595.28 - MARGEM * 2;
-const DIREITA = MARGEM + LARGURA_CONTEUDO;
-// Precisa sobrar espaço até a margem de baixo (841.89 - 40 = 801.89): se a
-// última linha do rodapé passar disso, o pdfkit cria uma página extra em
-// branco pra cada página do documento.
-const RODAPE_Y = 762;
-
-const LOGO = path.join(process.cwd(), 'public', 'logo.png');
-
-const moeda = (valor) =>
-  (Number(valor) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-
-const numero = (valor) =>
-  (Number(valor) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
-
-const texto = (valor, limite = 300) => String(valor ?? '').trim().slice(0, limite);
-
-function rotulo(doc, str, x, y, largura) {
-  doc.font('Helvetica-Bold').fontSize(7.5).fillColor(CINZA_ROTULO)
-    .text(String(str).toUpperCase(), x, y, { width: largura, characterSpacing: 0.4 });
-}
-
-function desenharCabecalho(doc, dados) {
-  if (fs.existsSync(LOGO)) doc.image(LOGO, MARGEM, MARGEM, { width: 100 });
-
-  const e = dados.emitente;
-  doc.font('Helvetica-Bold').fontSize(10).fillColor(TINTA)
-    .text(texto(e.nome), MARGEM + 115, MARGEM + 2, { width: 195 });
-  doc.font('Helvetica').fontSize(8).fillColor(CINZA_TEXTO)
-    .text([`CNPJ ${texto(e.cnpj)}`, texto(e.endereco), texto(e.telefone)].filter(Boolean).join('\n'),
-      MARGEM + 115, doc.y + 1, { width: 195, lineGap: 1 });
-
-  const xDireita = 360;
-  doc.font('Helvetica-Bold').fontSize(13).fillColor(AZUL)
-    .text('PROPOSTA COMERCIAL', xDireita, MARGEM + 2, { width: DIREITA - xDireita, align: 'right' });
-  doc.font('Helvetica-Bold').fontSize(11).fillColor(TINTA)
-    .text(texto(dados.numero, 40), xDireita, doc.y + 2, { width: DIREITA - xDireita, align: 'right' });
-  doc.font('Helvetica').fontSize(8.5).fillColor(CINZA_TEXTO)
-    .text(`Emitida em ${dados.emitidaEm}`, xDireita, doc.y + 1, { width: DIREITA - xDireita, align: 'right' });
-
-  const y = Math.max(doc.y + 8, MARGEM + 72);
-  doc.moveTo(MARGEM, y).lineTo(DIREITA, y).lineWidth(1.5).strokeColor(AZUL).stroke();
-  return y + 14;
-}
-
-function desenharBloco(doc, x, y, largura, titulo, linhas) {
-  const conteudo = linhas.filter(Boolean);
-  const altura = 26 + conteudo.length * 11.5;
-  doc.roundedRect(x, y, largura, altura, 3).lineWidth(0.8).strokeColor(BORDA).stroke();
-
-  rotulo(doc, titulo, x + 10, y + 8, largura - 20);
-  let linhaY = y + 21;
-  conteudo.forEach((linha, i) => {
-    doc.font(i === 0 ? 'Helvetica-Bold' : 'Helvetica').fontSize(i === 0 ? 10 : 8.5).fillColor(TINTA)
-      .text(texto(linha), x + 10, linhaY, { width: largura - 20, ellipsis: true, lineBreak: false });
-    linhaY += i === 0 ? 13 : 11;
-  });
-  return altura;
-}
 
 function desenharCabecalhoTabela(doc, y) {
   doc.rect(MARGEM, y, LARGURA_CONTEUDO, 20).fill(AZUL);
@@ -159,17 +94,22 @@ function desenharCondicoes(doc, dados, yInicial) {
 export function gerarOrcamentoPdf(dados) {
   const doc = new PDFDocument({ size: 'A4', margin: MARGEM, bufferPages: true });
 
-  let y = desenharCabecalho(doc, dados);
+  let y = cabecalhoDocumento(doc, {
+    emitente: dados.emitente,
+    titulo: 'PROPOSTA COMERCIAL',
+    subtitulo: dados.numero,
+    data: dados.emitidaEm ? `Emitida em ${dados.emitidaEm}` : '',
+  });
 
   const alturaBlocos = Math.max(
-    desenharBloco(doc, MARGEM, y, 250, 'Cliente', [
+    blocoDocumento(doc, MARGEM, y, 250, 'Cliente', [
       dados.cliente.nome || '—',
       dados.cliente.cnpj && `CNPJ ${dados.cliente.cnpj}`,
       dados.cliente.endereco,
       dados.cliente.cidade,
       dados.cliente.contato && `A/C ${dados.cliente.contato}`,
     ]),
-    desenharBloco(doc, 305, y, 250, 'Vendedor responsável', [
+    blocoDocumento(doc, 305, y, 250, 'Vendedor responsável', [
       dados.vendedor.nome || '—',
       dados.vendedor.cargo,
       dados.vendedor.registro,
@@ -189,29 +129,15 @@ export function gerarOrcamentoPdf(dados) {
       .text(texto(dados.observacoes, 1200), MARGEM, y + 11, { width: LARGURA_CONTEUDO });
   }
 
-  // Rodapé em todas as páginas
-  const faixa = doc.bufferedPageRange();
-  for (let i = 0; i < faixa.count; i++) {
-    doc.switchToPage(faixa.start + i);
-    doc.moveTo(MARGEM, RODAPE_Y).lineTo(DIREITA, RODAPE_Y).lineWidth(0.8).strokeColor(BORDA).stroke();
-    doc.font('Helvetica').fontSize(8.5).fillColor(CINZA_TEXTO);
-    doc.text(`${texto(dados.emitente.nome)} · CNPJ ${texto(dados.emitente.cnpj)}`, MARGEM, RODAPE_Y + 8, { width: 300, lineBreak: false });
-    const assinatura = [dados.vendedor.nome || dados.vendedor.cargo, dados.vendedor.celular].filter(Boolean).join(' · ');
-    doc.text(assinatura, 300, RODAPE_Y + 8, { width: DIREITA - 300, align: 'right', lineBreak: false });
-    if (faixa.count > 1) {
-      doc.fontSize(7.5).text(`Página ${i + 1} de ${faixa.count}`, MARGEM, RODAPE_Y + 21, { width: LARGURA_CONTEUDO, align: 'center', lineBreak: false });
-    }
-  }
+  rodapeDocumento(doc, {
+    emitente: dados.emitente,
+    assinatura: [dados.vendedor.nome || dados.vendedor.cargo, dados.vendedor.celular].filter(Boolean).join(' · '),
+  });
 
   doc.end();
   return doc;
 }
 
 export function nomeArquivoOrcamento(dados) {
-  const limpo = (str) => String(str ?? '')
-    .normalize('NFD').replace(/[̀-ͯ]/g, '')
-    .replace(/[^a-zA-Z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 40);
-  return [`Orcamento`, limpo(dados.numero), limpo(dados.cliente?.nome)].filter(Boolean).join('-') + '.pdf';
+  return nomeArquivo('Orcamento', dados.numero, dados.cliente?.nome);
 }
