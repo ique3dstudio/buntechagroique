@@ -3664,7 +3664,15 @@ function preencherSelectClienteVisita() {
 }
 
 async function carregarVisitas() {
-  visitasCache = await api('/visitas');
+  // Se a migração das visitas ainda não rodou, mostra o motivo na própria
+  // tabela em vez de derrubar o carregamento das outras abas.
+  let aviso = '';
+  try {
+    visitasCache = await api('/visitas');
+  } catch (erro) {
+    visitasCache = [];
+    aviso = erro.message;
+  }
   const tbody = document.getElementById('tabela-visitas');
 
   tbody.innerHTML = visitasCache.length
@@ -3689,7 +3697,7 @@ async function carregarVisitas() {
           </td>
         </tr>`;
       }).join('')
-    : '<tr><td class="vazio" colspan="5">Nenhuma visita registrada ainda.</td></tr>';
+    : `<tr><td class="vazio" colspan="5">${aviso ? escaparAtributo(aviso) : 'Nenhuma visita registrada ainda.'}</td></tr>`;
 
   tbody.querySelectorAll('[data-relatorio-visita]').forEach((btn) => {
     btn.addEventListener('click', () => baixarRelatorioVisita(btn.dataset.relatorioVisita));

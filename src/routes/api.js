@@ -853,33 +853,53 @@ router.patch('/atividades/:id/concluir', async (req, res) => {
 
 // --- Visitas ---
 
-const SELECT_VISITA = '*, contatos(nome), clientes(nome, endereco, dados)';
+// Do SELECT mais completo pro mais simples: em bancos onde a migração 031 (ou
+// a 003, que criava a tabela) ainda não rodou, cai pro que existir em vez de
+// quebrar a aba inteira.
+const SELECTS_VISITA = [
+  '*, contatos(nome), clientes(nome, endereco, dados)',
+  '*, clientes(nome, endereco, dados)',
+  '*',
+];
 const CAMPOS_VISITA = ['cliente_id', 'contato_id', 'data', 'km', 'observacoes', 'objetivo', 'participantes', 'relato', 'proximos_passos'];
 
 // A visita passou a apontar pra Carteira (clientes). Se a migração 031 ainda
 // não rodou, avisa direito em vez de estourar um erro cru de coluna.
 function erroDeMigracaoVisita(error) {
-  return !!error && /cliente_id|relato|objetivo|participantes|proximos_passos|anexo_/i.test(error.message || '');
+  if (!error) return false;
+  // PGRST200: o vínculo (contatos/clientes) não existe nesse banco.
+  if (error.code === 'PGRST200') return true;
+  return /cliente_id|contato_id|relato|objetivo|participantes|proximos_passos|anexo_/i.test(error.message || '');
 }
+
+// 42P01: a tabela "visitas" nunca foi criada nesse banco.
+function tabelaVisitasAusente(error) {
+  return !!error && (error.code === '42P01' || /relation .*visitas.* does not exist/i.test(error.message || ''));
+}
+
 const AVISO_MIGRACAO_VISITA =
   'A migração 031 das visitas ainda não rodou no banco (colunas cliente_id/relato em "visitas"). Rode o SQL no Supabase e tente de novo.';
+const AVISO_TABELA_VISITAS =
+  'A tabela "visitas" ainda não existe no banco. Rode a migração 031 no SQL Editor do Supabase (ela cria a tabela) e tente de novo.';
+
+// Repete a consulta descendo a lista de SELECTs até uma que o banco aceite.
+async function consultarVisitas(montarConsulta) {
+  let resposta;
+  for (const select of SELECTS_VISITA) {
+    resposta = await montarConsulta(select);
+    if (!resposta.error || !erroDeMigracaoVisita(resposta.error)) return resposta;
+  }
+  return resposta;
+}
 
 router.get('/visitas', async (req, res) => {
-  const { data, error } = await supabase
+  const { data, error } = await consultarVisitas((select) => supabase
     .from('visitas')
-    .select(SELECT_VISITA)
+    .select(select)
     .order('data', { ascending: false })
-    .limit(30);
+    .limit(30));
 
-  if (erroDeMigracaoVisita(error)) {
-    const { data: simples, error: erroSimples } = await supabase
-      .from('visitas')
-      .select('*, contatos(nome)')
-      .order('data', { ascending: false })
-      .limit(30);
-    if (erroSimples) return res.status(500).json({ error: erroSimples.message });
-    return res.json(simples);
-  }
+  if (tabelaVisitasAusente(error)) return res.status(400).json({ error: AVISO_TABELA_VISITAS });
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);
 });
@@ -895,7 +915,9 @@ router.post('/visitas', async (req, res) => {
   }
   registro.data = dataVisita;
 
-  const { data, error } = await supabase.from('visitas').insert(registro).select(SELECT_VISITA).single();
+  const { data, error } = await consultarVisitas((select) =>
+    supabase.from('visitas').insert(registro).select(select).single());
+  if (tabelaVisitasAusente(error)) return res.status(400).json({ error: AVISO_TABELA_VISITAS });
   if (erroDeMigracaoVisita(error)) return res.status(400).json({ error: AVISO_MIGRACAO_VISITA });
   if (error) return res.status(500).json({ error: error.message });
   res.status(201).json(data);
@@ -907,12 +929,13 @@ router.patch('/visitas/:id', async (req, res) => {
     if (req.body[campo] !== undefined) atualizacao[campo] = req.body[campo] || null;
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await consultarVisitas((select) => supabase
     .from('visitas')
     .update(atualizacao)
     .eq('id', req.params.id)
-    .select(SELECT_VISITA)
-    .single();
+    .select(select)
+    .single());
+  if (tabelaVisitasAusente(error)) return res.status(400).json({ error: AVISO_TABELA_VISITAS });
   if (erroDeMigracaoVisita(error)) return res.status(400).json({ error: AVISO_MIGRACAO_VISITA });
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);
@@ -938,12 +961,12 @@ router.post('/visitas/:id/anexo', upload.single('arquivo'), async (req, res) => 
 
   const { data: urlData } = supabase.storage.from('app-assets').getPublicUrl(caminho);
 
-  const { data, error } = await supabase
+  const { data, error } = await consultarVisitas((select) => supabase
     .from('visitas')
     .update({ anexo_url: urlData.publicUrl, anexo_nome: req.file.originalname })
     .eq('id', req.params.id)
-    .select(SELECT_VISITA)
-    .single();
+    .select(select)
+    .single());
   if (erroDeMigracaoVisita(error)) return res.status(400).json({ error: AVISO_MIGRACAO_VISITA });
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);
@@ -951,11 +974,12 @@ router.post('/visitas/:id/anexo', upload.single('arquivo'), async (req, res) => 
 
 // Relatório de visita em PDF, montado com o que foi preenchido no app.
 router.post('/visitas/:id/relatorio-pdf', async (req, res) => {
-  const { data: visita, error } = await supabase
+  const { data: visita, error } = await consultarVisitas((select) => supabase
     .from('visitas')
-    .select(SELECT_VISITA)
+    .select(select)
     .eq('id', req.params.id)
-    .single();
+    .single());
+  if (tabelaVisitasAusente(error)) return res.status(400).json({ error: AVISO_TABELA_VISITAS });
   if (erroDeMigracaoVisita(error)) return res.status(400).json({ error: AVISO_MIGRACAO_VISITA });
   if (error) return res.status(500).json({ error: error.message });
 
@@ -1042,10 +1066,12 @@ router.get('/resumo', async (req, res) => {
     .gte('data', mes)
     .lt('data', proximoMes);
 
+  // Antes da migração 031 a coluna cliente_id não existe, e num banco sem a
+  // 003 nem a tabela existe: não derruba o dashboard inteiro por causa disso.
   let { data: visitas, error: visitasError } = await consultaVisitas('contato_id, cliente_id, km');
-  // Antes da migração 031 a coluna cliente_id não existe: não derruba o
-  // dashboard inteiro por causa disso.
-  if (erroDeMigracaoVisita(visitasError)) ({ data: visitas, error: visitasError } = await consultaVisitas('contato_id, km'));
+  if (erroDeMigracaoVisita(visitasError)) ({ data: visitas, error: visitasError } = await consultaVisitas('cliente_id, km'));
+  if (erroDeMigracaoVisita(visitasError)) ({ data: visitas, error: visitasError } = await consultaVisitas('km'));
+  if (tabelaVisitasAusente(visitasError)) { visitas = []; visitasError = null; }
   if (visitasError) return res.status(500).json({ error: visitasError.message });
   // Conta clientes distintos visitados, seja pela Carteira (cliente_id) ou
   // pelas visitas antigas ligadas a contatos do CRM.
