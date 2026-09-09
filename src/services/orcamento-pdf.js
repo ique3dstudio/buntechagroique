@@ -217,5 +217,7 @@ export function gerarOrcamentoPdf(dados) {
 }
 
 export function nomeArquivoOrcamento(dados) {
-  return nomeArquivo('Orcamento', dados.numero, dados.cliente?.nome);
+  // dados.numero já carrega o mês (ORC-AAAAMM-NNN), mas o pedido foi pra
+  // data de emissão aparecer explícita no nome do arquivo, não só no número.
+  return nomeArquivo('Orcamento', dados.numero, dados.cliente?.nome, dados.emitidaEm?.replace(/\//g, '-'));
 }

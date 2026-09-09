@@ -30,21 +30,37 @@ export const RODAPE_Y = 762;
 
 // Caminho relativo a este arquivo: o logo tem que aparecer no PDF mesmo se o
 // servidor for iniciado de outra pasta.
-const LOGO = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'public', 'logo.png');
+const PASTA_PUBLIC = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'public');
+const LOGO = path.join(PASTA_PUBLIC, 'logo.png');
+// A folhinha recortada direto do logo da Buntech, pra marca d'água ficar
+// igual à marca oficial em vez de um desenho à mão aproximado.
+const MARCA_FOLHA = path.join(PASTA_PUBLIC, 'marca-folha.png');
 
 // Ícones no mesmo traço dos que aparecem no app (viewBox 24x24).
+// Cada ícone é uma lista de comandos: string = path (sintaxe SVG), e
+// { circulo: [cx, cy, r] } = um círculo - os dois entram na mesma escala de
+// 24x24 e no mesmo traço, então dá pra misturar num ícone só (ex: as rodas
+// do caminhão, o aro do gancho no ícone de frete).
 export const ICONES = {
-  pessoa: ['M20 21a8 8 0 0 0-16 0'],
   caixa: [
     'M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z',
     'M3.3 7 12 12l8.7-5',
     'M12 22V12',
   ],
   cartao: ['M2 5h20v14H2z', 'M2 10h20'],
-  caminhao: ['M10 17h4V5H2v12h3', 'M20 17h2v-3.34a4 4 0 0 0-1.17-2.83L19 9h-5v8h1'],
-  frete: ['M3 21h18', 'M5 21V8l7-5 7 5v13', 'M9 21v-6h6v6'],
+  // Caminhão (ícone do Lucide) - cabine + carroceria + as duas rodas.
+  caminhao: [
+    'M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2',
+    'M15 18H9',
+    'M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14v10',
+    { circulo: [17, 18, 2] },
+    { circulo: [7, 18, 2] },
+  ],
+  // Frete: o mesmo desenho do modelo original (prédio com topo em ponta e
+  // colunas) - a v1 tinha ficado uma casinha com porta, sem semelhança com o
+  // ícone do layout enviado.
+  frete: ['M4 20V9L12 4L20 9V20Z', 'M8 11V20', 'M12 5V20', 'M16 11V20'],
   calendario: ['M8 2v4', 'M16 2v4', 'M3 10h18', 'M3 4h18v18H3z'],
-  folha: ['M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z', 'M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12'],
 };
 
 export const moeda = (valor) =>
@@ -60,12 +76,16 @@ export function rotulo(doc, str, x, y, largura, cor = CINZA_ROTULO, tamanho = 7.
     .text(String(str).toUpperCase(), x, y, { width: largura, characterSpacing: 0.5 });
 }
 
-// Desenha um ícone de 24x24 (traço) na escala pedida.
-export function icone(doc, caminhos, x, y, tamanho, cor, espessura = 2) {
+// Desenha um ícone de 24x24 (traço) na escala pedida. Cada item é um path
+// (string) ou um círculo ({ circulo: [cx, cy, r] }).
+export function icone(doc, comandos, x, y, tamanho, cor, espessura = 2) {
   doc.save();
   doc.translate(x, y).scale(tamanho / 24);
   doc.lineWidth(espessura).strokeColor(cor).lineJoin('round').lineCap('round');
-  for (const caminho of caminhos) doc.path(caminho).stroke();
+  for (const comando of comandos) {
+    if (typeof comando === 'string') doc.path(comando).stroke();
+    else if (comando?.circulo) doc.circle(...comando.circulo).stroke();
+  }
   doc.restore();
 }
 
@@ -174,6 +194,10 @@ export function blocoDocumento(doc, x, y, largura, titulo, linhas, opcoes = {}) 
   return altura;
 }
 
+// Frase de assinatura da Buntech, dividida pra caber na coluna estreita da
+// marca d'água (compartilhada com a folha em HTML no app - ver SVG_ORCAMENTO).
+export const TAGLINE_BUNTECH = ['MAIS QUE UM', 'REVESTIMENTO,', 'UM CARREADOR', 'DE TECNOLOGIA!'];
+
 // Marca d'água discreta no pé da folha, como na papelaria da Buntech.
 export function marcaDagua(doc, y) {
   doc.save();
@@ -182,10 +206,10 @@ export function marcaDagua(doc, y) {
   doc.restore();
 
   doc.font('Helvetica-Bold').fontSize(6.5).fillColor('#9fb3bd');
-  ['SOLUÇÕES', 'QUE CULTIVAM', 'RESULTADOS'].forEach((linha, i) => {
-    doc.text(linha, DIREITA - 190, y + i * 10, { width: 140, align: 'right', characterSpacing: 1.6 });
+  TAGLINE_BUNTECH.forEach((linha, i) => {
+    doc.text(linha, DIREITA - 190, y + i * 10, { width: 140, align: 'right', characterSpacing: 1.2 });
   });
-  icone(doc, ICONES.folha, DIREITA - 40, y + 2, 22, VERDE, 1.6);
+  if (fs.existsSync(MARCA_FOLHA)) doc.image(MARCA_FOLHA, DIREITA - 42, y + 2, { height: 22 });
   doc.moveTo(DIREITA - 30, y + 30).lineTo(DIREITA - 8, y + 30).lineWidth(1.6).strokeColor(VERDE).stroke();
 }
 

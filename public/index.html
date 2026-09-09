@@ -927,7 +927,7 @@
   .orc-condicao.destaque .orc-condicao-valor { color: #0B7F79; }
 
   .orc-marca { margin-top: auto; display: flex; align-items: center; justify-content: flex-end; gap: 2.5mm; padding-top: 12mm; }
-  .orc-marca span { font-size: 6.5pt; font-weight: 700; letter-spacing: 0.16em; color: #9fb3bd; text-align: right; line-height: 1.7; }
+  .orc-marca span { font-size: 6.5pt; font-weight: 700; letter-spacing: 0.1em; color: #9fb3bd; text-align: right; line-height: 1.7; }
   .orc-marca svg { width: 6mm; height: 6mm; color: #05ABA3; }
   .orc-rodape { margin-top: 4mm; padding-top: 3mm; border-top: 1px solid #e3edf2; font-size: 8.5pt; color: #4b5b63; display: flex; justify-content: space-between; gap: 6mm; }
 
@@ -1784,7 +1784,13 @@
             <div class="field"><label>Prazo de entrega</label><input id="orcamento-entrega" placeholder="Ex: 10 dias úteis" /></div>
             <div class="field"><label>Validade da proposta (dias)</label><input type="number" min="1" id="orcamento-validade" value="15" /></div>
             <div class="field"><label>Nº do orçamento</label><input id="orcamento-numero" /></div>
-            <div class="field"><label>Seu nome (sai no PDF)</label><input id="orcamento-vendedor-nome" placeholder="Nome completo" /></div>
+            <div class="field"><label>Seu nome (sai no PDF)</label>
+              <select id="orcamento-vendedor-nome-opcao">
+                <option value="Gustavo Ique">Gustavo Ique</option>
+                <option value="__outro__">Outro…</option>
+              </select>
+              <input id="orcamento-vendedor-nome" placeholder="Nome completo" style="margin-top: 0.4rem; display: none" />
+            </div>
             <div class="field" style="grid-column: 1 / -1"><label>Observações</label><textarea id="orcamento-observacoes" placeholder="Impostos inclusos, condições especiais, etc."></textarea></div>
           </div>
         </form>
@@ -2713,9 +2719,8 @@ const SVG_ORCAMENTO = {
   caixa: traco('<path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="M3.3 7 12 12l8.7-5"/><path d="M12 22V12"/>', 1.8),
   cartao: traco('<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>', 1.8),
   caminhao: traco('<path d="M10 17h4V5H2v12h3"/><path d="M20 17h2v-3.34a4 4 0 0 0-1.17-2.83L19 9h-5v8h1"/><circle cx="7.5" cy="17.5" r="2"/><circle cx="17.5" cy="17.5" r="2"/>', 1.8),
-  frete: traco('<path d="M3 21h18"/><path d="M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/>', 1.8),
+  frete: traco('<path d="M4 20V9L12 4L20 9V20Z"/><path d="M8 11V20"/><path d="M12 5V20"/><path d="M16 11V20"/>', 1.8),
   calendario: traco('<path d="M8 2v4"/><path d="M16 2v4"/><path d="M3 10h18"/><rect x="3" y="4" width="18" height="18" rx="2"/>', 1.8),
-  folha: traco('<path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>', 1.6),
 };
 
 // Itens que a Buntech vende hoje - a lista sai no seletor da aba Orçamento.
@@ -3052,8 +3057,8 @@ function atualizarPreviewOrcamento() {
       </div>
 
       <div class="orc-marca">
-        <span>SOLUÇÕES<br/>QUE CULTIVAM<br/>RESULTADOS</span>
-        ${SVG_ORCAMENTO.folha}
+        <span>MAIS QUE UM<br/>REVESTIMENTO,<br/>UM CARREADOR<br/>DE TECNOLOGIA!</span>
+        <img src="/marca-folha.png" alt="" style="width: 6mm; height: auto;" />
       </div>
 
       <div class="orc-rodape">
@@ -3161,9 +3166,33 @@ document.getElementById('btn-baixar-orcamento').addEventListener('click', async 
   }
 });
 
+// "Gustavo Ique" é o vendedor de hoje - fica pré-selecionado; "Outro…" abre o
+// campo de texto pra digitar outro nome (útil se um dia mais alguém usar).
+function aplicarNomeVendedorOrcamento(nome) {
+  const select = document.getElementById('orcamento-vendedor-nome-opcao');
+  const input = document.getElementById('orcamento-vendedor-nome');
+  const conhecido = nome === 'Gustavo Ique';
+  select.value = conhecido || !nome ? 'Gustavo Ique' : '__outro__';
+  input.value = conhecido || !nome ? 'Gustavo Ique' : nome;
+  input.style.display = select.value === '__outro__' ? '' : 'none';
+}
+
+document.getElementById('orcamento-vendedor-nome-opcao').addEventListener('change', (e) => {
+  const input = document.getElementById('orcamento-vendedor-nome');
+  if (e.target.value === '__outro__') {
+    input.style.display = '';
+    input.value = '';
+    input.focus();
+  } else {
+    input.style.display = 'none';
+    input.value = e.target.value;
+  }
+  atualizarPreviewOrcamento();
+});
+
 function iniciarOrcamento() {
   document.getElementById('orcamento-numero').value = proximoNumeroOrcamento().numero;
-  document.getElementById('orcamento-vendedor-nome').value = localStorage.getItem('vendedorNomeOrcamento') || '';
+  aplicarNomeVendedorOrcamento(localStorage.getItem('vendedorNomeOrcamento') || 'Gustavo Ique');
   preencherClientesOrcamento();
   renderizarItensOrcamento();
   atualizarPreviewOrcamento();
@@ -3902,7 +3931,7 @@ async function baixarRelatorioVisita(id) {
   const corpo = {
     emitente: emitenteOrcamento(),
     vendedor: {
-      nome: localStorage.getItem('vendedorNomeOrcamento') || '',
+      nome: localStorage.getItem('vendedorNomeOrcamento') || 'Gustavo Ique',
       cargo: cargoAtual,
       celular: vendedorAtual.celular,
     },
