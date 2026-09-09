@@ -854,9 +854,10 @@
     width: 210mm;
     min-height: 297mm;
     margin: 0 auto;
-    padding: 14mm 13mm;
+    padding: 0;
+    overflow: hidden;
     background: #fff;
-    color: #142420;
+    color: #14232a;
     box-shadow: 0 4px 20px rgba(20, 36, 32, 0.15);
     font-size: 10pt;
     line-height: 1.45;
@@ -867,53 +868,68 @@
     .folha-a4 { transform: scale(0.42); transform-origin: top center; margin-bottom: -160mm; }
   }
 
-  .orc-cabecalho { display: flex; justify-content: space-between; align-items: flex-start; gap: 10mm; border-bottom: 2px solid var(--blue-dark); padding-bottom: 5mm; }
-  .orc-cabecalho img { height: 16mm; width: auto; }
-  .orc-emitente { font-size: 8.5pt; color: #4b5b57; line-height: 1.4; }
-  .orc-emitente strong { color: #142420; font-size: 10pt; display: block; }
-  .orc-titulo { text-align: right; flex-shrink: 0; }
-  .orc-titulo h1 { font-family: 'Poppins', sans-serif; font-size: 14pt; margin: 0; color: var(--blue-dark); letter-spacing: 0.02em; }
-  .orc-titulo .orc-numero { font-size: 11pt; font-weight: 700; margin-top: 1mm; }
-  .orc-titulo .orc-data { font-size: 8.5pt; color: #4b5b57; }
+  /* A folha espelha o PDF gerado no servidor (src/services/orcamento-pdf.js). */
+  .orc-barra-topo { height: 3mm; background: linear-gradient(90deg, #028ED2 0%, #028ED2 55%, #05ABA3 78%, #05ABA3 100%); }
+  .orc-corpo { padding: 10mm 12mm 8mm; display: flex; flex-direction: column; min-height: calc(297mm - 3mm); }
 
-  .orc-blocos { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; margin-top: 6mm; }
-  .orc-bloco { border: 1px solid #dfe7e5; border-radius: 2mm; padding: 3.5mm 4mm; }
-  .orc-bloco h2 { font-size: 8pt; text-transform: uppercase; letter-spacing: 0.08em; color: #6c7f7a; margin: 0 0 1.5mm; font-family: 'Inter', sans-serif; }
-  .orc-bloco .orc-linha { font-size: 9pt; }
-  .orc-bloco .orc-linha strong { font-size: 10pt; }
+  .orc-cabecalho { display: grid; grid-template-columns: auto 1fr auto; gap: 6mm; align-items: start; }
+  .orc-logo { width: 44mm; height: auto; align-self: center; }
+  .orc-emitente { font-size: 8pt; color: #4b5b63; line-height: 1.45; border-right: 1px solid #e3edf2; padding-right: 6mm; }
+  .orc-emitente strong { display: block; font-size: 10pt; color: #14232a; }
+  .orc-titulo { text-align: right; }
+  .orc-titulo h1 { font-family: 'Poppins', sans-serif; font-size: 19pt; line-height: 1.08; margin: 0; color: var(--blue-dark); }
+  .orc-titulo .orc-numero { font-weight: 700; font-size: 10.5pt; margin-top: 1.5mm; }
+  .orc-pill { display: inline-block; margin-top: 2mm; background: #eef6fb; color: #4b5b63; border-radius: 999px; padding: 1.4mm 4mm; font-size: 8.5pt; }
 
-  table.orc-tabela { width: 100%; border-collapse: collapse; margin-top: 6mm; font-size: 9pt; }
-  table.orc-tabela th {
-    background: var(--blue-dark);
-    color: #fff;
-    text-align: left;
-    padding: 2.5mm 3mm;
-    font-size: 8pt;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    border: none;
-  }
+  .orc-cartoes { display: grid; grid-template-columns: 1fr 1fr; gap: 5mm; margin-top: 7mm; }
+  .orc-cartao { position: relative; background: #fafcfd; border: 1px solid #e3edf2; border-radius: 2mm; padding: 5mm 4.5mm 4.5mm; overflow: hidden; }
+  .orc-cartao::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1.4mm; background: #028ED2; }
+  .orc-cartao.verde::before { background: #05ABA3; }
+  .orc-cartao-cab { display: flex; align-items: center; gap: 2.5mm; }
+  .orc-avatar { width: 7mm; height: 7mm; border-radius: 50%; background: #028ED2; color: #fff; display: flex; align-items: center; justify-content: center; flex: none; }
+  .orc-cartao.verde .orc-avatar { background: #05ABA3; }
+  .orc-avatar svg { width: 4mm; height: 4mm; }
+  .orc-cartao-rotulo { font-size: 7.5pt; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #6c7f8a; }
+  .orc-cartao-nome { display: block; font-family: 'Poppins', sans-serif; font-size: 12pt; font-weight: 700; margin: 3mm 0 1.5mm; }
+  .orc-cartao-linha { font-size: 8.5pt; color: #4b5b63; line-height: 1.5; }
+
+  .orc-secao { display: flex; align-items: center; justify-content: space-between; margin: 8mm 0 3mm; }
+  .orc-secao-titulo { display: flex; align-items: center; gap: 2.5mm; font-size: 9.5pt; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+  .orc-secao-titulo svg { width: 5mm; height: 5mm; color: #028ED2; }
+  .orc-secao-nota { font-size: 8.5pt; color: #6c7f8a; }
+
+  table.orc-tabela { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 9.5pt; border: 1px solid #e3edf2; border-radius: 2mm; overflow: hidden; }
+  table.orc-tabela th { background: var(--blue-dark); color: #fff; text-align: left; padding: 3mm 4mm; font-size: 8pt; text-transform: uppercase; letter-spacing: 0.05em; border: none; }
   table.orc-tabela th.num, table.orc-tabela td.num { text-align: right; }
-  table.orc-tabela td { padding: 2.5mm 3mm; border-bottom: 1px solid #e6edeb; }
-  table.orc-tabela tbody tr:nth-child(even) { background: #f7faf9; }
+  table.orc-tabela td { padding: 3mm 4mm; border-bottom: 1px solid #eaf2f6; }
+  table.orc-tabela tbody tr:nth-child(even) td { background: #f6fafc; }
+  table.orc-tabela tbody tr:last-child td { border-bottom: none; }
+  table.orc-tabela td.produto { font-weight: 700; }
+  table.orc-tabela td.total { font-weight: 700; color: var(--blue-dark); }
 
-  .orc-totais { margin-top: 4mm; margin-left: auto; width: 80mm; font-size: 9.5pt; }
-  .orc-totais div { display: flex; justify-content: space-between; padding: 1.5mm 0; }
-  .orc-totais .orc-total-geral {
-    border-top: 2px solid var(--blue-dark);
-    margin-top: 1.5mm;
-    padding-top: 2.5mm;
-    font-family: 'Poppins', sans-serif;
-    font-size: 12pt;
-    font-weight: 700;
-    color: var(--blue-dark);
-  }
+  .orc-fecho { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; margin-top: 5mm; align-items: start; }
+  .orc-notas { font-size: 9pt; color: #4b5b63; line-height: 1.6; white-space: pre-wrap; }
+  .orc-totais { border-radius: 2mm; overflow: hidden; }
+  .orc-totais-linha { display: flex; justify-content: space-between; gap: 3mm; padding: 3mm 4mm; font-size: 9.5pt; background: #f3f7f9; color: #4b5b63; }
+  .orc-totais-linha strong { color: #14232a; }
+  .orc-totais-linha.alt { background: #e9f4f9; }
+  .orc-total-geral { display: flex; justify-content: space-between; align-items: center; background: var(--blue-dark); color: #fff; padding: 4mm; font-family: 'Poppins', sans-serif; font-size: 14pt; font-weight: 700; }
 
-  .orc-condicoes { margin-top: 7mm; display: grid; grid-template-columns: repeat(2, 1fr); gap: 3mm 6mm; font-size: 9pt; }
-  .orc-condicoes .rotulo { font-size: 7.5pt; text-transform: uppercase; letter-spacing: 0.06em; color: #6c7f7a; font-weight: 700; }
-  .orc-observacoes { margin-top: 6mm; font-size: 9pt; white-space: pre-wrap; }
-  .orc-observacoes .rotulo { font-size: 7.5pt; text-transform: uppercase; letter-spacing: 0.06em; color: #6c7f7a; font-weight: 700; }
-  .orc-rodape { margin-top: 10mm; padding-top: 4mm; border-top: 1px solid #dfe7e5; font-size: 8.5pt; color: #4b5b57; display: flex; justify-content: space-between; gap: 6mm; }
+  .orc-condicoes { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2.5mm; margin-top: 8mm; }
+  .orc-condicao { border: 1px solid #e3edf2; border-radius: 2mm; background: #fafcfd; padding: 3.5mm; min-height: 20mm; display: flex; flex-direction: column; justify-content: space-between; gap: 3mm; }
+  .orc-condicao-cab { display: flex; gap: 2mm; align-items: flex-start; }
+  .orc-condicao-cab svg { width: 4.5mm; height: 4.5mm; color: #028ED2; flex: none; }
+  .orc-condicao-rot { font-size: 6.8pt; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: #6c7f8a; line-height: 1.35; }
+  .orc-condicao-valor { font-family: 'Poppins', sans-serif; font-size: 12pt; font-weight: 700; }
+  .orc-condicao-nota { font-size: 8pt; color: #05ABA3; }
+  .orc-condicao.destaque { background: #f0fbfa; }
+  .orc-condicao.destaque .orc-condicao-cab svg { color: #05ABA3; }
+  .orc-condicao.destaque .orc-condicao-valor { color: #0B7F79; }
+
+  .orc-marca { margin-top: auto; display: flex; align-items: center; justify-content: flex-end; gap: 2.5mm; padding-top: 12mm; }
+  .orc-marca span { font-size: 6.5pt; font-weight: 700; letter-spacing: 0.16em; color: #9fb3bd; text-align: right; line-height: 1.7; }
+  .orc-marca svg { width: 6mm; height: 6mm; color: #05ABA3; }
+  .orc-rodape { margin-top: 4mm; padding-top: 3mm; border-top: 1px solid #e3edf2; font-size: 8.5pt; color: #4b5b63; display: flex; justify-content: space-between; gap: 6mm; }
 
   /* Impressão: só a folha vai pro papel/PDF. */
   @media print {
@@ -1236,6 +1252,24 @@
         <button type="button" id="btn-excluir-so-este">Cancelar só este dia</button>
         <button type="button" class="secundario" id="btn-excluir-serie">Apagar a série toda</button>
       </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="modal-novo-item" hidden>
+    <div class="modal-card" style="max-width: 420px;">
+      <div class="modal-header">
+        <h3>Registrar novo item</h3>
+        <button class="fechar-modal" id="btn-fechar-novo-item" type="button" aria-label="Fechar">&times;</button>
+      </div>
+      <form id="form-novo-item">
+        <div class="field"><label>Nome do item</label><input id="novo-item-nome" placeholder="Ex: SEEDGEL FR BIGBAG 1TN" required /></div>
+        <div class="field"><label>Preço por tonelada (opcional)</label><input type="number" step="0.01" min="0" id="novo-item-preco" placeholder="0,00" /></div>
+        <p class="vazio" style="margin: 0.4rem 0 0">O item fica salvo na lista de produtos e aparece nos próximos orçamentos.</p>
+        <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:1rem;">
+          <button type="submit">Salvar item</button>
+          <button type="button" class="secundario" id="btn-cancelar-novo-item">Cancelar</button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -2671,6 +2705,28 @@ const EMITENTE_PADRAO = {
   telefone: '(19) 3936-1779',
 };
 
+const traco = (conteudo, largura = 2) =>
+  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${largura}" stroke-linecap="round" stroke-linejoin="round">${conteudo}</svg>`;
+
+const SVG_ORCAMENTO = {
+  pessoa: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8.5" r="3.4"/><path d="M4.6 20a7.4 7.4 0 0 1 14.8 0Z"/></svg>',
+  caixa: traco('<path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="M3.3 7 12 12l8.7-5"/><path d="M12 22V12"/>', 1.8),
+  cartao: traco('<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>', 1.8),
+  caminhao: traco('<path d="M10 17h4V5H2v12h3"/><path d="M20 17h2v-3.34a4 4 0 0 0-1.17-2.83L19 9h-5v8h1"/><circle cx="7.5" cy="17.5" r="2"/><circle cx="17.5" cy="17.5" r="2"/>', 1.8),
+  frete: traco('<path d="M3 21h18"/><path d="M5 21V8l7-5 7 5v13"/><path d="M9 21v-6h6v6"/>', 1.8),
+  calendario: traco('<path d="M8 2v4"/><path d="M16 2v4"/><path d="M3 10h18"/><rect x="3" y="4" width="18" height="18" rx="2"/>', 1.8),
+  folha: traco('<path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/>', 1.6),
+};
+
+// Itens que a Buntech vende hoje - a lista sai no seletor da aba Orçamento.
+// "Registrar novo item" acrescenta outros, que ficam salvos em Produtos.
+const ITENS_PADRAO_ORCAMENTO = [
+  'SEEDGEL FR SACARIA 25KG',
+  'SEEDGEL FR BIGBAG 1TN',
+  'SEEDGEL FR M BIGBAG 1TN',
+  'SEEDGRAF BIGBAG 500KG',
+];
+
 let itensOrcamento = [{ produto: '', quantidade: '', preco: '' }];
 let produtosCache = [];
 
@@ -2697,16 +2753,50 @@ function registrarNumeroUsado() {
   if (partes) localStorage.setItem('sequenciaOrcamento', JSON.stringify({ prefixo: partes[1], seq: Number(partes[2]) }));
 }
 
+// Lista de itens do seletor: os produtos da Buntech + o que já foi cadastrado
+// em Produtos (inclusive o que entrar por "Registrar novo item").
+function itensDisponiveisOrcamento() {
+  const lista = ITENS_PADRAO_ORCAMENTO.map((nome) => ({ nome, preco: null }));
+  const indice = new Map(lista.map((item) => [item.nome.toUpperCase(), item]));
+
+  for (const produto of produtosCache) {
+    const nome = (produto?.nome || '').trim();
+    if (!nome) continue;
+    const existente = indice.get(nome.toUpperCase());
+    if (existente) {
+      if (produto.preco != null && existente.preco == null) existente.preco = produto.preco;
+      continue;
+    }
+    const item = { nome, preco: produto.preco ?? null };
+    indice.set(nome.toUpperCase(), item);
+    lista.push(item);
+  }
+  return lista;
+}
+
 function renderizarItensOrcamento() {
   const wrap = document.getElementById('orcamento-itens');
-  const sugestoes = produtosCache.map((p) => `<option value="${escaparAtributo(p.nome)}"></option>`).join('');
+  const disponiveis = itensDisponiveisOrcamento();
 
-  wrap.innerHTML = `<datalist id="lista-produtos-orcamento">${sugestoes}</datalist>` + itensOrcamento.map((item, i) => {
+  wrap.innerHTML = itensOrcamento.map((item, i) => {
     const total = (Number(item.quantidade) || 0) * (Number(item.preco) || 0);
+    const escolhido = (item.produto || '').trim();
+    const conhecido = disponiveis.some((p) => p.nome.toUpperCase() === escolhido.toUpperCase());
+    const opcoes = disponiveis
+      .map((p) => `<option value="${escaparAtributo(p.nome)}"${p.nome.toUpperCase() === escolhido.toUpperCase() ? ' selected' : ''}>${escaparAtributo(p.nome)}</option>`)
+      .join('');
+    const avulso = escolhido && !conhecido
+      ? `<option value="${escaparAtributo(escolhido)}" selected>${escaparAtributo(escolhido)}</option>`
+      : '';
+
     return `
       <div class="orcamento-item" data-item="${i}">
-        <div class="field campo-produto"><label>Produto</label>
-          <input list="lista-produtos-orcamento" data-campo="produto" value="${escaparAtributo(item.produto)}" placeholder="Ex: Seedgel FR" />
+        <div class="field campo-produto"><label>Item</label>
+          <select data-campo="produto">
+            <option value=""${escolhido ? '' : ' selected'}>Selecionar item…</option>
+            ${opcoes}${avulso}
+            <option value="__novo__">+ Registrar novo item</option>
+          </select>
         </div>
         <div class="field"><label>Qtd (ton)</label>
           <input type="number" step="0.01" min="0" data-campo="quantidade" value="${escaparAtributo(item.quantidade)}" placeholder="0" />
@@ -2722,7 +2812,7 @@ function renderizarItensOrcamento() {
     `;
   }).join('');
 
-  wrap.querySelectorAll('[data-campo]').forEach((input) => {
+  wrap.querySelectorAll('input[data-campo]').forEach((input) => {
     input.addEventListener('input', () => {
       const i = Number(input.closest('[data-item]').dataset.item);
       itensOrcamento[i][input.dataset.campo] = input.value;
@@ -2730,6 +2820,28 @@ function renderizarItensOrcamento() {
       const linha = input.closest('.orcamento-item').querySelector('.orcamento-item-total');
       const total = (Number(itensOrcamento[i].quantidade) || 0) * (Number(itensOrcamento[i].preco) || 0);
       linha.innerHTML = total > 0 ? `Subtotal: ${fmtMoeda(total)}` : '&nbsp;';
+    });
+  });
+
+  wrap.querySelectorAll('select[data-campo="produto"]').forEach((select) => {
+    select.addEventListener('change', async () => {
+      const i = Number(select.closest('[data-item]').dataset.item);
+
+      if (select.value === '__novo__') {
+        select.value = itensOrcamento[i].produto || '';
+        const novo = await pedirNovoItem();
+        if (!novo) return;
+        itensOrcamento[i].produto = novo.nome;
+        if (novo.preco && !itensOrcamento[i].preco) itensOrcamento[i].preco = String(novo.preco);
+      } else {
+        itensOrcamento[i].produto = select.value;
+        // Se o item tem preço cadastrado, já preenche (dá pra trocar na hora).
+        const escolhido = itensDisponiveisOrcamento().find((p) => p.nome === select.value);
+        if (escolhido?.preco && !itensOrcamento[i].preco) itensOrcamento[i].preco = String(escolhido.preco);
+      }
+
+      renderizarItensOrcamento();
+      atualizarPreviewOrcamento();
     });
   });
 
@@ -2742,6 +2854,48 @@ function renderizarItensOrcamento() {
     });
   });
 }
+
+// "Registrar novo item": salva em Produtos e devolve o item pro orçamento.
+let resolverNovoItem = null;
+
+function pedirNovoItem() {
+  document.getElementById('novo-item-nome').value = '';
+  document.getElementById('novo-item-preco').value = '';
+  document.getElementById('modal-novo-item').hidden = false;
+  setTimeout(() => document.getElementById('novo-item-nome').focus(), 60);
+  return new Promise((resolve) => { resolverNovoItem = resolve; });
+}
+
+function fecharNovoItem(resposta) {
+  document.getElementById('modal-novo-item').hidden = true;
+  if (resolverNovoItem) {
+    resolverNovoItem(resposta);
+    resolverNovoItem = null;
+  }
+}
+
+document.getElementById('form-novo-item').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const nome = document.getElementById('novo-item-nome').value.trim();
+  if (!nome) return;
+  const preco = Number(document.getElementById('novo-item-preco').value) || null;
+
+  try {
+    const salvo = await api('/produtos', { method: 'POST', body: JSON.stringify({ nome, preco }) });
+    produtosCache = [salvo, ...produtosCache];
+  } catch (erro) {
+    // Não trava o orçamento: usa o item agora e avisa que não ficou salvo.
+    produtosCache = [{ id: `local-${Date.now()}`, nome, preco }, ...produtosCache];
+    alert(`Usei o item neste orçamento, mas não consegui salvar na lista: ${erro.message}`);
+  }
+  fecharNovoItem({ nome, preco });
+});
+
+document.getElementById('btn-cancelar-novo-item').addEventListener('click', () => fecharNovoItem(null));
+document.getElementById('btn-fechar-novo-item').addEventListener('click', () => fecharNovoItem(null));
+document.getElementById('modal-novo-item').addEventListener('click', (e) => {
+  if (e.target.id === 'modal-novo-item') fecharNovoItem(null);
+});
 
 function dadosOrcamento() {
   const v = (id) => document.getElementById(id).value.trim();
@@ -2796,82 +2950,116 @@ function atualizarPreviewOrcamento() {
   const linhas = d.itens.length
     ? d.itens.map((i) => `
         <tr>
-          <td>${i.produto || '—'}</td>
+          <td class="produto">${i.produto || '—'}</td>
           <td class="num">${i.quantidade.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</td>
           <td class="num">${fmtMoeda(i.preco)}</td>
-          <td class="num">${fmtMoeda(i.total)}</td>
+          <td class="num total">${fmtMoeda(i.total)}</td>
         </tr>
       `).join('')
     : '<tr><td colspan="4" style="text-align:center; color:#8a938f">Adicione os itens do orçamento</td></tr>';
 
+  const notas = [
+    d.cliente.nome ? `Proposta preparada para ${d.cliente.nome.replace(/\.$/, '')}.` : '',
+    d.frete === 'CIF'
+      ? (d.freteValor > 0 ? 'Frete CIF cobrado à parte, conforme quadro ao lado.' : 'Frete CIF incluso no preço.')
+      : 'Frete FOB por conta do cliente.',
+    d.observacoes,
+  ].filter(Boolean).join('\n');
+
+  const linhasVendedor = [
+    d.vendedorNome && cargoAtual ? cargoAtual : '',
+    vendedorAtual.numero_vendedor ? `Nº ${vendedorAtual.numero_vendedor}${vendedorAtual.matricula ? ` · Matrícula ${vendedorAtual.matricula}` : ''}` : '',
+    vendedorAtual.celular || '',
+    vendedorAtual.email || '',
+    regiaoAtual ? `Região: ${regiaoAtual}` : '',
+  ];
+
+  const condicao = (icone, titulo, valor, nota, destaque) => `
+    <div class="orc-condicao${destaque ? ' destaque' : ''}">
+      <div class="orc-condicao-cab">${icone}<div class="orc-condicao-rot">${titulo}</div></div>
+      <div>
+        <div class="orc-condicao-valor">${valor || '—'}</div>
+        ${nota ? `<div class="orc-condicao-nota">${nota}</div>` : ''}
+      </div>
+    </div>`;
+
   document.getElementById('orcamento-preview').innerHTML = `
-    <div class="orc-cabecalho">
-      <div style="display:flex; gap:5mm; align-items:flex-start;">
-        <img src="/logo.png" alt="Buntech" />
+    <div class="orc-barra-topo"></div>
+    <div class="orc-corpo">
+      <header class="orc-cabecalho">
+        <img class="orc-logo" src="/logo.png" alt="Buntech" />
         <div class="orc-emitente">
           <strong>${emitente.nome}</strong>
           CNPJ ${emitente.cnpj}<br/>
           ${emitente.endereco}<br/>
           ${emitente.telefone}
         </div>
+        <div class="orc-titulo">
+          <h1>PROPOSTA<br/>COMERCIAL</h1>
+          ${d.numero ? `<div class="orc-numero">${d.numero}</div>` : ''}
+          <div class="orc-pill">Emitida em ${fmtData(hoje)}</div>
+        </div>
+      </header>
+
+      <div class="orc-cartoes">
+        <section class="orc-cartao">
+          <div class="orc-cartao-cab"><span class="orc-avatar">${SVG_ORCAMENTO.pessoa}</span><span class="orc-cartao-rotulo">Cliente</span></div>
+          <strong class="orc-cartao-nome">${d.cliente.nome || '—'}</strong>
+          ${d.cliente.cnpj ? `<div class="orc-cartao-linha">CNPJ ${d.cliente.cnpj}</div>` : ''}
+          ${d.cliente.endereco ? `<div class="orc-cartao-linha">${d.cliente.endereco}</div>` : ''}
+          ${d.cliente.cidade ? `<div class="orc-cartao-linha">${d.cliente.cidade}</div>` : ''}
+          ${d.cliente.contato ? `<div class="orc-cartao-linha">A/C ${d.cliente.contato}</div>` : ''}
+        </section>
+        <section class="orc-cartao verde">
+          <div class="orc-cartao-cab"><span class="orc-avatar">${SVG_ORCAMENTO.pessoa}</span><span class="orc-cartao-rotulo">Vendedor responsável</span></div>
+          <strong class="orc-cartao-nome">${d.vendedorNome || cargoAtual || '—'}</strong>
+          ${linhasVendedor.filter(Boolean).map((linha) => `<div class="orc-cartao-linha">${linha}</div>`).join('')}
+        </section>
       </div>
-      <div class="orc-titulo">
-        <h1>PROPOSTA COMERCIAL</h1>
-        <div class="orc-numero">${d.numero || '—'}</div>
-        <div class="orc-data">Emitida em ${fmtData(hoje)}</div>
+
+      <div class="orc-secao">
+        <span class="orc-secao-titulo">${SVG_ORCAMENTO.caixa} Itens da proposta</span>
+        <span class="orc-secao-nota">Valores em reais (R$)</span>
       </div>
-    </div>
 
-    <div class="orc-blocos">
-      <div class="orc-bloco">
-        <h2>Cliente</h2>
-        <div class="orc-linha"><strong>${d.cliente.nome || '—'}</strong></div>
-        ${d.cliente.cnpj ? `<div class="orc-linha">CNPJ ${d.cliente.cnpj}</div>` : ''}
-        ${d.cliente.endereco ? `<div class="orc-linha">${d.cliente.endereco}</div>` : ''}
-        ${d.cliente.cidade ? `<div class="orc-linha">${d.cliente.cidade}</div>` : ''}
-        ${d.cliente.contato ? `<div class="orc-linha">A/C ${d.cliente.contato}</div>` : ''}
+      <table class="orc-tabela">
+        <thead>
+          <tr>
+            <th>Produto</th>
+            <th class="num">Qtd (ton)</th>
+            <th class="num">Preço / ton</th>
+            <th class="num">Total</th>
+          </tr>
+        </thead>
+        <tbody>${linhas}</tbody>
+      </table>
+
+      <div class="orc-fecho">
+        <div class="orc-notas">${notas}</div>
+        <div class="orc-totais">
+          <div class="orc-totais-linha"><span>Subtotal</span><strong>${fmtMoeda(d.subtotal)}</strong></div>
+          <div class="orc-totais-linha alt"><span>Frete (${d.frete})</span><strong>${d.frete === 'CIF' ? (d.freteValor > 0 ? fmtMoeda(d.freteValor) : 'Incluso') : 'Por conta do cliente'}</strong></div>
+          <div class="orc-total-geral"><span>Total</span><span>${fmtMoeda(d.total)}</span></div>
+        </div>
       </div>
-      <div class="orc-bloco">
-        <h2>Vendedor responsável</h2>
-        <div class="orc-linha"><strong>${d.vendedorNome || cargoAtual || '—'}</strong></div>
-        ${d.vendedorNome && cargoAtual ? `<div class="orc-linha">${cargoAtual}</div>` : ''}
-        ${vendedorAtual.numero_vendedor ? `<div class="orc-linha">Nº ${vendedorAtual.numero_vendedor}${vendedorAtual.matricula ? ` · Matrícula ${vendedorAtual.matricula}` : ''}</div>` : ''}
-        ${vendedorAtual.celular ? `<div class="orc-linha">${vendedorAtual.celular}</div>` : ''}
-        ${vendedorAtual.email ? `<div class="orc-linha">${vendedorAtual.email}</div>` : ''}
-        ${regiaoAtual ? `<div class="orc-linha">Região: ${regiaoAtual}</div>` : ''}
+
+      <div class="orc-condicoes">
+        ${condicao(SVG_ORCAMENTO.cartao, 'Condição de pagamento', d.pagamento)}
+        ${condicao(SVG_ORCAMENTO.caminhao, 'Prazo de entrega', d.entrega)}
+        ${condicao(SVG_ORCAMENTO.frete, 'Frete', d.frete)}
+        ${condicao(SVG_ORCAMENTO.calendario, 'Validade da proposta',
+          d.validadeDias ? `${d.validadeDias} dias` : '', d.validadeDias ? `(até ${fmtData(d.validadeData)})` : '', true)}
       </div>
-    </div>
 
-    <table class="orc-tabela">
-      <thead>
-        <tr>
-          <th>Produto</th>
-          <th class="num">Qtd (ton)</th>
-          <th class="num">Preço / ton</th>
-          <th class="num">Total</th>
-        </tr>
-      </thead>
-      <tbody>${linhas}</tbody>
-    </table>
+      <div class="orc-marca">
+        <span>SOLUÇÕES<br/>QUE CULTIVAM<br/>RESULTADOS</span>
+        ${SVG_ORCAMENTO.folha}
+      </div>
 
-    <div class="orc-totais">
-      <div><span>Subtotal</span><span>${fmtMoeda(d.subtotal)}</span></div>
-      <div><span>Frete (${d.frete})</span><span>${d.frete === 'CIF' ? (d.freteValor > 0 ? fmtMoeda(d.freteValor) : 'Incluso') : 'Por conta do cliente'}</span></div>
-      <div class="orc-total-geral"><span>Total</span><span>${fmtMoeda(d.total)}</span></div>
-    </div>
-
-    <div class="orc-condicoes">
-      <div><div class="rotulo">Condição de pagamento</div>${d.pagamento || '—'}</div>
-      <div><div class="rotulo">Prazo de entrega</div>${d.entrega || '—'}</div>
-      <div><div class="rotulo">Frete</div>${d.frete}</div>
-      <div><div class="rotulo">Validade da proposta</div>${d.validadeDias ? `${d.validadeDias} dias (até ${fmtData(d.validadeData)})` : '—'}</div>
-    </div>
-
-    ${d.observacoes ? `<div class="orc-observacoes"><div class="rotulo">Observações</div>${d.observacoes}</div>` : ''}
-
-    <div class="orc-rodape">
-      <div>${emitente.nome} · CNPJ ${emitente.cnpj}</div>
-      <div>${d.vendedorNome || cargoAtual || ''}${vendedorAtual.celular ? ` · ${vendedorAtual.celular}` : ''}</div>
+      <div class="orc-rodape">
+        <div>${emitente.nome} · CNPJ ${emitente.cnpj}</div>
+        <div>Vendedor${vendedorAtual.celular ? ` · ${vendedorAtual.celular}` : ''}</div>
+      </div>
     </div>
   `;
 

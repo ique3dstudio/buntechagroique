@@ -1,98 +1,168 @@
 import PDFDocument from 'pdfkit';
 import {
-  AZUL, TINTA, MARGEM, LARGURA_CONTEUDO, DIREITA, RODAPE_Y,
-  moeda, numero, texto, rotulo, cabecalhoDocumento, blocoDocumento, rodapeDocumento, nomeArquivo,
+  AZUL, AZUL_CLARO, VERDE, VERDE_ESCURO, VERDE_FUNDO, TINTA, CINZA_TEXTO, CINZA_ROTULO, BORDA, FUNDO_CARTAO,
+  MARGEM, LARGURA_CONTEUDO, DIREITA, RODAPE_Y, ICONES,
+  moeda, numero, texto, rotulo, icone, barraTopo, caixaMeiaRedonda,
+  cabecalhoDocumento, blocoDocumento, alturaCartao, marcaDagua, rodapeDocumento, nomeArquivo,
 } from './pdf-comum.js';
 
-// Gera a proposta comercial em PDF no servidor, pra o app baixar o arquivo
-// direto (sem passar pela caixa de impressão do navegador). O desenho abaixo
-// espelha a pré-visualização em tela do app.
+// Proposta comercial em PDF, no layout aprovado pela Buntech: faixa azul/verde
+// no topo, cartões de cliente e vendedor, tabela de itens com cabeçalho azul,
+// quadro de totais e os quatro cartões de condições comerciais.
 
-function desenharCabecalhoTabela(doc, y) {
-  doc.rect(MARGEM, y, LARGURA_CONTEUDO, 20).fill(AZUL);
+const COLUNAS = {
+  produto: { x: MARGEM + 14, largura: 205 },
+  quantidade: { x: 265, largura: 70 },
+  preco: { x: 345, largura: 95 },
+  total: { x: 450, largura: 91 },
+};
+
+const ALTURA_LINHA = 28;
+const ALTURA_CABECALHO_TABELA = 26;
+
+function cabecalhoTabela(doc, y) {
+  caixaMeiaRedonda(doc, MARGEM, y, LARGURA_CONTEUDO, ALTURA_CABECALHO_TABELA, 6, 'topo', AZUL);
   doc.font('Helvetica-Bold').fontSize(8).fillColor('#ffffff');
-  doc.text('PRODUTO', MARGEM + 8, y + 6.5, { width: 220 });
-  doc.text('QTD (TON)', 268, y + 6.5, { width: 62, align: 'right' });
-  doc.text('PREÇO / TON', 338, y + 6.5, { width: 82, align: 'right' });
-  doc.text('TOTAL', 428, y + 6.5, { width: 119, align: 'right' });
-  return y + 20;
+  const linha = (coluna, str, align) =>
+    doc.text(str, COLUNAS[coluna].x, y + 9, { width: COLUNAS[coluna].largura, align, characterSpacing: 0.5 });
+
+  linha('produto', 'PRODUTO', 'left');
+  linha('quantidade', 'QTD (TON)', 'right');
+  linha('preco', 'PREÇO / TON', 'right');
+  linha('total', 'TOTAL', 'right');
+  return y + ALTURA_CABECALHO_TABELA;
 }
 
 function desenharItens(doc, itens, yInicial) {
-  let y = desenharCabecalhoTabela(doc, yInicial);
+  let yTopo = yInicial;
+  let y = cabecalhoTabela(doc, yTopo);
 
   itens.forEach((item, i) => {
-    if (y + 18 > RODAPE_Y - 20) {
+    if (y + ALTURA_LINHA > RODAPE_Y - 30) {
+      // Fecha o quadro da página atual e recomeça a tabela na próxima.
+      doc.roundedRect(MARGEM, yTopo, LARGURA_CONTEUDO, y - yTopo, 6).lineWidth(0.8).strokeColor(BORDA).stroke();
       doc.addPage();
-      y = desenharCabecalhoTabela(doc, MARGEM);
+      yTopo = MARGEM + 12;
+      y = cabecalhoTabela(doc, yTopo);
     }
-    if (i % 2 === 1) doc.rect(MARGEM, y, LARGURA_CONTEUDO, 18).fill('#f7faf9');
 
-    doc.font('Helvetica').fontSize(9).fillColor(TINTA);
-    doc.text(texto(item.produto, 80) || '—', MARGEM + 8, y + 5, { width: 220, ellipsis: true, lineBreak: false });
-    doc.text(numero(item.quantidade), 268, y + 5, { width: 62, align: 'right' });
-    doc.text(moeda(item.preco), 338, y + 5, { width: 82, align: 'right' });
-    doc.text(moeda(item.total), 428, y + 5, { width: 119, align: 'right' });
+    doc.rect(MARGEM, y, LARGURA_CONTEUDO, ALTURA_LINHA).fill(i % 2 === 0 ? '#ffffff' : '#f6fafc');
 
-    doc.moveTo(MARGEM, y + 18).lineTo(DIREITA, y + 18).lineWidth(0.5).strokeColor('#e6edeb').stroke();
-    y += 18;
+    doc.font('Helvetica-Bold').fontSize(10).fillColor(TINTA);
+    doc.text(texto(item.produto, 80) || '—', COLUNAS.produto.x, y + 9,
+      { width: COLUNAS.produto.largura, ellipsis: true, lineBreak: false });
+
+    doc.font('Helvetica').fontSize(9.5).fillColor(CINZA_TEXTO);
+    doc.text(numero(item.quantidade), COLUNAS.quantidade.x, y + 9.5, { width: COLUNAS.quantidade.largura, align: 'right' });
+    doc.text(moeda(item.preco), COLUNAS.preco.x, y + 9.5, { width: COLUNAS.preco.largura, align: 'right' });
+
+    doc.font('Helvetica-Bold').fontSize(10).fillColor(AZUL);
+    doc.text(moeda(item.total), COLUNAS.total.x, y + 9, { width: COLUNAS.total.largura, align: 'right' });
+
+    y += ALTURA_LINHA;
+    if (i < itens.length - 1) {
+      doc.moveTo(MARGEM + 12, y).lineTo(DIREITA - 12, y).lineWidth(0.5).strokeColor('#eaf2f6').stroke();
+    }
   });
 
+  doc.roundedRect(MARGEM, yTopo, LARGURA_CONTEUDO, y - yTopo, 6).lineWidth(0.8).strokeColor(BORDA).stroke();
   return y;
 }
 
 function desenharTotais(doc, dados, yInicial) {
-  const x = 355;
+  const x = 307;
   const largura = DIREITA - x;
-  let y = yInicial + 10;
+  const alturaLinha = 30;
+  const alturaTotal = 44;
+  let y = yInicial;
 
-  const linha = (esquerda, direita) => {
-    doc.font('Helvetica').fontSize(9.5).fillColor(TINTA);
-    doc.text(esquerda, x, y, { width: largura / 2 });
-    doc.text(direita, x + largura / 2, y, { width: largura / 2, align: 'right' });
-    y += 15;
+  const linhaValor = (esquerda, direita, fundo) => {
+    doc.rect(x, y, largura, alturaLinha).fill(fundo);
+    doc.font('Helvetica').fontSize(9.5).fillColor(CINZA_TEXTO)
+      .text(esquerda, x + 14, y + 10.5, { width: largura / 2, lineBreak: false });
+    doc.font('Helvetica-Bold').fontSize(9.5).fillColor(TINTA)
+      .text(direita, x + largura / 2 - 14, y + 10.5, { width: largura / 2, align: 'right', lineBreak: false });
+    y += alturaLinha;
   };
 
-  linha('Subtotal', moeda(dados.subtotal));
-  linha(
+  caixaMeiaRedonda(doc, x, y, largura, alturaLinha, 6, 'topo', '#f3f7f9');
+  linhaValor('Subtotal', moeda(dados.subtotal), '#f3f7f9');
+  linhaValor(
     `Frete (${dados.frete})`,
     dados.frete === 'CIF'
       ? (dados.freteValor > 0 ? moeda(dados.freteValor) : 'Incluso')
-      : 'Por conta do cliente'
+      : 'Por conta do cliente',
+    '#e9f4f9'
   );
 
-  y += 3;
-  doc.moveTo(x, y).lineTo(DIREITA, y).lineWidth(1.5).strokeColor(AZUL).stroke();
-  y += 7;
-  doc.font('Helvetica-Bold').fontSize(12).fillColor(AZUL);
-  doc.text('Total', x, y, { width: largura / 2 });
-  doc.text(moeda(dados.total), x + largura / 2, y, { width: largura / 2, align: 'right' });
+  caixaMeiaRedonda(doc, x, y, largura, alturaTotal, 6, 'baixo', AZUL);
+  doc.font('Helvetica-Bold').fontSize(14).fillColor('#ffffff')
+    .text('Total', x + 14, y + 14, { width: largura / 2, lineBreak: false })
+    .text(moeda(dados.total), x + largura / 2 - 14, y + 14, { width: largura / 2, align: 'right', lineBreak: false });
 
-  return y + 22;
+  return y + alturaTotal;
 }
 
-function desenharCondicoes(doc, dados, yInicial) {
-  const colunas = [
-    ['Condição de pagamento', dados.pagamento || '—'],
-    ['Prazo de entrega', dados.entrega || '—'],
-    ['Frete', dados.frete],
-    ['Validade da proposta', dados.validadeTexto || '—'],
+// Texto curto do lado esquerdo dos totais, resumindo pra quem é a proposta.
+function desenharResumo(doc, dados, y, alturaDisponivel) {
+  const largura = 307 - MARGEM - 20;
+  const linhas = [
+    dados.cliente.nome ? `Proposta preparada para ${texto(dados.cliente.nome, 70).replace(/\.$/, '')}.` : '',
+    dados.frete === 'CIF'
+      ? (dados.freteValor > 0 ? 'Frete CIF cobrado à parte, conforme quadro ao lado.' : 'Frete CIF incluso no preço.')
+      : 'Frete FOB por conta do cliente.',
+    texto(dados.observacoes, 600),
+  ].filter(Boolean);
+
+  doc.font('Helvetica').fontSize(9).fillColor(CINZA_TEXTO)
+    .text(linhas.join('\n'), MARGEM, y + 4, { width: largura, lineGap: 3, height: alturaDisponivel });
+}
+
+function cartaoCondicao(doc, { x, y, largura, altura, iconeNome, titulo, valor, complemento, destaque }) {
+  doc.roundedRect(x, y, largura, altura, 6).fill(destaque ? VERDE_FUNDO : FUNDO_CARTAO);
+  doc.roundedRect(x, y, largura, altura, 6).lineWidth(0.8).strokeColor(BORDA).stroke();
+
+  icone(doc, ICONES[iconeNome], x + 12, y + 12, 16, destaque ? VERDE : AZUL_CLARO, 1.8);
+  rotulo(doc, titulo, x + 34, y + 13, largura - 44, CINZA_ROTULO, 6.5);
+
+  doc.font('Helvetica-Bold').fontSize(12).fillColor(destaque ? VERDE_ESCURO : TINTA)
+    .text(texto(valor, 40) || '—', x + 12, y + altura - 34, { width: largura - 24, ellipsis: true, lineBreak: false });
+  if (complemento) {
+    doc.font('Helvetica').fontSize(8).fillColor(destaque ? VERDE : CINZA_TEXTO)
+      .text(texto(complemento, 40), x + 12, y + altura - 17, { width: largura - 24, ellipsis: true, lineBreak: false });
+  }
+}
+
+function desenharCondicoes(doc, dados, y) {
+  const espaco = 8;
+  const largura = (LARGURA_CONTEUDO - espaco * 3) / 4;
+  const altura = 76;
+  const validade = String(dados.validadeTexto || '');
+  const partes = validade.match(/^(.+?)\s*\((.+)\)$/);
+
+  const cartoes = [
+    { iconeNome: 'cartao', titulo: 'Condição de pagamento', valor: dados.pagamento },
+    { iconeNome: 'caminhao', titulo: 'Prazo de entrega', valor: dados.entrega },
+    { iconeNome: 'frete', titulo: 'Frete', valor: dados.frete },
+    {
+      iconeNome: 'calendario',
+      titulo: 'Validade da proposta',
+      valor: partes ? partes[1] : validade,
+      complemento: partes ? `(${partes[2]})` : '',
+      destaque: true,
+    },
   ];
 
-  let y = yInicial;
-  colunas.forEach(([titulo, valor], i) => {
-    const x = i % 2 === 0 ? MARGEM : 305;
-    if (i % 2 === 0 && i > 0) y += 30;
-    rotulo(doc, titulo, x, y, 240);
-    doc.font('Helvetica').fontSize(9).fillColor(TINTA)
-      .text(texto(valor, 120), x, y + 11, { width: 240, ellipsis: true, lineBreak: false });
+  cartoes.forEach((cartao, i) => {
+    cartaoCondicao(doc, { ...cartao, x: MARGEM + i * (largura + espaco), y, largura, altura });
   });
 
-  return y + 40;
+  return y + altura;
 }
 
 export function gerarOrcamentoPdf(dados) {
   const doc = new PDFDocument({ size: 'A4', margin: MARGEM, bufferPages: true });
+  doc.on('pageAdded', () => barraTopo(doc));
 
   let y = cabecalhoDocumento(doc, {
     emitente: dados.emitente,
@@ -101,37 +171,45 @@ export function gerarOrcamentoPdf(dados) {
     data: dados.emitidaEm ? `Emitida em ${dados.emitidaEm}` : '',
   });
 
-  const alturaBlocos = Math.max(
-    blocoDocumento(doc, MARGEM, y, 250, 'Cliente', [
-      dados.cliente.nome || '—',
-      dados.cliente.cnpj && `CNPJ ${dados.cliente.cnpj}`,
-      dados.cliente.endereco,
-      dados.cliente.cidade,
-      dados.cliente.contato && `A/C ${dados.cliente.contato}`,
-    ]),
-    blocoDocumento(doc, 305, y, 250, 'Vendedor responsável', [
-      dados.vendedor.nome || '—',
-      dados.vendedor.cargo,
-      dados.vendedor.registro,
-      dados.vendedor.celular,
-      dados.vendedor.email,
-      dados.vendedor.regiao && `Região: ${dados.vendedor.regiao}`,
-    ])
-  );
+  const linhasCliente = [
+    dados.cliente.nome || '—',
+    dados.cliente.cnpj && `CNPJ ${dados.cliente.cnpj}`,
+    dados.cliente.endereco,
+    dados.cliente.cidade,
+    dados.cliente.contato && `A/C ${dados.cliente.contato}`,
+  ];
+  const linhasVendedor = [
+    dados.vendedor.nome || '—',
+    dados.vendedor.cargo,
+    dados.vendedor.registro,
+    dados.vendedor.celular,
+    dados.vendedor.email,
+    dados.vendedor.regiao && `Região: ${dados.vendedor.regiao}`,
+  ];
+  const alturaCartoes = Math.max(alturaCartao(doc, linhasCliente, 248), alturaCartao(doc, linhasVendedor, 248));
+  blocoDocumento(doc, MARGEM, y, 248, 'Cliente', linhasCliente, { cor: AZUL_CLARO, altura: alturaCartoes });
+  blocoDocumento(doc, 307, y, 248, 'Vendedor responsável', linhasVendedor, { cor: VERDE, altura: alturaCartoes });
+  y += alturaCartoes + 24;
 
-  y = desenharItens(doc, dados.itens, y + alturaBlocos + 16);
-  y = desenharTotais(doc, dados, y);
-  y = desenharCondicoes(doc, dados, y + 6);
+  // Título da seção de itens.
+  icone(doc, ICONES.caixa, MARGEM, y - 3, 16, AZUL_CLARO, 1.8);
+  rotulo(doc, 'Itens da proposta', MARGEM + 24, y + 1, 240, TINTA, 9);
+  doc.font('Helvetica').fontSize(8.5).fillColor(CINZA_ROTULO)
+    .text('Valores em reais (R$)', DIREITA - 200, y + 2, { width: 200, align: 'right' });
 
-  if (dados.observacoes) {
-    rotulo(doc, 'Observações', MARGEM, y, LARGURA_CONTEUDO);
-    doc.font('Helvetica').fontSize(9).fillColor(TINTA)
-      .text(texto(dados.observacoes, 1200), MARGEM, y + 11, { width: LARGURA_CONTEUDO });
-  }
+  y = desenharItens(doc, dados.itens, y + 20);
+
+  const yTotais = y + 16;
+  const yDepois = desenharTotais(doc, dados, yTotais);
+  desenharResumo(doc, dados, yTotais, yDepois - yTotais);
+
+  y = desenharCondicoes(doc, dados, yDepois + 26);
+
+  if (y + 60 < RODAPE_Y) marcaDagua(doc, Math.max(y + 30, RODAPE_Y - 66));
 
   rodapeDocumento(doc, {
     emitente: dados.emitente,
-    assinatura: [dados.vendedor.nome || dados.vendedor.cargo, dados.vendedor.celular].filter(Boolean).join(' · '),
+    assinatura: ['Vendedor', dados.vendedor.celular].filter(Boolean).join(' · '),
   });
 
   doc.end();

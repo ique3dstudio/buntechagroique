@@ -1,7 +1,8 @@
 import PDFDocument from 'pdfkit';
 import {
-  AZUL, TINTA, MARGEM, LARGURA_CONTEUDO, DIREITA, RODAPE_Y,
-  texto, rotulo, cabecalhoDocumento, blocoDocumento, rodapeDocumento, nomeArquivo,
+  AZUL, AZUL_CLARO, VERDE, TINTA, MARGEM, LARGURA_CONTEUDO, RODAPE_Y,
+  texto, rotulo, barraTopo, cabecalhoDocumento, blocoDocumento, alturaCartao,
+  marcaDagua, rodapeDocumento, nomeArquivo,
 } from './pdf-comum.js';
 
 // Relatório de visita em PDF, gerado a partir do que foi preenchido no app -
@@ -26,6 +27,7 @@ function secao(doc, titulo, conteudo, y) {
 
 export function gerarRelatorioVisitaPdf(dados) {
   const doc = new PDFDocument({ size: 'A4', margin: MARGEM, bufferPages: true });
+  doc.on('pageAdded', () => barraTopo(doc));
 
   let y = cabecalhoDocumento(doc, {
     emitente: dados.emitente,
@@ -34,23 +36,24 @@ export function gerarRelatorioVisitaPdf(dados) {
     data: dados.dataVisita ? `Visita em ${dados.dataVisita}` : '',
   });
 
-  const alturaBlocos = Math.max(
-    blocoDocumento(doc, MARGEM, y, 250, 'Cliente', [
-      dados.cliente.nome || '—',
-      dados.cliente.cnpj && `CNPJ ${dados.cliente.cnpj}`,
-      dados.cliente.endereco,
-      dados.cliente.cidade,
-      dados.cliente.contato,
-    ]),
-    blocoDocumento(doc, 305, y, 250, 'Visita', [
-      dados.dataVisita || '—',
-      dados.km ? `${dados.km} km rodados` : null,
-      dados.vendedor.nome || dados.vendedor.cargo,
-      dados.vendedor.celular,
-    ])
-  );
+  const linhasCliente = [
+    dados.cliente.nome || '—',
+    dados.cliente.cnpj && `CNPJ ${dados.cliente.cnpj}`,
+    dados.cliente.endereco,
+    dados.cliente.cidade,
+    dados.cliente.contato,
+  ];
+  const linhasVisita = [
+    dados.dataVisita || '—',
+    dados.km ? `${dados.km} km rodados` : null,
+    dados.vendedor.nome || dados.vendedor.cargo,
+    dados.vendedor.celular,
+  ];
+  const alturaBlocos = Math.max(alturaCartao(doc, linhasCliente, 248), alturaCartao(doc, linhasVisita, 248));
+  blocoDocumento(doc, MARGEM, y, 248, 'Cliente', linhasCliente, { cor: AZUL_CLARO, altura: alturaBlocos });
+  blocoDocumento(doc, 307, y, 248, 'Visita', linhasVisita, { cor: VERDE, altura: alturaBlocos });
 
-  y += alturaBlocos + 18;
+  y += alturaBlocos + 22;
 
   y = secao(doc, 'Quem participou', dados.participantes, y);
   y = secao(doc, 'Objetivo da visita', dados.objetivo, y);
@@ -63,6 +66,8 @@ export function gerarRelatorioVisitaPdf(dados) {
     doc.font('Helvetica').fontSize(9).fillColor(AZUL)
       .text(texto(dados.anexoNome, 120), MARGEM, y + 12, { width: LARGURA_CONTEUDO, link: dados.anexoUrl || null });
   }
+
+  if (y + 60 < RODAPE_Y) marcaDagua(doc, RODAPE_Y - 66);
 
   rodapeDocumento(doc, {
     emitente: dados.emitente,
