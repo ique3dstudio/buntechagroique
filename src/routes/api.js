@@ -4,6 +4,7 @@ import { supabase } from '../services/supabase.js';
 import { geocodificarEndereco } from '../services/geocode.js';
 import { gerarOrcamentoPdf, nomeArquivoOrcamento } from '../services/orcamento-pdf.js';
 import { gerarRelatorioVisitaPdf, nomeArquivoRelatorio } from '../services/visita-pdf.js';
+import { extrairTextoDocx } from '../services/docx-texto.js';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024 } });
@@ -945,6 +946,18 @@ router.delete('/visitas/:id', async (req, res) => {
   const { error } = await supabase.from('visitas').delete().eq('id', req.params.id);
   if (error) return res.status(500).json({ error: error.message });
   res.status(204).end();
+});
+
+// Texto de um .docx pra pré-visualização no app, antes mesmo da visita ser
+// registrada (o usuário escolhe o arquivo no formulário e já vê o conteúdo).
+router.post('/extrair-texto-docx', upload.single('arquivo'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'arquivo é obrigatório' });
+  try {
+    const texto = extrairTextoDocx(req.file.buffer);
+    res.json({ texto });
+  } catch (erro) {
+    res.status(400).json({ error: erro.message || 'Não consegui ler o texto deste arquivo.' });
+  }
 });
 
 // Anexo da visita (PDF, Word, foto do relatório assinado, etc.)

@@ -512,6 +512,19 @@
   }
   .celula-truncada { max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
+  /* --- Pré-visualização do anexo (Registrar visita) --- */
+  #visita-anexo-preview { margin: -0.3rem 0 1.1rem; padding: 0.9rem; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; }
+  .visita-anexo-preview-topo { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.6rem; }
+  .visita-anexo-preview-topo strong { font-size: 0.82rem; }
+  #visita-anexo-controles { display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; }
+  #visita-anexo-controles button { padding: 0.3rem 0.6rem; font-size: 0.78rem; }
+  #visita-anexo-controles span { font-size: 0.75rem; color: var(--muted); }
+  #visita-anexo-conteudo img { max-width: 100%; border-radius: 8px; cursor: zoom-in; display: block; }
+  #visita-anexo-conteudo iframe { width: 100%; height: 65vh; border: 1px solid var(--border); border-radius: 8px; background: #fff; }
+  #visita-anexo-texto { white-space: pre-wrap; font-family: inherit; line-height: 1.6; max-height: 55vh; overflow: auto; background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 0.9rem; margin: 0; }
+  .visita-anexo-overlay { position: fixed; inset: 0; background: rgba(10, 18, 16, 0.92); z-index: 9999; display: flex; align-items: center; justify-content: center; overflow: auto; padding: 1rem; }
+  .visita-anexo-overlay img { max-width: none; cursor: zoom-out; border-radius: 4px; }
+
   /* --- Grade de clientes --- */
   .clientes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.85rem; }
   .cliente-card {
@@ -862,10 +875,14 @@
     font-size: 10pt;
     line-height: 1.45;
   }
-  /* No celular a folha é reduzida pra caber na tela; o PDF sai em A4 real. */
+  /* No celular a folha é reduzida pra caber na tela; o PDF sai em A4 real.
+     Usa "zoom" em vez de "transform: scale()": o scale só encolhe o
+     desenho, não a caixa (ela continua com 210mm de largura no layout),
+     e isso fazia o card recortar a folha pela direita. O zoom encolhe a
+     caixa de verdade, então não precisa de nenhum hack de margem. */
   @media (max-width: 820px) {
     .folha-wrap { display: flex; justify-content: center; }
-    .folha-a4 { transform: scale(0.42); transform-origin: top center; margin-bottom: -160mm; }
+    .folha-a4 { zoom: 0.42; }
   }
 
   /* A folha espelha o PDF gerado no servidor (src/services/orcamento-pdf.js). */
@@ -943,7 +960,7 @@
       min-height: 0;
       margin: 0;
       padding: 0;
-      transform: none !important;
+      zoom: 1 !important;
       box-shadow: none;
     }
     .folha-wrap { overflow: visible; }
@@ -1449,13 +1466,47 @@
     <!-- ===== ABA CRM ===== -->
     <div class="painel" id="painel-crm" hidden>
       <nav class="secoes">
+        <a href="#visitas">Visitas</a>
         <a href="#empresas">Empresas</a>
         <a href="#contatos">Contatos</a>
         <a href="#produtos">Produtos</a>
         <a href="#negociacoes">Negociações</a>
         <a href="#atividades">Atividades</a>
-        <a href="#visitas">Visitas</a>
       </nav>
+
+      <section class="card" id="visitas">
+        <h2><span class="icone-secao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.1 7-11a7 7 0 0 0-14 0c0 4.9 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg></span>Registrar visita</h2>
+        <form id="form-visita">
+          <div class="form-grid">
+            <div class="field"><label>Cliente</label><select name="cliente_id" id="select-cliente-visita" required></select></div>
+            <div class="field"><label>Data</label><input name="data" type="date" required /></div>
+            <div class="field"><label>Km rodados</label><input name="km" placeholder="0" type="number" step="0.1" min="0" /></div>
+            <div class="field" style="grid-column: 1 / -1"><label>Objetivo da visita</label><input name="objetivo" placeholder="Ex: Apresentar o Seedgel Black" /></div>
+            <div class="field" style="grid-column: 1 / -1"><label>Observações</label><input name="observacoes" placeholder="Opcional" /></div>
+            <div class="field" style="grid-column: 1 / -1">
+              <label>Anexar arquivo (relatório, foto, etc.)</label>
+              <input type="file" name="arquivo_anexo" id="visita-arquivo-input" accept=".pdf,.doc,.docx,image/*" />
+            </div>
+          </div>
+
+          <div id="visita-anexo-preview" hidden>
+            <div class="visita-anexo-preview-topo">
+              <strong>Pré-visualização do anexo</strong>
+              <div id="visita-anexo-controles"></div>
+            </div>
+            <div id="visita-anexo-conteudo"></div>
+          </div>
+
+          <button type="submit">Registrar visita</button>
+        </form>
+        <div class="tabela-wrap">
+          <table>
+            <thead><tr><th>Cliente</th><th>Data</th><th>Km</th><th>Relato</th><th>Relatório</th></tr></thead>
+            <tbody id="tabela-visitas"></tbody>
+          </table>
+        </div>
+        <input type="file" id="input-anexo-visita" accept=".pdf,.doc,.docx,image/*" hidden />
+      </section>
 
       <section class="card" id="empresas">
         <h2><span class="icone-secao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h1M14 9h1M9 13h1M14 13h1M9 17h1M14 17h1"/></svg></span>Empresas</h2>
@@ -1586,30 +1637,6 @@
             <tbody id="tabela-atividades"></tbody>
           </table>
         </div>
-      </section>
-
-      <section class="card" id="visitas">
-        <h2><span class="icone-secao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.1 7-11a7 7 0 0 0-14 0c0 4.9 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg></span>Registrar visita</h2>
-        <form id="form-visita">
-          <div class="form-grid">
-            <div class="field"><label>Cliente</label><select name="cliente_id" id="select-cliente-visita" required></select></div>
-            <div class="field"><label>Data</label><input name="data" type="date" required /></div>
-            <div class="field"><label>Km rodados</label><input name="km" placeholder="0" type="number" step="0.1" min="0" /></div>
-            <div class="field"><label>Quem participou</label><input name="participantes" placeholder="Ex: Paulinho (comprador)" /></div>
-            <div class="field" style="grid-column: 1 / -1"><label>Objetivo da visita</label><input name="objetivo" placeholder="Ex: Apresentar o Seedgel Black" /></div>
-            <div class="field" style="grid-column: 1 / -1"><label>Como foi a visita</label><textarea name="relato" placeholder="O que foi tratado, o que o cliente falou, situação encontrada…"></textarea></div>
-            <div class="field" style="grid-column: 1 / -1"><label>Próximos passos</label><textarea name="proximos_passos" placeholder="O que ficou combinado, pendências, quando retornar…"></textarea></div>
-            <div class="field" style="grid-column: 1 / -1"><label>Observações</label><input name="observacoes" placeholder="Opcional" /></div>
-            <button type="submit">Registrar visita</button>
-          </div>
-        </form>
-        <div class="tabela-wrap">
-          <table>
-            <thead><tr><th>Cliente</th><th>Data</th><th>Km</th><th>Relato</th><th>Relatório</th></tr></thead>
-            <tbody id="tabela-visitas"></tbody>
-          </table>
-        </div>
-        <input type="file" id="input-anexo-visita" accept=".pdf,.doc,.docx,image/*" hidden />
       </section>
     </div>
 
@@ -3981,6 +4008,106 @@ document.getElementById('input-anexo-visita').addEventListener('change', async (
   }
 });
 
+// Pré-visualização do arquivo escolhido no formulário "Registrar visita" -
+// dá pra ler e copiar o texto (docx) ou ver a imagem/PDF ampliado sem sair
+// do app, antes mesmo de a visita ser salva.
+document.getElementById('visita-arquivo-input').addEventListener('change', (e) => {
+  mostrarPreviewAnexoVisita(e.target.files[0] || null);
+});
+
+async function mostrarPreviewAnexoVisita(arquivo) {
+  const wrap = document.getElementById('visita-anexo-preview');
+  const conteudo = document.getElementById('visita-anexo-conteudo');
+  const controles = document.getElementById('visita-anexo-controles');
+  controles.innerHTML = '';
+  conteudo.innerHTML = '';
+
+  if (!arquivo) { wrap.hidden = true; return; }
+  wrap.hidden = false;
+
+  const nome = arquivo.name.toLowerCase();
+
+  if (arquivo.type.startsWith('image/')) {
+    const url = URL.createObjectURL(arquivo);
+    const img = document.createElement('img');
+    img.src = url;
+    img.alt = 'Anexo';
+    img.addEventListener('click', () => ampliarImagemAnexo(url));
+    conteudo.appendChild(img);
+    controles.innerHTML = '<span>Toque na imagem pra ampliar</span>';
+    return;
+  }
+
+  if (arquivo.type === 'application/pdf' || nome.endsWith('.pdf')) {
+    const url = URL.createObjectURL(arquivo);
+    conteudo.innerHTML = `<iframe src="${url}" title="Pré-visualização do PDF"></iframe>`;
+    controles.innerHTML = '<span>Use os controles do próprio PDF pra ampliar e selecionar o texto</span>';
+    return;
+  }
+
+  if (nome.endsWith('.docx')) {
+    conteudo.innerHTML = '<p class="vazio">Lendo o documento…</p>';
+    const formData = new FormData();
+    formData.append('arquivo', arquivo);
+    try {
+      const res = await fetch('/api/extrair-texto-docx', { method: 'POST', body: formData });
+      const dados = await res.json();
+      if (!res.ok) throw new Error(dados.error || 'Não consegui ler este arquivo.');
+      renderizarTextoAnexoVisita(dados.texto || '(documento sem texto)', conteudo, controles);
+    } catch (erro) {
+      conteudo.innerHTML = `<p class="vazio">${escaparAtributo(erro.message)} O arquivo ainda será anexado normalmente à visita.</p>`;
+    }
+    return;
+  }
+
+  conteudo.innerHTML = '<p class="vazio">Pré-visualização não disponível pra este tipo de arquivo. Ele será anexado normalmente à visita.</p>';
+}
+
+function renderizarTextoAnexoVisita(texto, conteudo, controles) {
+  let zoom = 100;
+  const pre = document.createElement('pre');
+  pre.id = 'visita-anexo-texto';
+  pre.textContent = texto;
+  conteudo.innerHTML = '';
+  conteudo.appendChild(pre);
+
+  const btnMenos = document.createElement('button');
+  btnMenos.type = 'button';
+  btnMenos.className = 'secundario';
+  btnMenos.textContent = 'A−';
+  btnMenos.addEventListener('click', () => { zoom = Math.max(60, zoom - 15); pre.style.fontSize = zoom + '%'; });
+
+  const btnMais = document.createElement('button');
+  btnMais.type = 'button';
+  btnMais.className = 'secundario';
+  btnMais.textContent = 'A+';
+  btnMais.addEventListener('click', () => { zoom = Math.min(220, zoom + 15); pre.style.fontSize = zoom + '%'; });
+
+  const btnCopiar = document.createElement('button');
+  btnCopiar.type = 'button';
+  btnCopiar.textContent = 'Copiar texto';
+  btnCopiar.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(texto);
+      btnCopiar.textContent = 'Copiado!';
+      setTimeout(() => { btnCopiar.textContent = 'Copiar texto'; }, 1500);
+    } catch {
+      alert('Não consegui copiar automaticamente. Selecione o texto e copie manualmente.');
+    }
+  });
+
+  controles.innerHTML = '';
+  controles.append(btnMenos, btnMais, btnCopiar);
+}
+
+function ampliarImagemAnexo(url) {
+  const overlay = document.createElement('div');
+  overlay.className = 'visita-anexo-overlay';
+  overlay.innerHTML = `<img src="${url}" alt="Anexo ampliado" />`;
+  overlay.addEventListener('click', () => overlay.remove());
+  document.body.appendChild(overlay);
+}
+
 // --- Aba CRM ---
 
 async function carregarEmpresas() {
@@ -4629,7 +4756,38 @@ formHandler('form-produto', '/produtos', carregarProdutos);
 formHandler('form-contato', '/contatos', () => Promise.all([carregarContatos(), carregarResumo()]));
 formHandler('form-negociacao', '/negociacoes', () => Promise.all([carregarNegociacoes(), carregarResumo()]));
 formHandler('form-atividade', '/atividades', () => Promise.all([carregarAtividades(), carregarResumo()]));
-formHandler('form-visita', '/visitas', () => Promise.all([carregarVisitas(), carregarResumo()]));
+// Formulário próprio (em vez de formHandler): tem um campo de arquivo, que
+// não dá pra mandar dentro do JSON da visita - primeiro cria a visita,
+// depois anexa o arquivo escolhido no registro recém-criado.
+document.getElementById('form-visita').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  const dadosForm = new FormData(form);
+  const arquivo = dadosForm.get('arquivo_anexo');
+  dadosForm.delete('arquivo_anexo');
+  const corpo = Object.fromEntries(dadosForm);
+
+  try {
+    const resultado = await api('/visitas', { method: 'POST', body: JSON.stringify(corpo) });
+
+    if (arquivo && arquivo.size > 0 && resultado?.id) {
+      const anexoForm = new FormData();
+      anexoForm.append('arquivo', arquivo);
+      const res = await fetch(`/api/visitas/${resultado.id}/anexo`, { method: 'POST', body: anexoForm });
+      if (!res.ok) {
+        const erro = await res.json().catch(() => ({}));
+        alert(erro.error || 'Visita registrada, mas não consegui anexar o arquivo.');
+      }
+    }
+
+    form.reset();
+    mostrarPreviewAnexoVisita(null);
+    await Promise.all([carregarVisitas(), carregarResumo()]);
+    if (resultado?.aviso) alert(resultado.aviso);
+  } catch (err) {
+    alert(err.message);
+  }
+});
 formHandler('form-rdv', '/rdv', () => {
   document.getElementById('rdv-numero-pa-wrap').style.display = 'none';
   document.getElementById('rdv-tipo-politica-wrap').style.display = 'none';
