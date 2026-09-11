@@ -1091,27 +1091,6 @@ router.get('/resumo', async (req, res) => {
   const clientesVisitadosMes = new Set(visitas.map((v) => v.cliente_id || v.contato_id).filter(Boolean)).size;
   const kmRodadosMes = visitas.reduce((soma, v) => soma + Number(v.km || 0), 0);
 
-  // Antes esses números vinham de "contatos" (a lista de leads do CRM) -
-  // passaram a vir da Carteira ("clientes"), que é a base de verdade da
-  // base de clientes. Ativo/desenvolvimento/inativo é o campo "Situação"
-  // da ficha; "convertido" não existe na Situação, então usa a etapa
-  // "Fechado/Ganha" do campo "Funil" (o cliente fechou negócio).
-  const statusContagens = {};
-  const consultasSituacaoCliente = [
-    ['ativo', 'situacao', 'Ativo'],
-    ['inativo', 'situacao', 'Inativo'],
-    ['desenvolvimento', 'situacao', 'Desenvolvimento'],
-    ['convertido', 'funil', 'Fechado/Ganha'],
-  ];
-  for (const [chave, campo, valor] of consultasSituacaoCliente) {
-    const { count, error } = await supabase
-      .from('clientes')
-      .select('*', { count: 'exact', head: true })
-      .eq(`dados->>${campo}`, valor);
-    if (error) return res.status(500).json({ error: error.message });
-    statusContagens[chave] = count ?? 0;
-  }
-
   const inicioAno = `${anoAtual}-01-01`;
   const inicioProximoAno = `${anoAtual + 1}-01-01`;
   const { data: negociacoesGanhasAno, error: negociacoesAnoError } = await supabase
@@ -1152,10 +1131,6 @@ router.get('/resumo', async (req, res) => {
     meses_restantes: mesesRestantes,
     clientes_visitados_mes: clientesVisitadosMes,
     km_rodados_mes: kmRodadosMes,
-    clientes_ativos: statusContagens.ativo,
-    clientes_inativos: statusContagens.inativo,
-    clientes_desenvolvimento: statusContagens.desenvolvimento,
-    clientes_convertidos: statusContagens.convertido,
   });
 });
 

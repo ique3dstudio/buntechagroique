@@ -3689,20 +3689,20 @@ async function carregarResumo() {
     </div>
     <div class="stat">
       <div class="stat-corpo">
-        ${icone('<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="m17 11 2 2 4-4"/>')}
-        <div><div class="valor">${r.clientes_ativos}</div><div class="label">Clientes ativos</div></div>
+        ${icone('<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>')}
+        <div style="flex:1; min-width:0">
+          <div class="valor" id="situacao-clientes-contagem">0</div>
+          <div class="label funil-vendas-label">
+            <span>Situação:</span>
+            <select class="seletor-funil-mini" id="situacao-clientes-select"></select>
+          </div>
+        </div>
       </div>
     </div>
     <div class="stat">
       <div class="stat-corpo">
-        ${icone('<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>')}
-        <div><div class="valor">${r.clientes_desenvolvimento}</div><div class="label">Em desenvolvimento</div></div>
-      </div>
-    </div>
-    <div class="stat">
-      <div class="stat-corpo">
-        ${icone('<path d="M11 17H4a2 2 0 0 1-2-2v-1a4 4 0 0 1 4-4h2m6 0a4 4 0 0 1 4 4v1a2 2 0 0 1-2 2h-1"/><path d="m9 12 2 2 4-4"/>')}
-        <div><div class="valor">${r.clientes_convertidos}</div><div class="label">Convertidos</div></div>
+        ${icone('<path d="M17 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>')}
+        <div><div class="valor" id="carteira-total-contagem">0</div><div class="label">Clientes na carteira</div></div>
       </div>
     </div>
     <div class="stat">
@@ -3730,6 +3730,8 @@ async function carregarResumo() {
   `;
   renderizarTileFaturamento();
   renderizarMetaProgresso();
+  renderizarSituacaoClientes();
+  renderizarTotalCarteira();
   renderizarFunilVendas();
   ajustarAlturaInicio();
 }
@@ -3807,7 +3809,39 @@ document.getElementById('seletor-periodo-resumo').addEventListener('change', (e)
   renderizarTileFaturamento();
 });
 
-// --- Funil de vendas (caixa ao lado de "Convertidos") ---
+// --- Situação da carteira (caixa com seletor, no lugar dos três cartões
+// separados de ativos/desenvolvimento/convertidos) ---
+
+let situacaoClienteSelecionada = 'Ativo';
+// A Situação da ficha do cliente só tem Ativo/Desenvolvimento/Inativo -
+// "Convertido" não existe nela, então usa a etapa "Fechado/Ganha" do Funil
+// (mesmo critério usado no dashboard antes disso virar um seletor).
+const OPCOES_SITUACAO_CLIENTE = ['Ativo', 'Desenvolvimento', 'Convertido', 'Inativo'];
+
+function renderizarSituacaoClientes() {
+  const select = document.getElementById('situacao-clientes-select');
+  const contagemEl = document.getElementById('situacao-clientes-contagem');
+  if (!select || !contagemEl) return;
+
+  select.innerHTML = OPCOES_SITUACAO_CLIENTE
+    .map((o) => `<option value="${o}" ${o === situacaoClienteSelecionada ? 'selected' : ''}>${o}</option>`)
+    .join('');
+  select.onchange = () => {
+    situacaoClienteSelecionada = select.value;
+    renderizarSituacaoClientes();
+  };
+
+  contagemEl.textContent = situacaoClienteSelecionada === 'Convertido'
+    ? clientesCache.filter((c) => c.dados?.funil === 'Fechado/Ganha').length
+    : clientesCache.filter((c) => c.dados?.situacao === situacaoClienteSelecionada).length;
+}
+
+function renderizarTotalCarteira() {
+  const el = document.getElementById('carteira-total-contagem');
+  if (el) el.textContent = clientesCache.length;
+}
+
+// --- Funil de vendas (caixa ao lado da Situação) ---
 
 let funilVendasSelecionado = null;
 
@@ -4250,6 +4284,8 @@ async function carregarClientes() {
   preencherSelectClienteVisita();
   renderizarFiltroClientes();
   renderizarGradeClientes();
+  renderizarSituacaoClientes();
+  renderizarTotalCarteira();
   renderizarFunilVendas();
   if (clienteAtualId && !document.getElementById('clientes-detalhe-view').hidden) {
     abrirDetalheCliente(clienteAtualId);
