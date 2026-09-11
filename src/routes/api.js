@@ -1027,6 +1027,57 @@ router.post('/visitas/:id/relatorio-pdf', async (req, res) => {
   }
 });
 
+// --- Pedidos (lançados no TOTVS Protheus, registrados aqui pra entrar no
+// faturamento do dashboard sem esperar a integração de verdade) ---
+
+function tabelaPedidosAusente(error) {
+  return !!error && (error.code === '42P01' || /relation .*pedidos.* does not exist/i.test(error.message || ''));
+}
+const AVISO_TABELA_PEDIDOS =
+  'A tabela "pedidos" ainda não existe no banco. Rode a migração 037 no SQL Editor do Supabase e tente de novo.';
+
+const CAMPOS_PEDIDO = [
+  'tipo_pedido', 'loja', 'tipo_cliente', 'cond_pagamento', 'tipo_frete', 'presenca_comercial',
+  'comunicacao_interna', 'produto', 'numero_vendedor', 'unidade',
+];
+
+router.get('/pedidos', async (req, res) => {
+  const { data, error } = await supabase
+    .from('pedidos')
+    .select('*, clientes(nome)')
+    .order('data', { ascending: false })
+    .limit(50);
+  if (tabelaPedidosAusente(error)) return res.status(400).json({ error: AVISO_TABELA_PEDIDOS });
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
+router.post('/pedidos', async (req, res) => {
+  const { cliente_id, data: dataPedido } = req.body;
+  if (!cliente_id) return res.status(400).json({ error: 'cliente é obrigatório' });
+  if (!dataPedido) return res.status(400).json({ error: 'data é obrigatória' });
+
+  const registro = { cliente_id, data: dataPedido };
+  for (const campo of CAMPOS_PEDIDO) {
+    if (req.body[campo] !== undefined) registro[campo] = req.body[campo] || null;
+  }
+  // O total é sempre recalculado aqui (não confia no que vier do navegador).
+  const quantidade = Number(req.body.quantidade) || 0;
+  const precoUnitario = Number(req.body.preco_unitario) || 0;
+  registro.quantidade = quantidade || null;
+  registro.preco_unitario = precoUnitario || null;
+  registro.valor_total = quantidade * precoUnitario;
+
+  const { data, error } = await supabase
+    .from('pedidos')
+    .insert(registro)
+    .select('*, clientes(nome)')
+    .single();
+  if (tabelaPedidosAusente(error)) return res.status(400).json({ error: AVISO_TABELA_PEDIDOS });
+  if (error) return res.status(500).json({ error: error.message });
+  res.status(201).json(data);
+});
+
 // --- Metas e resumo do mês ---
 
 router.post('/metas', async (req, res) => {
@@ -1071,7 +1122,20 @@ router.get('/resumo', async (req, res) => {
     .gte('updated_at', mesFaturamento)
     .lt('updated_at', proximoMesFaturamento);
   if (negociacoesError) return res.status(500).json({ error: negociacoesError.message });
-  const faturamentoMes = negociacoesGanhas.reduce((soma, n) => soma + Number(n.valor || 0), 0);
+
+  // Pedidos lançados no TOTVS (aba "Criar pedido") somam no faturamento do
+  // mesmo jeito que negociação ganha - se a migração 037 ainda não rodou,
+  // simplesmente não soma nada em vez de derrubar o /resumo inteiro.
+  let { data: pedidosMes, error: pedidosError } = await supabase
+    .from('pedidos')
+    .select('valor_total')
+    .gte('data', mesFaturamento)
+    .lt('data', proximoMesFaturamento);
+  if (tabelaPedidosAusente(pedidosError)) { pedidosMes = []; pedidosError = null; }
+  if (pedidosError) return res.status(500).json({ error: pedidosError.message });
+
+  const faturamentoMes = negociacoesGanhas.reduce((soma, n) => soma + Number(n.valor || 0), 0)
+    + pedidosMes.reduce((soma, p) => soma + Number(p.valor_total || 0), 0);
 
   const consultaVisitas = (colunas) => supabase
     .from('visitas')
@@ -1100,7 +1164,17 @@ router.get('/resumo', async (req, res) => {
     .gte('updated_at', inicioAno)
     .lt('updated_at', inicioProximoAno);
   if (negociacoesAnoError) return res.status(500).json({ error: negociacoesAnoError.message });
-  const faturamentoAnoNegociacoes = negociacoesGanhasAno.reduce((soma, n) => soma + Number(n.valor || 0), 0);
+
+  let { data: pedidosAno, error: pedidosAnoError } = await supabase
+    .from('pedidos')
+    .select('valor_total')
+    .gte('data', inicioAno)
+    .lt('data', inicioProximoAno);
+  if (tabelaPedidosAusente(pedidosAnoError)) { pedidosAno = []; pedidosAnoError = null; }
+  if (pedidosAnoError) return res.status(500).json({ error: pedidosAnoError.message });
+
+  const faturamentoAnoNegociacoes = negociacoesGanhasAno.reduce((soma, n) => soma + Number(n.valor || 0), 0)
+    + pedidosAno.reduce((soma, p) => soma + Number(p.valor_total || 0), 0);
 
   // Se a migracao que adiciona meta_valor/vendido_base ainda nao rodou nesse banco,
   // nao derruba o /resumo inteiro - so deixa os cartoes de meta/pace sem dado.

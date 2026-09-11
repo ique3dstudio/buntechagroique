@@ -879,6 +879,14 @@
   .orcamento-total-resumo span { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); font-weight: 700; }
   .orcamento-total-resumo strong { font-family: 'Poppins', sans-serif; font-size: 1.3rem; color: var(--blue-dark); }
 
+  .pedido-total-linha {
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    margin: 0.25rem 0 1.1rem; padding: 0.75rem 1rem;
+    background: #f3f7f6; border-radius: 10px;
+  }
+  .pedido-total-linha span { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); font-weight: 700; }
+  .pedido-total-linha strong { font-family: 'Poppins', sans-serif; font-size: 1.2rem; color: var(--blue-dark); }
+
   .folha-wrap { overflow-x: auto; }
   .folha-a4 {
     width: 210mm;
@@ -1866,18 +1874,45 @@
 
     <!-- ===== ABA CRIAR PEDIDO ===== -->
     <div class="painel" id="painel-pedido" hidden>
-      <section class="card">
-        <h2><span class="icone-secao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span>Criar pedido</h2>
-        <p class="vazio" style="margin: -0.5rem 0 1rem">Ainda não conectado ao TOTVS Protheus.</p>
-        <div class="aviso-integracao">
-          <strong>O que falta pra essa aba funcionar de verdade:</strong>
-          <ul>
-            <li>Print da tela de abertura do pedido (seleção de cliente)</li>
-            <li>Print da tela de adicionar item (produto, quantidade, preço)</li>
-            <li>Print da condição de pagamento / tabela de preço</li>
-            <li>Print da tela de resumo antes de confirmar</li>
-          </ul>
-          <p class="vazio" style="margin: 0.75rem 0 0">Depois disso: você monta o pedido aqui (cliente + produtos), e eu gero ele direto no Protheus.</p>
+      <section class="card" id="pedidos">
+        <h2><span class="icone-secao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg></span>Inserir pedido</h2>
+        <p class="vazio" style="margin: -0.5rem 0 1rem">Ainda não conectado direto ao TOTVS Protheus - registre aqui o pedido lançado por lá. Os campos com * são os que aparecem obrigatórios (asterisco vermelho) na tela de Pedidos de Venda.</p>
+        <form id="form-pedido">
+          <div class="form-grid">
+            <div class="field"><label>Cliente *</label><select name="cliente_id" id="select-cliente-pedido" required></select></div>
+            <div class="field"><label>Data *</label><input name="data" type="date" required /></div>
+            <div class="field"><label>Tipo de pedido *</label><input name="tipo_pedido" placeholder="Ex: N - Normal" required /></div>
+            <div class="field"><label>Loja *</label><input name="loja" placeholder="Ex: 01" required /></div>
+            <div class="field"><label>Tipo de cliente *</label><input name="tipo_cliente" placeholder="Ex: R - Revendedor" required /></div>
+            <div class="field"><label>Condição de pagamento *</label><input name="cond_pagamento" placeholder="Ex: 545" required /></div>
+            <div class="field"><label>Tipo de frete *</label>
+              <select name="tipo_frete" required>
+                <option value="">Selecionar</option>
+                <option value="CIF">CIF</option>
+                <option value="FOB">FOB</option>
+              </select>
+            </div>
+            <div class="field"><label>Presença comercial *</label><input name="presenca_comercial" placeholder="Ex: 2 - Não presencial, Net" required /></div>
+            <div class="field" style="grid-column: 1 / -1"><label>Produto</label><select name="produto" id="pedido-produto"></select></div>
+            <div class="field"><label>Unidade</label><input name="unidade" placeholder="Ex: TN" /></div>
+            <div class="field"><label>Quantidade</label><input name="quantidade" id="pedido-quantidade" type="number" step="0.01" min="0" placeholder="0" /></div>
+            <div class="field"><label>Preço unitário (R$)</label><input name="preco_unitario" id="pedido-preco-unitario" type="number" step="0.01" min="0" placeholder="0,00" /></div>
+            <div class="field"><label>Número do vendedor</label><input name="numero_vendedor" placeholder="Ex: 3131" /></div>
+            <div class="field" style="grid-column: 1 / -1"><label>Comunicação interna</label><textarea name="comunicacao_interna" placeholder="Opcional"></textarea></div>
+          </div>
+
+          <div class="pedido-total-linha">
+            <span>Valor total do pedido</span>
+            <strong id="pedido-total-exibicao">R$ 0,00</strong>
+          </div>
+
+          <button type="submit">Registrar pedido</button>
+        </form>
+        <div class="tabela-wrap">
+          <table>
+            <thead><tr><th>Cliente</th><th>Data</th><th>Produto</th><th>Qtd</th><th>Total</th></tr></thead>
+            <tbody id="tabela-pedidos"></tbody>
+          </table>
         </div>
       </section>
     </div>
@@ -3993,8 +4028,10 @@ function renderizarMetaProgresso() {
 let visitasCache = [];
 let visitaAnexoId = null;
 
-function preencherSelectClienteVisita() {
-  const select = document.getElementById('select-cliente-visita');
+// Usado no "Registrar visita" e no "Inserir pedido" - os dois escolhem um
+// cliente da Carteira do mesmo jeito.
+function preencherSelectClientes(id) {
+  const select = document.getElementById(id);
   if (!select) return;
   const escolhido = select.value;
   select.innerHTML = '<option value="">Selecionar cliente…</option>' +
@@ -4203,6 +4240,80 @@ function ampliarImagemAnexo(url) {
   document.body.appendChild(overlay);
 }
 
+// --- Aba Criar pedido ---
+// Reaproveita a mesma lista de itens e o mesmo modal "Registrar novo item"
+// da aba Orçamento (itensDisponiveisOrcamento / pedirNovoItem).
+
+function renderizarProdutoPedido(selecionado) {
+  const select = document.getElementById('pedido-produto');
+  if (!select) return;
+  const atual = selecionado ?? select.value;
+  const disponiveis = itensDisponiveisOrcamento();
+  const conhecido = disponiveis.some((p) => p.nome.toUpperCase() === atual.toUpperCase());
+  const opcoes = disponiveis
+    .map((p) => `<option value="${escaparAtributo(p.nome)}" ${p.nome === atual ? 'selected' : ''}>${escaparAtributo(p.nome)}</option>`)
+    .join('');
+  const avulso = atual && !conhecido ? `<option value="${escaparAtributo(atual)}" selected>${escaparAtributo(atual)}</option>` : '';
+  select.innerHTML = `<option value=""${atual ? '' : ' selected'}>Selecionar item…</option>${opcoes}${avulso}<option value="__novo__">+ Registrar novo item</option>`;
+}
+
+document.getElementById('pedido-produto').addEventListener('change', async (e) => {
+  if (e.target.value !== '__novo__') return;
+  const novo = await pedirNovoItem();
+  if (!novo) { renderizarProdutoPedido(''); return; }
+  renderizarProdutoPedido(novo.nome);
+  const precoUnitario = document.getElementById('pedido-preco-unitario');
+  if (novo.preco && !precoUnitario.value) precoUnitario.value = novo.preco;
+  atualizarTotalPedido();
+});
+
+function atualizarTotalPedido() {
+  const qtd = Number(document.getElementById('pedido-quantidade').value) || 0;
+  const preco = Number(document.getElementById('pedido-preco-unitario').value) || 0;
+  document.getElementById('pedido-total-exibicao').textContent = fmtMoeda(qtd * preco);
+}
+document.getElementById('pedido-quantidade').addEventListener('input', atualizarTotalPedido);
+document.getElementById('pedido-preco-unitario').addEventListener('input', atualizarTotalPedido);
+
+async function carregarPedidos() {
+  let pedidos;
+  let aviso = '';
+  try {
+    pedidos = await api('/pedidos');
+  } catch (erro) {
+    pedidos = [];
+    aviso = erro.message;
+  }
+  const tbody = document.getElementById('tabela-pedidos');
+  tbody.innerHTML = pedidos.length
+    ? pedidos.map((p) => `
+        <tr>
+          <td>${p.clientes?.nome ?? '—'}</td>
+          <td>${new Date(p.data + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
+          <td>${p.produto ?? '—'}</td>
+          <td>${p.quantidade != null ? Number(p.quantidade).toLocaleString('pt-BR') : '—'}</td>
+          <td>${fmtMoeda(p.valor_total)}</td>
+        </tr>`).join('')
+    : `<tr><td class="vazio" colspan="5">${aviso ? escaparAtributo(aviso) : 'Nenhum pedido registrado ainda.'}</td></tr>`;
+}
+
+// Formulário próprio (não formHandler): depois de registrar, o valor tem que
+// atualizar o dashboard na hora (carregarResumo), não só a tabela daqui.
+document.getElementById('form-pedido').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  const corpo = Object.fromEntries(new FormData(form));
+  try {
+    await api('/pedidos', { method: 'POST', body: JSON.stringify(corpo) });
+    form.reset();
+    renderizarProdutoPedido('');
+    atualizarTotalPedido();
+    await Promise.all([carregarPedidos(), carregarResumo()]);
+  } catch (err) {
+    alert(err.message);
+  }
+});
+
 // --- Aba CRM ---
 
 async function carregarEmpresas() {
@@ -4226,6 +4337,8 @@ async function carregarProdutos() {
 
   document.getElementById('select-produto-negociacao').innerHTML =
     '<option value="">Sem produto</option>' + produtos.map((p) => `<option value="${p.id}">${p.nome}</option>`).join('');
+
+  renderizarProdutoPedido();
 }
 
 async function carregarContatos() {
@@ -4357,7 +4470,8 @@ let filtroFunilAtual = null;
 
 async function carregarClientes() {
   clientesCache = await api('/clientes');
-  preencherSelectClienteVisita();
+  preencherSelectClientes('select-cliente-visita');
+  preencherSelectClientes('select-cliente-pedido');
   renderizarFiltroClientes();
   renderizarGradeClientes();
   renderizarSituacaoClientes();
@@ -4951,7 +5065,7 @@ document.getElementById('btn-editar-meta-mini').addEventListener('click', async 
   carregarConfig();
   await Promise.all([carregarEmpresas(), carregarProdutos(), carregarCamposClientes()]);
   await Promise.all([carregarContatos(), carregarClientes()]);
-  await Promise.all([carregarResumo(), carregarVisitas(), carregarNegociacoes(), carregarAtividades(), carregarRdv(), carregarAgenda()]);
+  await Promise.all([carregarResumo(), carregarVisitas(), carregarNegociacoes(), carregarAtividades(), carregarRdv(), carregarAgenda(), carregarPedidos()]);
   iniciarOrcamento();
   ajustarAlturaInicio();
 })();
