@@ -3095,8 +3095,6 @@ function atualizarPreviewOrcamento() {
   ].filter(Boolean).join('\n');
 
   const linhasVendedor = [
-    d.vendedorNome && cargoAtual ? cargoAtual : '',
-    vendedorAtual.numero_vendedor ? `Nº ${vendedorAtual.numero_vendedor}${vendedorAtual.matricula ? ` · Matrícula ${vendedorAtual.matricula}` : ''}` : '',
     vendedorAtual.celular || '',
     vendedorAtual.email || '',
     regiaoAtual ? `Região: ${regiaoAtual}` : '',
@@ -3140,7 +3138,7 @@ function atualizarPreviewOrcamento() {
         </section>
         <section class="orc-cartao verde">
           <div class="orc-cartao-cab"><span class="orc-avatar">${SVG_ORCAMENTO.pessoa}</span><span class="orc-cartao-rotulo">Vendedor responsável</span></div>
-          <strong class="orc-cartao-nome">${d.vendedorNome || cargoAtual || '—'}</strong>
+          <strong class="orc-cartao-nome">${d.vendedorNome || 'Gustavo Ique'}</strong>
           ${linhasVendedor.filter(Boolean).map((linha) => `<div class="orc-cartao-linha">${linha}</div>`).join('')}
         </section>
       </div>

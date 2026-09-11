@@ -179,9 +179,7 @@ export function gerarOrcamentoPdf(dados) {
     dados.cliente.contato && `A/C ${dados.cliente.contato}`,
   ];
   const linhasVendedor = [
-    dados.vendedor.nome || '—',
-    dados.vendedor.cargo,
-    dados.vendedor.registro,
+    dados.vendedor.nome || 'Gustavo Ique',
     dados.vendedor.celular,
     dados.vendedor.email,
     dados.vendedor.regiao && `Região: ${dados.vendedor.regiao}`,
