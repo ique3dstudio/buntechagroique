@@ -831,6 +831,23 @@
   }
   .matriz-corpo { flex: 1; min-width: 180px; }
 
+  /* --- Paradas da rota calculada, com link direto pro Waze --- */
+  .rota-paradas { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; }
+  .parada-waze {
+    display: flex; align-items: center; gap: 0.6rem;
+    padding: 0.6rem 0.75rem; border-radius: 10px;
+    background: #f3f7f6; color: var(--ink); text-decoration: none;
+    transition: background 0.15s;
+  }
+  .parada-waze:hover { background: #e3f5f3; }
+  .parada-waze-num {
+    flex: none; width: 22px; height: 22px; border-radius: 50%;
+    background: var(--teal); color: #fff; font-size: 0.72rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .parada-waze-nome { flex: 1; min-width: 0; font-size: 0.88rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .parada-waze-icone { flex: none; width: 18px; height: 18px; color: var(--teal); }
+
   /* --- Orçamento: formulário + folha A4 que vira o PDF --- */
   .orcamento-item {
     display: grid;
@@ -1017,6 +1034,9 @@
   .campo-label { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); margin-bottom: 0.25rem; }
   .campo-valor { font-size: 0.92rem; word-break: break-word; white-space: pre-wrap; }
   .campo-valor a { color: var(--teal); font-weight: 600; }
+  .valor-whatsapp, .tel-whatsapp { display: inline-flex; align-items: center; gap: 0.3rem; color: #25D366; font-weight: 600; text-decoration: none; }
+  .valor-whatsapp:hover, .tel-whatsapp:hover { text-decoration: underline; }
+  .icone-whatsapp { width: 14px; height: 14px; flex: none; }
   .btn-lapis {
     flex-shrink: 0; width: 30px; height: 30px; border-radius: 50%;
     background: #eef1f0; border: none; color: var(--muted); cursor: pointer; box-shadow: none;
@@ -1718,6 +1738,11 @@
           <button id="btn-limpar-rota" class="secundario" type="button">Limpar</button>
           <span id="rota-resultado" style="font-weight: 700; color: var(--blue-dark);"></span>
         </div>
+
+        <div id="rota-paradas-wrap" hidden style="margin-top: 0.9rem;">
+          <div class="filtro-label" style="margin-bottom: 0.5rem;">Paradas na ordem da rota - toque pra abrir no Waze</div>
+          <ol id="rota-paradas" class="rota-paradas"></ol>
+        </div>
       </section>
 
       <section class="card" id="mapa-cliente-info" hidden>
@@ -2096,10 +2121,36 @@ function irParaClienteNoMapa(id) {
   abrirDetalheCliente(id);
 }
 
+// O Waze não tem link pra rota com várias paradas (só Google Maps tem) -
+// então a saída é abrir uma parada de cada vez: a lista sai na ordem que o
+// OSRM otimizou, e cada item já é um link direto pro Waze daquele ponto.
+function renderizarParadasRota(paradasOrdenadas) {
+  const wrap = document.getElementById('rota-paradas-wrap');
+  const lista = document.getElementById('rota-paradas');
+  if (!paradasOrdenadas.length) {
+    wrap.hidden = true;
+    lista.innerHTML = '';
+    return;
+  }
+  wrap.hidden = false;
+  lista.innerHTML = paradasOrdenadas.map((p, i) => {
+    const url = `https://waze.com/ul?ll=${p.latitude},${p.longitude}&navigate=yes`;
+    return `
+      <li>
+        <a class="parada-waze" href="${escaparAtributo(url)}" target="_blank" rel="noopener">
+          <span class="parada-waze-num">${i + 1}</span>
+          <span class="parada-waze-nome">${escaparAtributo(p.nome)}</span>
+          <svg class="parada-waze-icone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11 22 2 13 21 11 13Z"/></svg>
+        </a>
+      </li>`;
+  }).join('');
+}
+
 document.getElementById('btn-limpar-rota').addEventListener('click', () => {
   pontosRota = [];
   atualizarListaRota();
   document.getElementById('rota-resultado').textContent = '';
+  renderizarParadasRota([]);
   if (camadaRota) {
     mapa.removeLayer(camadaRota);
     camadaRota = null;
@@ -2129,8 +2180,17 @@ document.getElementById('btn-calcular-rota').addEventListener('click', async () 
     const km = (trip.distance / 1000).toFixed(1);
     const minutos = Math.round(trip.duration / 60);
     document.getElementById('rota-resultado').textContent = `${km} km · ~${minutos} min de carro`;
+
+    // dados.waypoints está na mesma ordem de pontosRota (o "coords" que a
+    // gente mandou); waypoint_index é a posição de cada um na rota otimizada.
+    const paradasOrdenadas = dados.waypoints
+      .map((w, i) => ({ ponto: pontosRota[i], ordem: w.waypoint_index }))
+      .sort((a, b) => a.ordem - b.ordem)
+      .map((o) => o.ponto);
+    renderizarParadasRota(paradasOrdenadas);
   } catch (err) {
     document.getElementById('rota-resultado').textContent = '';
+    renderizarParadasRota([]);
     alert(err.message);
   }
 });
@@ -4176,7 +4236,7 @@ async function carregarContatos() {
         <tr>
           <td>${c.nome}</td>
           <td>${c.empresas?.nome ?? '—'}</td>
-          <td>${c.telefone ?? '—'}</td>
+          <td>${c.telefone ? `<a class="tel-whatsapp" href="${escaparAtributo(linkWhatsapp(c.telefone))}" target="_blank" rel="noopener">${escaparAtributo(c.telefone)}${ICONE_WHATSAPP}</a>` : '—'}</td>
           <td><span class="badge status-${c.status}">${c.status}</span></td>
         </tr>
       `).join('')
@@ -4254,6 +4314,17 @@ async function carregarAtividades() {
 let camposClientes = [];
 let clientesCache = [];
 
+// wa.me só aceita dígitos, com DDI na frente. Número já com 12/13 dígitos
+// (DDI+DDD+número) mantém como está; senão assume Brasil (55).
+function linkWhatsapp(telefone) {
+  const digitos = String(telefone ?? '').replace(/\D/g, '');
+  if (!digitos) return '';
+  const comDdi = digitos.length > 11 ? digitos : `55${digitos}`;
+  return `https://wa.me/${comDdi}`;
+}
+
+const ICONE_WHATSAPP = '<svg class="icone-whatsapp" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>';
+
 function valorCampoParaExibicao(campo, valor) {
   if (valor == null || valor === '') return '—';
   if (campo.tipo === 'numero') return Number(valor).toLocaleString('pt-BR');
@@ -4264,6 +4335,11 @@ function valorCampoParaExibicao(campo, valor) {
   if (campo.tipo === 'link') {
     const href = /^https?:\/\//i.test(valor) ? valor : `https://${valor}`;
     return `<a href="${escaparAtributo(href)}" target="_blank" rel="noopener">${String(valor)}</a>`;
+  }
+  if (campo.tipo === 'whatsapp') {
+    const href = linkWhatsapp(valor);
+    if (!href) return String(valor);
+    return `<a class="valor-whatsapp" href="${escaparAtributo(href)}" target="_blank" rel="noopener">${String(valor)}${ICONE_WHATSAPP}</a>`;
   }
   return String(valor);
 }
@@ -4483,6 +4559,8 @@ function ativarEdicaoCampo(chave) {
     inputHtml = `<select><option value="">Selecionar</option>${opcoes.map((o) => `<option value="${escaparAtributo(o)}" ${o === valorAtual ? 'selected' : ''}>${o}</option>`).join('')}</select>`;
   } else if (tipo === 'link') {
     inputHtml = `<input type="url" placeholder="www.exemplo.com" value="${escaparAtributo(valorAtual)}" />`;
+  } else if (tipo === 'whatsapp') {
+    inputHtml = `<input type="tel" placeholder="(00) 00000-0000" value="${escaparAtributo(valorAtual)}" />`;
   } else {
     inputHtml = `<input type="text" value="${escaparAtributo(valorAtual)}" />`;
   }
@@ -4586,6 +4664,9 @@ function campoInputHtml(campo, valorAtual) {
   }
   if (campo.tipo === 'link') {
     return `<div class="field"><label>${campo.rotulo}</label><input type="url" placeholder="www.exemplo.com" ${attr} value="${escaparAtributo(valor)}" /></div>`;
+  }
+  if (campo.tipo === 'whatsapp') {
+    return `<div class="field"><label>${campo.rotulo}</label><input type="tel" placeholder="(00) 00000-0000" ${attr} value="${escaparAtributo(valor)}" /></div>`;
   }
   return `<div class="field"><label>${campo.rotulo}</label><input type="text" ${attr} value="${escaparAtributo(valor)}" /></div>`;
 }
