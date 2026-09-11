@@ -1016,6 +1016,7 @@
   .campo-linha .campo-conteudo { flex: 1; min-width: 0; }
   .campo-label { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); margin-bottom: 0.25rem; }
   .campo-valor { font-size: 0.92rem; word-break: break-word; white-space: pre-wrap; }
+  .campo-valor a { color: var(--teal); font-weight: 600; }
   .btn-lapis {
     flex-shrink: 0; width: 30px; height: 30px; border-radius: 50%;
     background: #eef1f0; border: none; color: var(--muted); cursor: pointer; box-shadow: none;
@@ -4226,6 +4227,10 @@ function valorCampoParaExibicao(campo, valor) {
     const data = new Date(valor + 'T00:00:00');
     return isNaN(data) ? String(valor) : data.toLocaleDateString('pt-BR');
   }
+  if (campo.tipo === 'link') {
+    const href = /^https?:\/\//i.test(valor) ? valor : `https://${valor}`;
+    return `<a href="${escaparAtributo(href)}" target="_blank" rel="noopener">${String(valor)}</a>`;
+  }
   return String(valor);
 }
 
@@ -4440,6 +4445,8 @@ function ativarEdicaoCampo(chave) {
     inputHtml = `<input type="date" value="${escaparAtributo(valorAtual)}" />`;
   } else if (tipo === 'selecao') {
     inputHtml = `<select><option value="">Selecionar</option>${opcoes.map((o) => `<option value="${escaparAtributo(o)}" ${o === valorAtual ? 'selected' : ''}>${o}</option>`).join('')}</select>`;
+  } else if (tipo === 'link') {
+    inputHtml = `<input type="url" placeholder="www.exemplo.com" value="${escaparAtributo(valorAtual)}" />`;
   } else {
     inputHtml = `<input type="text" value="${escaparAtributo(valorAtual)}" />`;
   }
@@ -4540,6 +4547,9 @@ function campoInputHtml(campo, valorAtual) {
   if (campo.tipo === 'selecao') {
     const opcoes = campo.opcoes || [];
     return `<div class="field"><label>${campo.rotulo}</label><select ${attr}><option value="">Selecionar</option>${opcoes.map((o) => `<option value="${escaparAtributo(o)}" ${o === valor ? 'selected' : ''}>${o}</option>`).join('')}</select></div>`;
+  }
+  if (campo.tipo === 'link') {
+    return `<div class="field"><label>${campo.rotulo}</label><input type="url" placeholder="www.exemplo.com" ${attr} value="${escaparAtributo(valor)}" /></div>`;
   }
   return `<div class="field"><label>${campo.rotulo}</label><input type="text" ${attr} value="${escaparAtributo(valor)}" /></div>`;
 }
