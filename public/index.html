@@ -1881,18 +1881,56 @@
           <div class="form-grid">
             <div class="field"><label>Cliente *</label><select name="cliente_id" id="select-cliente-pedido" required></select></div>
             <div class="field"><label>Data *</label><input name="data" type="date" required /></div>
-            <div class="field"><label>Tipo de pedido *</label><input name="tipo_pedido" placeholder="Ex: N - Normal" required /></div>
-            <div class="field"><label>Loja *</label><input name="loja" placeholder="Ex: 01" required /></div>
-            <div class="field"><label>Tipo de cliente *</label><input name="tipo_cliente" placeholder="Ex: R - Revendedor" required /></div>
-            <div class="field"><label>Condição de pagamento *</label><input name="cond_pagamento" placeholder="Ex: 545" required /></div>
-            <div class="field"><label>Tipo de frete *</label>
-              <select name="tipo_frete" required>
-                <option value="">Selecionar</option>
-                <option value="CIF">CIF</option>
-                <option value="FOB">FOB</option>
+            <div class="field"><label>Tipo de pedido *</label>
+              <select name="tipo_pedido" required>
+                <option value="N - Normal" selected>N - Normal</option>
+                <option value="C - Compl.Preco/Quantidade">C - Compl.Preco/Quantidade</option>
+                <option value="I - Compl.ICMS">I - Compl.ICMS</option>
+                <option value="P - Compl.IPI">P - Compl.IPI</option>
+                <option value="D - Dev.Compras">D - Dev.Compras</option>
+                <option value="B - Utiliza Fornecedor">B - Utiliza Fornecedor</option>
               </select>
             </div>
-            <div class="field"><label>Presença comercial *</label><input name="presenca_comercial" placeholder="Ex: 2 - Não presencial, Net" required /></div>
+            <div class="field"><label>Loja *</label><input name="loja" placeholder="Ex: 01" required /></div>
+            <div class="field"><label>Tipo de cliente *</label><input name="tipo_cliente" placeholder="Ex: R - Revendedor" required /></div>
+            <div class="field"><label>Condição de pagamento *</label>
+              <select name="cond_pagamento" required>
+                <option value="200 - 20/80 - DDL">200 - 20/80 - DDL</option>
+                <option value="500 - 00 - A VISTA">500 - 00 - A VISTA</option>
+                <option value="501 - 00/14/28 - DDL">501 - 00/14/28 - DDL</option>
+                <option value="502 - 00/30 - DDL">502 - 00/30 - DDL</option>
+                <option value="503 - 00/30/60 - DDL">503 - 00/30/60 - DDL</option>
+                <option value="504 - 00/30/60/90 - DDL">504 - 00/30/60/90 - DDL</option>
+                <option value="505 - 00/30/60/90/120 - DDL">505 - 00/30/60/90/120 - DDL</option>
+                <option value="541 - 75 - DDL">541 - 75 - DDL</option>
+                <option value="542 - 90 - DDL">542 - 90 - DDL</option>
+                <option value="543 - 92 - DDL">543 - 92 - DDL</option>
+                <option value="544 - 120 - DDL">544 - 120 - DDL</option>
+                <option value="545 - 30/60/90/120 - DDL" selected>545 - 30/60/90/120 - DDL</option>
+                <option value="546 - 35 - DDL">546 - 35 - DDL</option>
+                <option value="547 - 30/45 - DDL">547 - 30/45 - DDL</option>
+              </select>
+            </div>
+            <div class="field"><label>Tipo de frete *</label>
+              <select name="tipo_frete" required>
+                <option value="C - CIF" selected>C - CIF</option>
+                <option value="F - FOB">F - FOB</option>
+                <option value="T - Por conta de terceiros">T - Por conta de terceiros</option>
+                <option value="R - Por conta remetente">R - Por conta remetente</option>
+                <option value="D - Por conta destinatário">D - Por conta destinatário</option>
+                <option value="S - Sem frete">S - Sem frete</option>
+              </select>
+            </div>
+            <div class="field"><label>Presença comercial *</label>
+              <select name="presenca_comercial" required>
+                <option value="0 - Não Aplica">0 - Não Aplica</option>
+                <option value="1 - Presencial">1 - Presencial</option>
+                <option value="2 - Não Presencial,Net" selected>2 - Não Presencial,Net</option>
+                <option value="3 - Não Presencial,TeleAtendi.">3 - Não Presencial,TeleAtendi.</option>
+                <option value="5 - Presencial,ForadoEstab.">5 - Presencial,ForadoEstab.</option>
+                <option value="9 - Não Presencial,outros">9 - Não Presencial,outros</option>
+              </select>
+            </div>
             <div class="field" style="grid-column: 1 / -1"><label>Produto</label><select name="produto" id="pedido-produto"></select></div>
             <div class="field"><label>Unidade</label><input name="unidade" placeholder="Ex: TN" /></div>
             <div class="field"><label>Quantidade</label><input name="quantidade" id="pedido-quantidade" type="number" step="0.01" min="0" placeholder="0" /></div>
