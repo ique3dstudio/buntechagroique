@@ -4485,6 +4485,46 @@ function linkWhatsapp(telefone) {
 
 const ICONE_WHATSAPP = '<svg class="icone-whatsapp" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>';
 
+// CNPJ (14 dígitos) ou CPF (11 dígitos) - decide pela quantidade de números
+// e recoloca a pontuação certa. Enquanto não bate com nenhum dos dois
+// tamanhos (documento incompleto, ainda digitando), mostra só os dígitos -
+// sem isso, ao editar um documento já formatado a pontuação antiga fica
+// colada nos números novos.
+function formatarDocumento(valor) {
+  const digitos = String(valor ?? '').replace(/\D/g, '');
+  if (digitos.length === 14) return digitos.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
+  if (digitos.length === 11) return digitos.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+  return digitos;
+}
+
+// Só a primeira letra de cada palavra maiúscula.
+function capitalizarPalavras(valor) {
+  return String(valor ?? '').trim().toLowerCase().split(/\s+/).filter(Boolean)
+    .map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
+}
+
+// Cidades cujo nome não se repete em outro estado do Brasil - dá pra
+// completar o "- UF" com certeza. Mesma lista usada na migração 040 (que
+// corrige o que já tava salvo); aqui cobre qualquer cidade nova que caia
+// nessa lista, na hora de mostrar.
+const UF_CIDADES_CONHECIDAS = {
+  'itanhomi': 'MG', 'governador valadares': 'MG', 'montes claros': 'MG',
+  'itanhandu': 'MG', 'brasilia de minas': 'MG', 'brasília de minas': 'MG',
+  'chapada gaucha': 'MG', 'chapada gaúcha': 'MG',
+  'tupaciguara': 'MG', 'araxa': 'MG', 'araxá': 'MG',
+};
+
+// Se já vier com "- UF" no final, só ajusta a capitalização. Senão, tenta
+// completar com a lista de cidades conhecidas; não achando, deixa sem UF
+// mesmo (melhor que chutar errado).
+function formatarCidade(valor) {
+  const bruto = String(valor ?? '').trim();
+  const comUf = bruto.match(/^(.*?)\s*-\s*([A-Za-z]{2})$/);
+  if (comUf) return `${capitalizarPalavras(comUf[1])} - ${comUf[2].toUpperCase()}`;
+  const uf = UF_CIDADES_CONHECIDAS[bruto.toLowerCase()];
+  return uf ? `${capitalizarPalavras(bruto)} - ${uf}` : capitalizarPalavras(bruto);
+}
+
 function valorCampoParaExibicao(campo, valor) {
   if (valor == null || valor === '') return '—';
   if (campo.tipo === 'numero') return Number(valor).toLocaleString('pt-BR');
@@ -4501,7 +4541,23 @@ function valorCampoParaExibicao(campo, valor) {
     if (!href) return String(valor);
     return `<a class="valor-whatsapp" href="${escaparAtributo(href)}" target="_blank" rel="noopener">${String(valor)}${ICONE_WHATSAPP}</a>`;
   }
+  if (campo.tipo === 'documento') return formatarDocumento(valor);
+  if (campo.tipo === 'email') {
+    const emailMin = String(valor).trim().toLowerCase();
+    return `<a href="mailto:${escaparAtributo(emailMin)}">${escaparAtributo(emailMin)}</a>`;
+  }
+  if (campo.tipo === 'cidade') return formatarCidade(valor);
   return String(valor);
+}
+
+// Normaliza o valor ANTES de salvar (não só na exibição), pra Orçamento e
+// qualquer outro lugar que leia o dado direto também já pegar limpo.
+function normalizarValorCampoCliente(chave, valor) {
+  if (!valor) return valor;
+  if (chave === 'cnpj') return formatarDocumento(valor);
+  if (chave === 'email') return String(valor).trim().toLowerCase();
+  if (chave === 'cidade') return formatarCidade(valor);
+  return valor;
 }
 
 function escaparAtributo(valor) {
@@ -4837,6 +4893,10 @@ function ativarEdicaoCampo(chave) {
     inputHtml = `<input type="url" placeholder="www.exemplo.com" value="${escaparAtributo(valorAtual)}" />`;
   } else if (tipo === 'whatsapp') {
     inputHtml = `<input type="tel" placeholder="(00) 00000-0000" value="${escaparAtributo(valorAtual)}" />`;
+  } else if (tipo === 'documento') {
+    inputHtml = `<input type="text" placeholder="CNPJ ou CPF" value="${escaparAtributo(valorAtual)}" oninput="this.value = formatarDocumento(this.value)" />`;
+  } else if (tipo === 'email') {
+    inputHtml = `<input type="email" value="${escaparAtributo(valorAtual)}" oninput="this.value = this.value.toLowerCase()" />`;
   } else {
     inputHtml = `<input type="text" value="${escaparAtributo(valorAtual)}" />`;
   }
@@ -4878,7 +4938,7 @@ async function salvarCampoCliente(chave, valor) {
       });
     } else {
       const novosDados = { ...(cliente.dados || {}) };
-      if (valor) novosDados[chave] = valor;
+      if (valor) novosDados[chave] = normalizarValorCampoCliente(chave, valor);
       else delete novosDados[chave];
       resultado = await api(`/clientes/${clienteAtualId}`, { method: 'PATCH', body: JSON.stringify({ dados: novosDados }) });
     }
@@ -4944,6 +5004,12 @@ function campoInputHtml(campo, valorAtual) {
   if (campo.tipo === 'whatsapp') {
     return `<div class="field"><label>${campo.rotulo}</label><input type="tel" placeholder="(00) 00000-0000" ${attr} value="${escaparAtributo(valor)}" /></div>`;
   }
+  if (campo.tipo === 'documento') {
+    return `<div class="field"><label>${campo.rotulo}</label><input type="text" placeholder="CNPJ ou CPF" ${attr} value="${escaparAtributo(valor)}" oninput="this.value = formatarDocumento(this.value)" /></div>`;
+  }
+  if (campo.tipo === 'email') {
+    return `<div class="field"><label>${campo.rotulo}</label><input type="email" ${attr} value="${escaparAtributo(valor)}" oninput="this.value = this.value.toLowerCase()" /></div>`;
+  }
   return `<div class="field"><label>${campo.rotulo}</label><input type="text" ${attr} value="${escaparAtributo(valor)}" /></div>`;
 }
 
@@ -4981,7 +5047,7 @@ document.getElementById('form-cliente-modal').addEventListener('submit', async (
     if (chave === '_nome') nome = valor;
     else if (chave === '_endereco') endereco = valor;
     else if (chave === '_coordenadas') coordenadas = valor;
-    else if (valor) dados[chave] = valor;
+    else if (valor) dados[chave] = normalizarValorCampoCliente(chave, valor);
   });
 
   try {
