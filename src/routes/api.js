@@ -360,7 +360,7 @@ router.get('/clientes', async (req, res) => {
 });
 
 router.post('/clientes', async (req, res) => {
-  const { nome, endereco, coordenadas, dados } = req.body;
+  const { nome, endereco, coordenadas, dados, contatos } = req.body;
   if (!nome) return res.status(400).json({ error: 'nome é obrigatório' });
 
   let latitude = null;
@@ -388,7 +388,7 @@ router.post('/clientes', async (req, res) => {
 
   const { data, error } = await supabase
     .from('clientes')
-    .insert({ nome, endereco, latitude, longitude, dados: dados || {} })
+    .insert({ nome, endereco, latitude, longitude, dados: dados || {}, contatos: contatos || [] })
     .select()
     .single();
   if (error) return res.status(500).json({ error: error.message });
@@ -396,11 +396,12 @@ router.post('/clientes', async (req, res) => {
 });
 
 router.patch('/clientes/:id', async (req, res) => {
-  const { nome, endereco, coordenadas, dados } = req.body;
+  const { nome, endereco, coordenadas, dados, contatos } = req.body;
 
   const atualizacao = { updated_at: new Date().toISOString() };
   if (nome !== undefined) atualizacao.nome = nome;
   if (dados !== undefined) atualizacao.dados = dados;
+  if (contatos !== undefined) atualizacao.contatos = contatos;
 
   let aviso;
   if (coordenadas !== undefined) {

@@ -1064,6 +1064,13 @@
   .btn-confirmar:hover, .btn-cancelar:hover { transform: none; box-shadow: none; filter: brightness(1.08); }
   .btn-confirmar svg, .btn-cancelar svg { width: 14px; height: 14px; }
 
+  /* --- Contatos do cliente (telefone + responsável, pode ter mais de um) --- */
+  .contato-linha { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0.6rem 0; border-top: 1px solid var(--border); }
+  .contato-linha-info { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; font-size: 0.92rem; }
+  .contato-linha-responsavel { color: var(--muted); }
+  .contato-linha-acoes { display: flex; gap: 0.3rem; flex-shrink: 0; }
+  .contato-vazio { padding: 0.6rem 0; border-top: 1px solid var(--border); }
+
   /* --- Marcadores customizados do mapa --- */
   .marcador-cliente { background: transparent; border: none; }
 
@@ -1704,6 +1711,10 @@
           <h2 id="detalhe-nome" style="margin:0; font-size:1.2rem;"></h2>
         </div>
         <div id="detalhe-campos"></div>
+
+        <h3 class="detalhe-subtitulo">Contatos</h3>
+        <div id="detalhe-contatos-lista"></div>
+        <button type="button" class="secundario" id="btn-add-contato" style="margin-top:0.75rem">+ Adicionar contato</button>
 
         <div id="detalhe-historico-wrap" hidden>
           <h3 class="detalhe-subtitulo">Histórico e forecast de vendas por produto</h3>
@@ -4641,8 +4652,123 @@ function abrirDetalheCliente(id) {
     btn.addEventListener('click', () => ativarEdicaoCampo(btn.dataset.editar));
   });
 
+  document.getElementById('btn-add-contato').hidden = false;
+  renderizarContatosDetalhe(cliente);
+
   carregarHistoricoVendas(id);
 }
+
+// --- Contatos do cliente (telefone + responsável - pode ter mais de um,
+// por isso é uma lista própria em vez de campo dinâmico de valor único) ---
+
+function linhaContatoHtml(contato, indice) {
+  const telefone = contato?.telefone || '';
+  const responsavel = contato?.responsavel || '';
+  const numero = telefone
+    ? `<a class="valor-whatsapp" href="${escaparAtributo(linkWhatsapp(telefone))}" target="_blank" rel="noopener">${escaparAtributo(telefone)}${ICONE_WHATSAPP}</a>`
+    : '<span class="vazio">Sem telefone</span>';
+  return `
+    <div class="contato-linha" data-indice="${indice}">
+      <div class="contato-linha-info">
+        ${numero}
+        ${responsavel ? `<span class="contato-linha-responsavel">— ${escaparAtributo(responsavel)}</span>` : ''}
+      </div>
+      <div class="contato-linha-acoes">
+        <button type="button" class="btn-lapis" data-editar-contato="${indice}" title="Editar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+        </button>
+        <button type="button" class="btn-lapis" data-remover-contato="${indice}" title="Remover">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+        </button>
+      </div>
+    </div>`;
+}
+
+function renderizarContatosDetalhe(cliente) {
+  const lista = document.getElementById('detalhe-contatos-lista');
+  const contatos = cliente.contatos || [];
+  lista.innerHTML = contatos.length
+    ? contatos.map((c, i) => linhaContatoHtml(c, i)).join('')
+    : '<div class="contato-vazio vazio">Nenhum contato cadastrado ainda.</div>';
+
+  lista.querySelectorAll('[data-editar-contato]').forEach((btn) => {
+    btn.addEventListener('click', () => ativarEdicaoContato(Number(btn.dataset.editarContato)));
+  });
+  lista.querySelectorAll('[data-remover-contato]').forEach((btn) => {
+    btn.addEventListener('click', () => removerContato(Number(btn.dataset.removerContato)));
+  });
+}
+
+function formularioContatoHtml(telefone, responsavel) {
+  return `
+    <div class="campo-edicao" style="flex:1">
+      <input type="tel" placeholder="(00) 00000-0000" value="${escaparAtributo(telefone)}" data-campo-contato="telefone" />
+      <input type="text" placeholder="Nome do responsável" value="${escaparAtributo(responsavel)}" data-campo-contato="responsavel" />
+      <div class="campo-edicao-acoes">
+        <button type="button" class="btn-confirmar" title="Salvar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button>
+        <button type="button" class="btn-cancelar" title="Cancelar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      </div>
+    </div>`;
+}
+
+function ativarEdicaoContato(indice) {
+  const cliente = clientesCache.find((c) => c.id === clienteAtualId);
+  const contato = (cliente.contatos || [])[indice] || {};
+  const linha = document.querySelector(`.contato-linha[data-indice="${indice}"]`);
+  linha.innerHTML = formularioContatoHtml(contato.telefone || '', contato.responsavel || '');
+
+  linha.querySelector('[data-campo-contato="telefone"]').focus();
+  linha.querySelector('.btn-cancelar').addEventListener('click', () => abrirDetalheCliente(clienteAtualId));
+  linha.querySelector('.btn-confirmar').addEventListener('click', () => {
+    const novaLista = [...(cliente.contatos || [])];
+    novaLista[indice] = {
+      telefone: linha.querySelector('[data-campo-contato="telefone"]').value.trim(),
+      responsavel: linha.querySelector('[data-campo-contato="responsavel"]').value.trim(),
+    };
+    salvarListaContatos(novaLista);
+  });
+}
+
+function removerContato(indice) {
+  const cliente = clientesCache.find((c) => c.id === clienteAtualId);
+  if (!confirm('Remover este contato?')) return;
+  salvarListaContatos((cliente.contatos || []).filter((_, i) => i !== indice));
+}
+
+function abrirNovoContato() {
+  const botao = document.getElementById('btn-add-contato');
+  botao.hidden = true;
+  const lista = document.getElementById('detalhe-contatos-lista');
+  lista.querySelector('.contato-vazio')?.remove();
+  const linha = document.createElement('div');
+  linha.className = 'contato-linha';
+  linha.innerHTML = formularioContatoHtml('', '');
+  lista.appendChild(linha);
+
+  linha.querySelector('[data-campo-contato="telefone"]').focus();
+  linha.querySelector('.btn-cancelar').addEventListener('click', () => abrirDetalheCliente(clienteAtualId));
+  linha.querySelector('.btn-confirmar').addEventListener('click', () => {
+    const cliente = clientesCache.find((c) => c.id === clienteAtualId);
+    const novoContato = {
+      telefone: linha.querySelector('[data-campo-contato="telefone"]').value.trim(),
+      responsavel: linha.querySelector('[data-campo-contato="responsavel"]').value.trim(),
+    };
+    if (!novoContato.telefone && !novoContato.responsavel) { abrirDetalheCliente(clienteAtualId); return; }
+    salvarListaContatos([...(cliente.contatos || []), novoContato]);
+  });
+}
+
+async function salvarListaContatos(novaLista) {
+  try {
+    await api(`/clientes/${clienteAtualId}`, { method: 'PATCH', body: JSON.stringify({ contatos: novaLista }) });
+    await carregarClientes();
+    abrirDetalheCliente(clienteAtualId);
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+document.getElementById('btn-add-contato').addEventListener('click', abrirNovoContato);
 
 async function carregarHistoricoVendas(clienteId) {
   const wrap = document.getElementById('detalhe-historico-wrap');
