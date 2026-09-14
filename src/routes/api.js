@@ -386,9 +386,15 @@ router.post('/clientes', async (req, res) => {
     }
   }
 
+  // "contatos" só entra no insert se vier preenchido: assim continua dando
+  // pra criar cliente num banco onde a migração 039 (que adiciona a coluna)
+  // ainda não rodou - antes disso, o registro nem tem contato pra vir.
+  const registro = { nome, endereco, latitude, longitude, dados: dados || {} };
+  if (contatos !== undefined) registro.contatos = contatos;
+
   const { data, error } = await supabase
     .from('clientes')
-    .insert({ nome, endereco, latitude, longitude, dados: dados || {}, contatos: contatos || [] })
+    .insert(registro)
     .select()
     .single();
   if (error) return res.status(500).json({ error: error.message });
