@@ -1748,13 +1748,6 @@
           <button type="button" class="secundario" id="btn-editar-matriz">Editar matriz</button>
         </div>
         <p class="aviso-integracao" id="mapa-aviso-matriz" hidden style="margin-bottom:0.75rem"></p>
-
-        <div style="margin-bottom:0.9rem;">
-          <button type="button" class="secundario" id="btn-regeocodificar">Corrigir coordenadas de todos os clientes</button>
-          <p class="vazio" id="regeocod-status" style="margin: 0.5rem 0 0; display:none;"></p>
-          <div id="regeocod-revisao" style="display:none;"></div>
-        </div>
-
         <div id="mapa" style="height: 520px; border-radius: 10px; overflow: hidden; border: 1px solid var(--border);"></div>
 
         <div class="rota-painel" style="margin-top: 1rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem;">
@@ -2162,59 +2155,6 @@ const mapaPronto = (async function iniciarMapa() {
 })();
 
 document.getElementById('btn-add-cliente-mapa').addEventListener('click', () => abrirModalCliente(null));
-
-// Corrige as coordenadas de todos os clientes, em lotes pequenos (o
-// Nominatim só aceita 1 requisição por segundo, então processar tudo de uma
-// vez numa chamada só arriscaria estourar tempo limite) - o app chama o
-// endpoint várias vezes em sequência e vai somando o resultado.
-document.getElementById('btn-regeocodificar').addEventListener('click', async () => {
-  if (!confirm('Isso confere e corrige a coordenada de todo mundo na Carteira que tem endereço ou cidade cadastrados. Só grava quando a cidade encontrada bate com a cadastrada. Pode demorar alguns minutos - não feche essa aba. Continuar?')) return;
-
-  const botao = document.getElementById('btn-regeocodificar');
-  const status = document.getElementById('regeocod-status');
-  const revisaoWrap = document.getElementById('regeocod-revisao');
-  botao.disabled = true;
-  status.style.display = '';
-  revisaoWrap.style.display = 'none';
-  revisaoWrap.innerHTML = '';
-
-  const ids = clientesCache.map((c) => c.id);
-  const TAMANHO_LOTE = 8;
-  let atualizados = 0;
-  let semMudanca = 0;
-  const precisamRevisao = [];
-
-  for (let i = 0; i < ids.length; i += TAMANHO_LOTE) {
-    const lote = ids.slice(i, i + TAMANHO_LOTE);
-    status.textContent = `Conferindo clientes ${i + 1}–${Math.min(i + TAMANHO_LOTE, ids.length)} de ${ids.length}...`;
-    try {
-      const resultado = await api('/clientes/regeocodificar', { method: 'POST', body: JSON.stringify({ ids: lote }) });
-      atualizados += resultado.atualizados.length;
-      semMudanca += resultado.sem_mudanca.length;
-      precisamRevisao.push(...resultado.precisam_revisao);
-    } catch (err) {
-      precisamRevisao.push(...lote.map((id) => ({
-        nome: clientesCache.find((c) => c.id === id)?.nome || id,
-        motivo: err.message,
-      })));
-    }
-  }
-
-  status.textContent = `Pronto: ${atualizados} coordenada(s) corrigida(s), ${semMudanca} já estavam certas, ${precisamRevisao.length} precisam de revisão manual.`;
-  if (precisamRevisao.length) {
-    revisaoWrap.style.display = '';
-    revisaoWrap.innerHTML = `
-      <div class="filtro-label" style="margin: 0.6rem 0 0.4rem">Precisam de revisão manual</div>
-      <ul style="margin:0; padding-left:1.2rem; font-size:0.85rem; color: var(--muted);">
-        ${precisamRevisao.map((r) => `<li><strong style="color:var(--ink)">${escaparAtributo(r.nome)}</strong>: ${escaparAtributo(r.motivo)}</li>`).join('')}
-      </ul>
-    `;
-  }
-
-  botao.disabled = false;
-  await carregarClientes();
-  mapaPronto.then(() => carregarClientesMapa()).catch(() => {});
-});
 
 // --- Matriz (ponto de partida das rotas) ---
 

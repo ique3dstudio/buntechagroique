@@ -46,20 +46,3 @@ export const NOME_ESTADO = {
   RO: 'Rondônia', RR: 'Roraima', SC: 'Santa Catarina', SP: 'São Paulo',
   SE: 'Sergipe', TO: 'Tocantins',
 };
-
-// Tira acento e caixa pra comparar nome de cidade sem falso-negativo por
-// causa de "Araxá" vs "Araxa", maiúscula/minúscula, etc.
-function normalizarNome(texto) {
-  return String(texto ?? '')
-    .normalize('NFD').replace(/[̀-ͯ]/g, '')
-    .toLowerCase().trim();
-}
-
-// Confere se a cidade que o Nominatim devolveu é (ou contém/está contida em)
-// a cidade esperada - é a trava que evita gravar coordenada de outro lugar.
-export function cidadeBate(cidadeEsperada, cidadeResolvida) {
-  const esperada = normalizarNome(cidadeEsperada);
-  const resolvida = normalizarNome(cidadeResolvida);
-  if (!esperada || !resolvida) return false;
-  return esperada === resolvida || esperada.includes(resolvida) || resolvida.includes(esperada);
-}
