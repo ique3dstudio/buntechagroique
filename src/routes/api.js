@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import multer from 'multer';
 import { supabase } from '../services/supabase.js';
-import { geocodificarEndereco } from '../services/geocode.js';
+import { geocodificarEndereco, cidadeBate, NOME_ESTADO } from '../services/geocode.js';
 import { gerarOrcamentoPdf, nomeArquivoOrcamento } from '../services/orcamento-pdf.js';
 import { gerarRelatorioVisitaPdf, nomeArquivoRelatorio } from '../services/visita-pdf.js';
 import { extrairTextoDocx } from '../services/docx-texto.js';
@@ -37,6 +37,17 @@ const ETAPAS = [
 // CEP e número costumam derrubar a busca do Nominatim, então vale insistir com
 // rua+cidade e, no pior caso, só a cidade - melhor um pino aproximado do que
 // nenhum pino.
+// A ficha do cliente guarda "Cidade - UF" (migração 040) quando a UF é
+// conhecida. Extrai os dois pra montar uma consulta de geocodificação
+// correta - antes disso, tudo ia pro Nominatim como se fosse Minas Gerais,
+// mesmo cliente de outro estado (ex: Pedra Lavrada é na Paraíba).
+function extrairCidadeEEstado(cidadeCompleta) {
+  const bruto = String(cidadeCompleta || '').trim();
+  const match = bruto.match(/^(.*?)\s*-\s*([A-Za-z]{2})$/);
+  if (match) return { cidade: match[1].trim(), estado: NOME_ESTADO[match[2].toUpperCase()] || 'Minas Gerais' };
+  return { cidade: bruto, estado: 'Minas Gerais' };
+}
+
 async function geocodificarMatriz(endereco) {
   const semCep = endereco.replace(/,?\s*\d{5}-?\d{3}\s*$/, '').trim();
   const partes = semCep.split(',').map((p) => p.trim()).filter(Boolean);
@@ -375,8 +386,8 @@ router.post('/clientes', async (req, res) => {
     latitude = coords.latitude;
     longitude = coords.longitude;
   } else if (endereco) {
-    const cidade = dados?.cidade;
-    const enderecoCompleto = [endereco, cidade, 'Minas Gerais', 'Brasil'].filter(Boolean).join(', ');
+    const { cidade, estado } = extrairCidadeEEstado(dados?.cidade);
+    const enderecoCompleto = [endereco, cidade, estado, 'Brasil'].filter(Boolean).join(', ');
     const coords = await geocodificarEndereco(enderecoCompleto).catch(() => null);
     if (coords) {
       latitude = coords.latitude;
@@ -425,8 +436,8 @@ router.patch('/clientes/:id', async (req, res) => {
   } else if (endereco !== undefined) {
     atualizacao.endereco = endereco;
     if (endereco) {
-      const cidade = dados?.cidade;
-      const enderecoCompleto = [endereco, cidade, 'Minas Gerais', 'Brasil'].filter(Boolean).join(', ');
+      const { cidade, estado } = extrairCidadeEEstado(dados?.cidade);
+      const enderecoCompleto = [endereco, cidade, estado, 'Brasil'].filter(Boolean).join(', ');
       const coords = await geocodificarEndereco(enderecoCompleto).catch(() => null);
       if (coords) {
         atualizacao.latitude = coords.latitude;
@@ -456,6 +467,79 @@ router.delete('/clientes/:id', async (req, res) => {
   const { error } = await supabase.from('clientes').delete().eq('id', req.params.id);
   if (error) return res.status(500).json({ error: error.message });
   res.status(204).end();
+});
+
+// Corrige as coordenadas de um lote de clientes: geocodifica de novo com o
+// endereço + cidade + UF de verdade (a extrairCidadeEEstado só cai pra
+// "Minas Gerais" quando a ficha não tem UF nenhuma cadastrada), e só grava
+// a coordenada nova se a cidade que o Nominatim devolveu bater com a cidade
+// cadastrada do cliente. Quando não bate (ou não acha nada), o cliente entra
+// em "precisam_revisao" e fica do jeito que estava - nunca grava um palpite.
+//
+// Recebe um lote pequeno de ids por chamada (o app chama isso várias vezes
+// em sequência, uma leva pra cada grupo de clientes) porque o Nominatim só
+// aceita 1 requisição por segundo - processar todo mundo de uma vez numa
+// chamada só arriscaria estourar o tempo limite da requisição.
+router.post('/clientes/regeocodificar', async (req, res) => {
+  const ids = Array.isArray(req.body?.ids) ? req.body.ids : null;
+  if (!ids || !ids.length) return res.status(400).json({ error: 'ids é obrigatório (lista de clientes pra processar nessa chamada)' });
+
+  const { data: clientes, error } = await supabase
+    .from('clientes')
+    .select('id, nome, endereco, dados, latitude, longitude')
+    .in('id', ids);
+  if (error) return res.status(500).json({ error: error.message });
+
+  const atualizados = [];
+  const semMudanca = [];
+  const precisamRevisao = [];
+
+  for (const cliente of clientes) {
+    const { cidade, estado } = extrairCidadeEEstado(cliente.dados?.cidade);
+    if (!cidade && !cliente.endereco) {
+      precisamRevisao.push({ id: cliente.id, nome: cliente.nome, motivo: 'Sem endereço nem cidade cadastrados.' });
+      continue;
+    }
+
+    const consulta = [cliente.endereco, cidade, estado, 'Brasil'].filter(Boolean).join(', ');
+    const resultado = await geocodificarEndereco(consulta).catch(() => null);
+
+    if (!resultado) {
+      precisamRevisao.push({ id: cliente.id, nome: cliente.nome, motivo: `Não encontrei nada pra "${consulta}".` });
+    } else if (!cidade) {
+      // Sem cidade cadastrada não dá pra conferir contra nada - por mais que
+      // o Nominatim tenha achado alguma coisa, não é seguro gravar sem essa
+      // confirmação.
+      precisamRevisao.push({
+        id: cliente.id,
+        nome: cliente.nome,
+        motivo: `Não tem cidade cadastrada pra conferir - o mapa sugere "${resultado.enderecoCompleto}", mas não dá pra confirmar sem isso.`,
+      });
+    } else if (!cidadeBate(cidade, resultado.cidadeResolvida)) {
+      precisamRevisao.push({
+        id: cliente.id,
+        nome: cliente.nome,
+        motivo: `Cidade cadastrada é "${cidade}", mas o mapa achou "${resultado.cidadeResolvida || resultado.enderecoCompleto}" - não gravei por segurança.`,
+      });
+    } else if (cliente.latitude === resultado.latitude && cliente.longitude === resultado.longitude) {
+      semMudanca.push({ id: cliente.id, nome: cliente.nome });
+    } else {
+      const { error: erroUpdate } = await supabase
+        .from('clientes')
+        .update({ latitude: resultado.latitude, longitude: resultado.longitude, updated_at: new Date().toISOString() })
+        .eq('id', cliente.id);
+      if (erroUpdate) {
+        precisamRevisao.push({ id: cliente.id, nome: cliente.nome, motivo: `Erro ao salvar: ${erroUpdate.message}` });
+      } else {
+        atualizados.push({ id: cliente.id, nome: cliente.nome, latitude: resultado.latitude, longitude: resultado.longitude });
+      }
+    }
+
+    // Nominatim pede no máximo 1 requisição por segundo.
+    await new Promise((resolve) => setTimeout(resolve, 1100));
+  }
+
+  res.json({ atualizados, sem_mudanca: semMudanca, precisam_revisao: precisamRevisao });
 });
 
 router.post('/clientes/:id/foto', upload.single('arquivo'), async (req, res) => {
