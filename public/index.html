@@ -1851,7 +1851,15 @@
                 <option value="FOB">FOB (frete por conta do cliente)</option>
               </select>
             </div>
-            <div class="field" id="orcamento-frete-valor-wrap"><label>Valor do frete (R$/ton)</label><input type="number" step="0.01" min="0" id="orcamento-frete-valor" placeholder="0,00" /></div>
+            <div class="field" id="orcamento-frete-valor-wrap"><label>Valor do frete (R$/ton)</label>
+              <select id="orcamento-frete-valor-opcao">
+                <option value="348.69" selected>R$ 348,69 (média)</option>
+                <option value="294.259">R$ 294,259 (menor)</option>
+                <option value="456.50">R$ 456,50 (maior)</option>
+                <option value="__outro__">Outro…</option>
+              </select>
+              <input type="number" step="0.01" min="0" id="orcamento-frete-valor" value="348.69" placeholder="0,00" style="margin-top: 0.4rem; display: none" />
+            </div>
             <div class="field"><label>Condição de pagamento</label><input id="orcamento-pagamento" placeholder="Ex: 28 DDL" /></div>
             <div class="field"><label>Prazo de entrega</label><input id="orcamento-entrega" placeholder="Ex: 10 dias úteis" /></div>
             <div class="field"><label>Validade da proposta (dias)</label><input type="number" min="1" id="orcamento-validade" value="15" /></div>
@@ -3265,6 +3273,22 @@ document.getElementById('orcamento-cliente').addEventListener('change', (e) => {
 
 document.getElementById('orcamento-frete').addEventListener('change', (e) => {
   document.getElementById('orcamento-frete-valor-wrap').style.display = e.target.value === 'CIF' ? '' : 'none';
+  atualizarPreviewOrcamento();
+});
+
+// Três valores de referência (média/menor/maior) pra escolher rápido, com
+// opção de digitar outro valor específico - mesmo padrão do seletor de nome
+// do vendedor.
+document.getElementById('orcamento-frete-valor-opcao').addEventListener('change', (e) => {
+  const input = document.getElementById('orcamento-frete-valor');
+  if (e.target.value === '__outro__') {
+    input.style.display = '';
+    input.value = '';
+    input.focus();
+  } else {
+    input.style.display = 'none';
+    input.value = e.target.value;
+  }
   atualizarPreviewOrcamento();
 });
 
