@@ -69,33 +69,15 @@ function desenharItens(doc, itens, yInicial) {
   return y;
 }
 
+// Só o total final (produto + frete já embutido) - sem quebrar em Subtotal
+// e Frete separados, pra não expor o valor do frete calculado por tonelada.
 function desenharTotais(doc, dados, yInicial) {
   const x = 307;
   const largura = DIREITA - x;
-  const alturaLinha = 30;
   const alturaTotal = 44;
-  let y = yInicial;
+  const y = yInicial;
 
-  const linhaValor = (esquerda, direita, fundo) => {
-    doc.rect(x, y, largura, alturaLinha).fill(fundo);
-    doc.font('Helvetica').fontSize(9.5).fillColor(CINZA_TEXTO)
-      .text(esquerda, x + 14, y + 10.5, { width: largura / 2, lineBreak: false });
-    doc.font('Helvetica-Bold').fontSize(9.5).fillColor(TINTA)
-      .text(direita, x + largura / 2 - 14, y + 10.5, { width: largura / 2, align: 'right', lineBreak: false });
-    y += alturaLinha;
-  };
-
-  caixaMeiaRedonda(doc, x, y, largura, alturaLinha, 6, 'topo', '#f3f7f9');
-  linhaValor('Subtotal', moeda(dados.subtotal), '#f3f7f9');
-  linhaValor(
-    `Frete (${dados.frete})`,
-    dados.frete === 'CIF'
-      ? (dados.freteValor > 0 ? moeda(dados.freteValor) : 'Incluso')
-      : 'Por conta do cliente',
-    '#e9f4f9'
-  );
-
-  caixaMeiaRedonda(doc, x, y, largura, alturaTotal, 6, 'baixo', AZUL);
+  doc.roundedRect(x, y, largura, alturaTotal, 6).fill(AZUL);
   doc.font('Helvetica-Bold').fontSize(14).fillColor('#ffffff')
     .text('Total', x + 14, y + 14, { width: largura / 2, lineBreak: false })
     .text(moeda(dados.total), x + largura / 2 - 14, y + 14, { width: largura / 2, align: 'right', lineBreak: false });
@@ -108,9 +90,8 @@ function desenharResumo(doc, dados, y, alturaDisponivel) {
   const largura = 307 - MARGEM - 20;
   const linhas = [
     dados.cliente.nome ? `Proposta preparada para ${texto(dados.cliente.nome, 70).replace(/\.$/, '')}.` : '',
-    dados.frete === 'CIF'
-      ? (dados.freteValor > 0 ? 'Frete CIF cobrado à parte, conforme quadro ao lado.' : 'Frete CIF incluso no preço.')
-      : 'Frete FOB por conta do cliente.',
+    // O valor do frete não aparece separado - já está embutido no Total.
+    dados.frete === 'CIF' ? 'Frete CIF incluso no preço.' : 'Frete FOB por conta do cliente.',
     texto(dados.observacoes, 600),
   ].filter(Boolean);
 

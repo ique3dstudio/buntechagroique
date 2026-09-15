@@ -1851,7 +1851,7 @@
                 <option value="FOB">FOB (frete por conta do cliente)</option>
               </select>
             </div>
-            <div class="field" id="orcamento-frete-valor-wrap"><label>Valor do frete (R$)</label><input type="number" step="0.01" min="0" id="orcamento-frete-valor" placeholder="0,00" /></div>
+            <div class="field" id="orcamento-frete-valor-wrap"><label>Valor do frete (R$/ton)</label><input type="number" step="0.01" min="0" id="orcamento-frete-valor" placeholder="0,00" /></div>
             <div class="field"><label>Condição de pagamento</label><input id="orcamento-pagamento" placeholder="Ex: 28 DDL" /></div>
             <div class="field"><label>Prazo de entrega</label><input id="orcamento-entrega" placeholder="Ex: 10 dias úteis" /></div>
             <div class="field"><label>Validade da proposta (dias)</label><input type="number" min="1" id="orcamento-validade" value="15" /></div>
@@ -3086,8 +3086,12 @@ function dadosOrcamento() {
     .filter((i) => i.produto || i.total > 0);
 
   const subtotal = itens.reduce((s, i) => s + i.total, 0);
+  const totalToneladas = itens.reduce((s, i) => s + i.quantidade, 0);
   const frete = v('orcamento-frete');
-  const freteValor = frete === 'CIF' ? Number(v('orcamento-frete-valor')) || 0 : 0;
+  // O valor digitado é por tonelada - o total do frete sai daqui multiplicado
+  // pela soma das toneladas dos itens, não é mais um valor fixo digitado.
+  const freteValorPorTon = frete === 'CIF' ? Number(v('orcamento-frete-valor')) || 0 : 0;
+  const freteValor = freteValorPorTon * totalToneladas;
 
   const validadeDias = Number(v('orcamento-validade')) || 0;
   const validadeData = new Date();
@@ -3137,9 +3141,9 @@ function atualizarPreviewOrcamento() {
 
   const notas = [
     d.cliente.nome ? `Proposta preparada para ${d.cliente.nome.replace(/\.$/, '')}.` : '',
-    d.frete === 'CIF'
-      ? (d.freteValor > 0 ? 'Frete CIF cobrado à parte, conforme quadro ao lado.' : 'Frete CIF incluso no preço.')
-      : 'Frete FOB por conta do cliente.',
+    // O valor do frete some daqui pra dentro do Total - o cliente não vê o
+    // cálculo por tonelada, só que o frete já está incluso no preço final.
+    d.frete === 'CIF' ? 'Frete CIF incluso no preço.' : 'Frete FOB por conta do cliente.',
     d.observacoes,
   ].filter(Boolean).join('\n');
 
@@ -3212,8 +3216,6 @@ function atualizarPreviewOrcamento() {
       <div class="orc-fecho">
         <div class="orc-notas">${notas}</div>
         <div class="orc-totais">
-          <div class="orc-totais-linha"><span>Subtotal</span><strong>${fmtMoeda(d.subtotal)}</strong></div>
-          <div class="orc-totais-linha alt"><span>Frete (${d.frete})</span><strong>${d.frete === 'CIF' ? (d.freteValor > 0 ? fmtMoeda(d.freteValor) : 'Incluso') : 'Por conta do cliente'}</strong></div>
           <div class="orc-total-geral"><span>Total</span><span>${fmtMoeda(d.total)}</span></div>
         </div>
       </div>
