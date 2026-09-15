@@ -1198,6 +1198,7 @@
         <button data-aba="agenda"><span class="icone-aba"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg></span><span class="rotulo-aba">Agenda</span></button>
         <button data-aba="crm"><span class="icone-aba"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span><span class="rotulo-aba">CRM</span></button>
         <button data-aba="clientes"><span class="icone-aba"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="rotulo-aba">Carteira</span></button>
+        <button data-aba="negociacoes"><span class="icone-aba"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17 9 11 13 15 21 7"/><path d="M15 7h6v6"/></svg></span><span class="rotulo-aba">Negociações</span></button>
         <button data-aba="mapa"><span class="icone-aba"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20 3 17V4l6 3m0 13 6-3m-6 3V7m6 10 6 3V7l-6-3m0 13V4m0 3L9 4"/></svg></span><span class="rotulo-aba">Mapa</span></button>
         <button data-aba="rdv"><span class="icone-aba"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M9 15h6M9 11h2"/></svg></span><span class="rotulo-aba">RDV</span></button>
         <button data-aba="orcamento"><span class="icone-aba"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M12 11v6M9.5 12.5h3.2a1.5 1.5 0 0 1 0 3h-2.4a1.5 1.5 0 0 0 0 3h3.2"/></svg></span><span class="rotulo-aba">Orçamento</span></button>
@@ -1366,6 +1367,7 @@
               <option value="visita">Visita</option>
               <option value="reuniao">Reunião</option>
               <option value="ligacao">Ligação</option>
+              <option value="mensagem">Mensagem</option>
               <option value="outro">Outro</option>
             </select>
           </div>
@@ -1506,7 +1508,6 @@
         <a href="#empresas">Empresas</a>
         <a href="#contatos">Contatos</a>
         <a href="#produtos">Produtos</a>
-        <a href="#negociacoes">Negociações</a>
         <a href="#atividades">Atividades</a>
       </nav>
 
@@ -1621,32 +1622,6 @@
         </div>
       </section>
 
-      <section class="card" id="negociacoes">
-        <h2><span class="icone-secao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17 9 11 13 15 21 7"/><path d="M15 7h6v6"/></svg></span>Negociações</h2>
-        <form id="form-negociacao">
-          <div class="form-grid">
-            <div class="field"><label>Contato</label><select name="contato_id" id="select-contato-negociacao" required></select></div>
-            <div class="field"><label>Produto</label><select name="produto_id" id="select-produto-negociacao"><option value="">Sem produto</option></select></div>
-            <div class="field"><label>Título</label><input name="titulo" placeholder="Descrição da negociação" required /></div>
-            <div class="field"><label>Valor (R$)</label><input name="valor" placeholder="0,00" type="number" step="0.01" min="0" /></div>
-            <div class="field"><label>Temperatura</label>
-              <select name="temperatura">
-                <option value="morno">Morno</option>
-                <option value="quente">Quente</option>
-                <option value="frio">Frio</option>
-              </select>
-            </div>
-            <div class="field"><label>Previsão de fechamento</label><input name="data_prevista" type="date" /></div>
-            <button type="submit">Adicionar negociação</button>
-          </div>
-        </form>
-        <div class="tabela-wrap">
-          <table>
-            <thead><tr><th>Contato</th><th>Negociação</th><th>Valor</th><th>Temperatura</th><th>Etapa</th></tr></thead>
-            <tbody id="tabela-negociacoes"></tbody>
-          </table>
-        </div>
-      </section>
 
       <section class="card" id="atividades">
         <h2><span class="icone-secao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/><path d="m8 15 2 2 4-4"/></svg></span>Atividades pendentes</h2>
@@ -1724,6 +1699,58 @@
               <tbody id="detalhe-historico-tabela"></tbody>
             </table>
           </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ===== ABA NEGOCIAÇÕES ===== -->
+    <div class="painel" id="painel-negociacoes" hidden>
+      <section class="card" id="negociacoes-registro">
+        <h2><span class="icone-secao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17 9 11 13 15 21 7"/><path d="M15 7h6v6"/></svg></span>Registrar negociação</h2>
+        <form id="form-negociacao">
+          <div class="form-grid">
+            <div class="field"><label>Cliente</label><select name="cliente_id" id="select-cliente-negociacao" required></select></div>
+            <div class="field"><label>Produto</label><select name="produto_id" id="select-produto-negociacao"><option value="">Sem produto</option></select></div>
+            <div class="field"><label>Fase</label><select name="etapa" id="select-fase-negociacao"></select></div>
+            <div class="field" style="grid-column: 1 / -1"><label>Observações</label><textarea name="observacoes" placeholder="Anotações sobre a negociação"></textarea></div>
+          </div>
+          <button type="submit">Registrar negociação</button>
+        </form>
+        <div class="tabela-wrap">
+          <table>
+            <thead><tr><th>Cliente</th><th>Produto</th><th>Fase</th><th>Observações</th><th></th></tr></thead>
+            <tbody id="tabela-negociacoes"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card" id="negociacoes-previsao">
+        <h2><span class="icone-secao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01"/></svg></span>Previsão de pedidos</h2>
+        <p class="vazio" style="margin: -0.5rem 0 1rem">Marque o ritmo de compra do cliente e ele entra na Agenda pra te lembrar de mandar mensagem.</p>
+        <form id="form-previsao-pedido">
+          <div class="form-grid">
+            <div class="field"><label>Cliente</label><select name="cliente_id" id="select-cliente-previsao" required></select></div>
+            <div class="field"><label>Ritmo de compra</label>
+              <select id="select-intervalo-previsao">
+                <option value="7">A cada 7 dias</option>
+                <option value="15" selected>A cada 15 dias</option>
+                <option value="30">A cada 30 dias</option>
+                <option value="45">A cada 45 dias</option>
+                <option value="60">A cada 60 dias</option>
+                <option value="outro">Outro...</option>
+              </select>
+            </div>
+            <div class="field" id="campo-intervalo-previsao-outro" style="display:none"><label>A cada quantos dias</label><input type="number" id="input-intervalo-previsao" min="1" placeholder="Ex: 20" /></div>
+            <div class="field"><label>Próxima mensagem</label><input type="date" name="data" id="input-data-previsao" required /></div>
+            <div class="field" style="grid-column: 1 / -1"><label>Observações</label><input name="observacoes" placeholder="Ex: prefere confirmar por WhatsApp" /></div>
+          </div>
+          <button type="submit">Salvar previsão</button>
+        </form>
+        <div class="tabela-wrap">
+          <table>
+            <thead><tr><th>Cliente</th><th>Ritmo</th><th>Próxima mensagem</th><th>Observações</th><th></th></tr></thead>
+            <tbody id="tabela-previsoes-pedido"></tbody>
+          </table>
         </div>
       </section>
     </div>
@@ -3761,6 +3788,7 @@ document.querySelectorAll('nav.abas button').forEach((btn) => {
     document.getElementById('painel-agenda').hidden = btn.dataset.aba !== 'agenda';
     document.getElementById('painel-crm').hidden = btn.dataset.aba !== 'crm';
     document.getElementById('painel-clientes').hidden = btn.dataset.aba !== 'clientes';
+    document.getElementById('painel-negociacoes').hidden = btn.dataset.aba !== 'negociacoes';
     document.getElementById('painel-mapa').hidden = btn.dataset.aba !== 'mapa';
     document.getElementById('painel-rdv').hidden = btn.dataset.aba !== 'rdv';
     document.getElementById('painel-orcamento').hidden = btn.dataset.aba !== 'orcamento';
@@ -4429,27 +4457,29 @@ async function carregarContatos() {
     : '<tr><td class="vazio" colspan="4">Nenhum contato ainda.</td></tr>';
 
   const opcoes = contatos.map((c) => `<option value="${c.id}">${c.nome}</option>`).join('');
-  document.getElementById('select-contato-negociacao').innerHTML = opcoes;
   document.getElementById('select-contato-atividade').innerHTML = opcoes;
 }
 
-async function carregarNegociacoes() {
-  const negociacoes = await api('/negociacoes');
-  const opcoesEtapa = (etapaAtual) =>
-    ETAPAS.map(([valor, rotulo]) => `<option value="${valor}" ${valor === etapaAtual ? 'selected' : ''}>${rotulo}</option>`).join('');
+function opcoesFase(etapaAtual) {
+  return ETAPAS.map(([valor, rotulo]) => `<option value="${valor}" ${valor === etapaAtual ? 'selected' : ''}>${rotulo}</option>`).join('');
+}
 
+async function carregarNegociacoes() {
+  document.getElementById('select-fase-negociacao').innerHTML = opcoesFase();
+
+  const negociacoes = await api('/negociacoes');
   const tbody = document.getElementById('tabela-negociacoes');
   tbody.innerHTML = negociacoes.length
     ? negociacoes.map((n) => `
         <tr>
-          <td>${n.contatos?.nome ?? '—'}</td>
-          <td>${n.titulo}${n.produtos?.nome ? ' <span class="vazio">(' + n.produtos.nome + ')</span>' : ''}</td>
-          <td>${fmtMoeda(n.valor)}</td>
-          <td><span class="badge temp-${n.temperatura}">${n.temperatura}</span></td>
-          <td><select class="badge etapa-${n.etapa}" data-id="${n.id}">${opcoesEtapa(n.etapa)}</select></td>
+          <td>${n.clientes?.nome ?? n.contatos?.nome ?? '—'}</td>
+          <td>${n.produtos?.nome ?? '—'}</td>
+          <td><select class="badge etapa-${n.etapa}" data-id="${n.id}">${opcoesFase(n.etapa)}</select></td>
+          <td>${n.observacoes ? escaparAtributo(n.observacoes) : '—'}</td>
+          <td><button type="button" class="secundario" data-excluir="${n.id}">Excluir</button></td>
         </tr>
       `).join('')
-    : '<tr><td class="vazio" colspan="5">Nenhuma negociação ainda.</td></tr>';
+    : '<tr><td class="vazio" colspan="5">Nenhuma negociação registrada ainda.</td></tr>';
 
   tbody.querySelectorAll('select[data-id]').forEach((select) => {
     select.addEventListener('change', async () => {
@@ -4466,7 +4496,113 @@ async function carregarNegociacoes() {
       }
     });
   });
+
+  tbody.querySelectorAll('button[data-excluir]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('Excluir essa negociação?')) return;
+      try {
+        await api(`/negociacoes/${btn.dataset.excluir}`, { method: 'DELETE' });
+        await carregarNegociacoes();
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+  });
 }
+
+// --- Previsão de pedidos: ritmo de compra do cliente, guardado como série
+// recorrente na Agenda (tipo "mensagem", recorrencia "personalizada") pra
+// aparecer lá também e lembrar de mandar mensagem no dia certo.
+
+function formatarRitmo(dias) {
+  if (dias === 7) return 'Toda semana';
+  if (dias === 14) return 'A cada 2 semanas';
+  if (dias === 30) return 'Todo mês';
+  return `A cada ${dias} dias`;
+}
+
+async function carregarPrevisoesPedido() {
+  const inicio = dataISOHoje();
+  const fim = dataISOde(somarDias(new Date(), 400));
+  const ocorrencias = await api(`/agenda?inicio=${inicio}&fim=${fim}`);
+
+  const proximaPorSerie = new Map();
+  ocorrencias
+    .filter((o) => o.tipo === 'mensagem' && o.recorrencia === 'personalizada')
+    .forEach((o) => {
+      const atual = proximaPorSerie.get(o.serie_id);
+      if (!atual || o.data < atual.data) proximaPorSerie.set(o.serie_id, o);
+    });
+
+  const previsoes = [...proximaPorSerie.values()].sort((a, b) => a.data.localeCompare(b.data));
+  const tbody = document.getElementById('tabela-previsoes-pedido');
+  tbody.innerHTML = previsoes.length
+    ? previsoes.map((p) => `
+        <tr>
+          <td>${p.clientes?.nome ?? '—'}</td>
+          <td>${formatarRitmo(p.recorrencia_intervalo_dias)}</td>
+          <td>${new Date(p.data + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
+          <td>${p.descricao ? escaparAtributo(p.descricao) : '—'}</td>
+          <td><button type="button" class="secundario" data-excluir="${p.serie_id}">Excluir</button></td>
+        </tr>
+      `).join('')
+    : '<tr><td class="vazio" colspan="5">Nenhuma previsão de pedido cadastrada ainda.</td></tr>';
+
+  tbody.querySelectorAll('button[data-excluir]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('Excluir essa previsão de pedido?')) return;
+      try {
+        await api(`/agenda/${btn.dataset.excluir}`, { method: 'DELETE' });
+        await Promise.all([carregarPrevisoesPedido(), carregarAgenda()]);
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+  });
+}
+
+document.getElementById('select-intervalo-previsao').addEventListener('change', (e) => {
+  document.getElementById('campo-intervalo-previsao-outro').style.display = e.target.value === 'outro' ? '' : 'none';
+});
+
+document.getElementById('form-previsao-pedido').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const form = e.target;
+  const cliente_id = form.elements.cliente_id.value;
+  const presetIntervalo = document.getElementById('select-intervalo-previsao').value;
+  const intervalo_dias = presetIntervalo === 'outro'
+    ? Number(document.getElementById('input-intervalo-previsao').value)
+    : Number(presetIntervalo);
+  const data = form.elements.data.value;
+  const observacoes = form.elements.observacoes.value;
+
+  if (!intervalo_dias || intervalo_dias < 1) {
+    alert('Informe a cada quantos dias mandar mensagem.');
+    return;
+  }
+
+  const clienteNome = clientesCache.find((c) => c.id === cliente_id)?.nome ?? 'cliente';
+  try {
+    await api('/agenda', {
+      method: 'POST',
+      body: JSON.stringify({
+        data,
+        tipo: 'mensagem',
+        titulo: `Mandar mensagem: ${clienteNome}`,
+        cliente_id,
+        descricao: observacoes,
+        recorrencia: 'personalizada',
+        recorrencia_intervalo_dias: intervalo_dias,
+      }),
+    });
+    form.reset();
+    form.elements.data.value = dataISOHoje();
+    document.getElementById('campo-intervalo-previsao-outro').style.display = 'none';
+    await Promise.all([carregarPrevisoesPedido(), carregarAgenda()]);
+  } catch (err) {
+    alert(err.message);
+  }
+});
 
 async function carregarAtividades() {
   const atividades = await api('/atividades');
@@ -4601,6 +4737,8 @@ async function carregarClientes() {
   clientesCache = await api('/clientes');
   preencherSelectClientes('select-cliente-visita');
   preencherSelectClientes('select-cliente-pedido');
+  preencherSelectClientes('select-cliente-negociacao');
+  preencherSelectClientes('select-cliente-previsao');
   renderizarFiltroClientes();
   renderizarGradeClientes();
   renderizarSituacaoClientes();
@@ -5317,9 +5455,10 @@ document.getElementById('btn-editar-meta-mini').addEventListener('click', async 
 
 (async function iniciar() {
   carregarConfig();
+  document.getElementById('input-data-previsao').value = dataISOHoje();
   await Promise.all([carregarEmpresas(), carregarProdutos(), carregarCamposClientes()]);
   await Promise.all([carregarContatos(), carregarClientes()]);
-  await Promise.all([carregarResumo(), carregarVisitas(), carregarNegociacoes(), carregarAtividades(), carregarRdv(), carregarAgenda(), carregarPedidos()]);
+  await Promise.all([carregarResumo(), carregarVisitas(), carregarNegociacoes(), carregarPrevisoesPedido(), carregarAtividades(), carregarRdv(), carregarAgenda(), carregarPedidos()]);
   iniciarOrcamento();
   ajustarAlturaInicio();
 })();

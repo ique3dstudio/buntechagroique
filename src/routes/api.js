@@ -542,7 +542,7 @@ router.post('/orcamento/pdf', (req, res) => {
 
 // --- Agenda (compromissos/visitas, com cliente vinculado pra montar rota no mapa) ---
 
-const CAMPOS_COMPROMISSO = ['data', 'hora', 'hora_fim', 'tipo', 'titulo', 'cliente_id', 'localizacao', 'motivo', 'etapa_funil', 'descricao', 'status_confirmacao', 'recorrencia', 'recorrencia_ate'];
+const CAMPOS_COMPROMISSO = ['data', 'hora', 'hora_fim', 'tipo', 'titulo', 'cliente_id', 'localizacao', 'motivo', 'etapa_funil', 'descricao', 'status_confirmacao', 'recorrencia', 'recorrencia_ate', 'recorrencia_intervalo_dias'];
 
 const PASSO_RECORRENCIA_DIAS = { semanal: 7, quinzenal: 14 };
 
@@ -559,7 +559,10 @@ function expandirRecorrencia(serie, inicio, fim) {
 
   const excecoes = new Set(serie.recorrencia_excecoes || []);
   const datas = [];
-  const passo = PASSO_RECORRENCIA_DIAS[serie.recorrencia];
+  // "personalizada" é o ritmo de compra do cliente (Previsão de pedidos):
+  // repete a cada N dias, com N guardado em recorrencia_intervalo_dias.
+  const passo = PASSO_RECORRENCIA_DIAS[serie.recorrencia]
+    || (serie.recorrencia === 'personalizada' ? serie.recorrencia_intervalo_dias : null);
 
   if (passo) {
     let atual = new Date(`${serie.data}T00:00:00Z`);
@@ -596,7 +599,7 @@ function expandirRecorrencia(serie, inicio, fim) {
 // Enquanto a migração de recorrência (028) não roda no banco, as colunas
 // recorrencia/recorrencia_ate/recorrencia_excecoes não existem. Em vez de
 // derrubar a agenda inteira, o código detecta isso e trabalha sem recorrência.
-const CAMPOS_RECORRENCIA = ['recorrencia', 'recorrencia_ate', 'recorrencia_excecoes'];
+const CAMPOS_RECORRENCIA = ['recorrencia', 'recorrencia_ate', 'recorrencia_excecoes', 'recorrencia_intervalo_dias'];
 
 function erroDeRecorrenciaAusente(error) {
   return !!error && /recorrencia/i.test(error.message || '');
@@ -775,55 +778,71 @@ router.post('/contatos', async (req, res) => {
 
 // --- Negociações ---
 
+const SELECT_NEGOCIACAO = '*, clientes(nome), contatos(nome), produtos(nome)';
+
 router.get('/negociacoes', async (req, res) => {
   const { data, error } = await supabase
     .from('negociacoes')
-    .select('*, contatos(nome), produtos(nome)')
+    .select(SELECT_NEGOCIACAO)
     .order('created_at', { ascending: false });
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);
 });
 
 router.post('/negociacoes', async (req, res) => {
-  const { contato_id, produto_id, titulo, valor, origem, temperatura, data_prevista } = req.body;
-  if (!contato_id || !titulo) {
-    return res.status(400).json({ error: 'contato_id e titulo são obrigatórios' });
+  const { cliente_id, produto_id, titulo, valor, origem, temperatura, observacoes, data_prevista } = req.body;
+  if (!cliente_id) {
+    return res.status(400).json({ error: 'cliente_id é obrigatório' });
   }
 
   const { data, error } = await supabase
     .from('negociacoes')
     .insert({
-      contato_id,
+      cliente_id,
       produto_id: produto_id || null,
-      titulo,
-      valor,
-      origem,
+      titulo: titulo || null,
+      valor: valor || null,
+      origem: origem || null,
       temperatura: temperatura || 'morno',
-      data_prevista,
+      observacoes: observacoes || null,
+      data_prevista: data_prevista || null,
+      etapa: ETAPAS[0],
     })
-    .select('*, contatos(nome), produtos(nome)')
+    .select(SELECT_NEGOCIACAO)
     .single();
   if (error) return res.status(500).json({ error: error.message });
   res.status(201).json(data);
 });
 
 router.patch('/negociacoes/:id', async (req, res) => {
-  const { etapa, motivo_perda } = req.body;
-  if (!ETAPAS.includes(etapa)) {
-    return res.status(400).json({ error: 'etapa inválida' });
-  }
+  const { etapa, motivo_perda, cliente_id, produto_id, valor, observacoes, data_prevista } = req.body;
+  const atualizacao = { updated_at: new Date().toISOString() };
 
-  const atualizacao = { etapa, updated_at: new Date().toISOString() };
-  if (etapa === 'perdida') atualizacao.motivo_perda = motivo_perda || null;
+  if (etapa !== undefined) {
+    if (!ETAPAS.includes(etapa)) return res.status(400).json({ error: 'etapa inválida' });
+    atualizacao.etapa = etapa;
+    if (etapa === 'perdida') atualizacao.motivo_perda = motivo_perda || null;
+  }
+  if (cliente_id !== undefined) atualizacao.cliente_id = cliente_id || null;
+  if (produto_id !== undefined) atualizacao.produto_id = produto_id || null;
+  if (valor !== undefined) atualizacao.valor = valor || null;
+  if (observacoes !== undefined) atualizacao.observacoes = observacoes || null;
+  if (data_prevista !== undefined) atualizacao.data_prevista = data_prevista || null;
 
   const { data, error } = await supabase
     .from('negociacoes')
     .update(atualizacao)
     .eq('id', req.params.id)
-    .select('*, contatos(nome), produtos(nome)')
+    .select(SELECT_NEGOCIACAO)
     .single();
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);
+});
+
+router.delete('/negociacoes/:id', async (req, res) => {
+  const { error } = await supabase.from('negociacoes').delete().eq('id', req.params.id);
+  if (error) return res.status(500).json({ error: error.message });
+  res.status(204).end();
 });
 
 // --- Atividades ---
