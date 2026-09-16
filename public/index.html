@@ -172,6 +172,10 @@
   .avatar-img[hidden], .avatar-fallback[hidden] { display: none; }
   .perfil-info-coluna { display: flex; flex-direction: column; gap: 0.3rem; flex: 1; min-width: 220px; }
   .perfil-secao-label { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin-bottom: -0.2rem; }
+  .perfil-vendedor-seletor { display: flex; align-items: center; gap: 0.35rem; }
+  .perfil-vendedor-seletor select { padding: 0.3rem 0.5rem; font-size: 0.82rem; font-weight: 700; max-width: 200px; }
+  .perfil-vendedor-seletor .btn-lapis { flex-shrink: 0; width: 26px; height: 26px; }
+  .perfil-vendedor-seletor .btn-lapis svg { width: 13px; height: 13px; }
   .perfil-cargo-wrap { display: flex; align-items: center; gap: 0.5rem; }
   .perfil-cargo-texto { font-size: 0.92rem; font-weight: 700; color: var(--ink); }
   .perfil-pills-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.35rem; }
@@ -1418,6 +1422,8 @@
             </div>
           </div>
           <div class="perfil-info-coluna">
+            <div class="perfil-secao-label">Perfil</div>
+            <div class="perfil-vendedor-seletor" id="perfil-vendedor-seletor"></div>
             <div class="perfil-secao-label">Cargo</div>
             <div class="perfil-cargo-wrap" id="perfil-cargo-wrap"></div>
             <div class="perfil-pills-row">
@@ -1893,7 +1899,6 @@
             <div class="field"><label>Nº do orçamento</label><input id="orcamento-numero" /></div>
             <div class="field"><label>Seu nome (sai no PDF)</label>
               <select id="orcamento-vendedor-nome-opcao">
-                <option value="Gustavo Ique">Gustavo Ique</option>
                 <option value="__outro__">Outro…</option>
               </select>
               <input id="orcamento-vendedor-nome" placeholder="Nome completo" style="margin-top: 0.4rem; display: none" />
@@ -3226,7 +3231,7 @@ function atualizarPreviewOrcamento() {
         </section>
         <section class="orc-cartao verde">
           <div class="orc-cartao-cab"><span class="orc-avatar">${SVG_ORCAMENTO.pessoa}</span><span class="orc-cartao-rotulo">Vendedor responsável</span></div>
-          <strong class="orc-cartao-nome">${d.vendedorNome || 'Gustavo Ique'}</strong>
+          <strong class="orc-cartao-nome">${d.vendedorNome || vendedorAtivo()?.nome || 'Vendedor'}</strong>
           ${linhasVendedor.filter(Boolean).map((linha) => `<div class="orc-cartao-linha">${linha}</div>`).join('')}
         </section>
       </div>
@@ -3389,14 +3394,23 @@ document.getElementById('btn-baixar-orcamento').addEventListener('click', async 
   }
 });
 
-// "Gustavo Ique" é o vendedor de hoje - fica pré-selecionado; "Outro…" abre o
-// campo de texto pra digitar outro nome (útil se um dia mais alguém usar).
+// A lista de nomes vem dos vendedores cadastrados (ver carregarVendedores);
+// "Outro…" abre o campo de texto pra digitar um nome avulso.
+function preencherSeletorVendedorOrcamento() {
+  const select = document.getElementById('orcamento-vendedor-nome-opcao');
+  const nomeAtual = select.value && select.value !== '__outro__' ? select.value : null;
+  select.innerHTML = vendedoresCache.map((v) => `<option value="${escaparAtributo(v.nome)}">${escaparAtributo(v.nome)}</option>`).join('')
+    + '<option value="__outro__">Outro…</option>';
+  aplicarNomeVendedorOrcamento(localStorage.getItem('vendedorNomeOrcamento') || nomeAtual || vendedorAtivo()?.nome || '');
+}
+
 function aplicarNomeVendedorOrcamento(nome) {
   const select = document.getElementById('orcamento-vendedor-nome-opcao');
   const input = document.getElementById('orcamento-vendedor-nome');
-  const conhecido = nome === 'Gustavo Ique';
-  select.value = conhecido || !nome ? 'Gustavo Ique' : '__outro__';
-  input.value = conhecido || !nome ? 'Gustavo Ique' : nome;
+  const nomeFinal = nome || vendedorAtivo()?.nome || '';
+  const conhecido = vendedoresCache.some((v) => v.nome === nomeFinal);
+  select.value = conhecido ? nomeFinal : '__outro__';
+  input.value = nomeFinal;
   input.style.display = select.value === '__outro__' ? '' : 'none';
 }
 
@@ -3415,7 +3429,7 @@ document.getElementById('orcamento-vendedor-nome-opcao').addEventListener('chang
 
 function iniciarOrcamento() {
   document.getElementById('orcamento-numero').value = proximoNumeroOrcamento().numero;
-  aplicarNomeVendedorOrcamento(localStorage.getItem('vendedorNomeOrcamento') || 'Gustavo Ique');
+  preencherSeletorVendedorOrcamento();
   preencherClientesOrcamento();
   renderizarItensOrcamento();
   atualizarPreviewOrcamento();
@@ -3423,37 +3437,19 @@ function iniciarOrcamento() {
 
 // --- Configurações visuais (ícone, foto de perfil, cargo) ---
 
-let cargoAtual = 'Vendedor Júnior';
-let regiaoAtual = 'Minas Gerais';
-let vendedorAtual = { numero_vendedor: '', matricula: '', celular: '', email: '' };
+let cargoAtual = '';
+let regiaoAtual = '';
+let vendedorAtual = { id: null, nome: '', numero_vendedor: '', matricula: '', celular: '', email: '', foto_perfil_url: '' };
 let metaAtual = null;
 let metaGeralAtual = null;
 
 function aplicarConfig(config) {
-  if (config.foto_perfil_url) {
-    const img = document.getElementById('avatar-img');
-    img.src = config.foto_perfil_url;
-    img.hidden = false;
-    document.getElementById('avatar-fallback').hidden = true;
-  }
   if (config.icone_url) {
     document.getElementById('favicon').href = config.icone_url;
     document.getElementById('apple-touch-icon').href = config.icone_url;
   }
-  if (config.cargo) cargoAtual = config.cargo;
-  if (config.regiao) regiaoAtual = config.regiao;
-  vendedorAtual = {
-    numero_vendedor: config.numero_vendedor || '',
-    matricula: config.matricula || '',
-    celular: config.celular || '',
-    email: config.email || '',
-  };
   metaAtual = config.meta_valor ?? null;
   metaGeralAtual = config.meta_geral ?? null;
-  renderizarCargo();
-  renderizarRegiao();
-  renderizarVendedor();
-  renderizarCelular();
   renderizarMetaGeral();
   renderizarMetaProgresso();
 }
@@ -3463,18 +3459,157 @@ async function carregarConfig() {
     const config = await api('/config');
     aplicarConfig(config);
   } catch {
-    renderizarCargo();
-    renderizarRegiao();
-    renderizarVendedor();
-    renderizarCelular();
     renderizarMetaGeral();
   }
+}
+
+// --- Vendedores: perfis com nome/cargo/região/contato próprios, com um
+// seletor pra trocar qual está "ativo" no aparelho (guardado no localStorage -
+// cada vendedor vê o app com o próprio perfil, sem depender de login). ---
+
+let vendedoresCache = [];
+let vendedorAtivoId = localStorage.getItem('vendedorAtivoId') || null;
+
+function vendedorAtivo() {
+  return vendedoresCache.find((v) => v.id === vendedorAtivoId) || vendedoresCache[0] || null;
+}
+
+async function carregarVendedores() {
+  try {
+    vendedoresCache = await api('/vendedores');
+  } catch {
+    vendedoresCache = [];
+  }
+  if (!vendedoresCache.some((v) => v.id === vendedorAtivoId)) {
+    vendedorAtivoId = vendedoresCache[0]?.id || null;
+  }
+  if (vendedorAtivoId) localStorage.setItem('vendedorAtivoId', vendedorAtivoId);
+  aplicarVendedorAtivo();
+  renderizarSeletorVendedor();
+}
+
+function aplicarVendedorAtivo() {
+  const v = vendedorAtivo();
+  vendedorAtual = {
+    id: v?.id || null,
+    nome: v?.nome || '',
+    numero_vendedor: v?.numero_vendedor || '',
+    matricula: v?.matricula || '',
+    celular: v?.celular || '',
+    email: v?.email || '',
+    foto_perfil_url: v?.foto_perfil_url || '',
+  };
+  cargoAtual = v?.cargo || '';
+  regiaoAtual = v?.regiao || '';
+
+  const img = document.getElementById('avatar-img');
+  const fallback = document.getElementById('avatar-fallback');
+  if (vendedorAtual.foto_perfil_url) {
+    img.src = vendedorAtual.foto_perfil_url;
+    img.hidden = false;
+    fallback.hidden = true;
+  } else {
+    img.hidden = true;
+    fallback.hidden = false;
+  }
+
+  renderizarCargo();
+  renderizarRegiao();
+  renderizarVendedor();
+  renderizarCelular();
+}
+
+function renderizarSeletorVendedor() {
+  const wrap = document.getElementById('perfil-vendedor-seletor');
+  if (!vendedoresCache.length) {
+    wrap.innerHTML = `<button type="button" class="btn-upload" id="btn-novo-vendedor">+ Cadastrar vendedor</button>`;
+    document.getElementById('btn-novo-vendedor').addEventListener('click', criarNovoVendedor);
+    return;
+  }
+  wrap.innerHTML = `
+    <select id="select-vendedor-ativo" title="Trocar de vendedor">
+      ${vendedoresCache.map((v) => `<option value="${v.id}" ${v.id === vendedorAtivoId ? 'selected' : ''}>${escaparAtributo(v.nome)}</option>`).join('')}
+    </select>
+    <button type="button" class="btn-lapis" id="btn-renomear-vendedor" title="Renomear este vendedor">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+    </button>
+    <button type="button" class="btn-lapis" id="btn-novo-vendedor" title="Cadastrar novo vendedor">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+    ${vendedoresCache.length > 1 ? `<button type="button" class="btn-lapis" id="btn-remover-vendedor" title="Remover este vendedor">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6h16Z"/></svg>
+    </button>` : ''}
+  `;
+  document.getElementById('select-vendedor-ativo').addEventListener('change', (e) => {
+    vendedorAtivoId = e.target.value;
+    localStorage.setItem('vendedorAtivoId', vendedorAtivoId);
+    aplicarVendedorAtivo();
+    renderizarSeletorVendedor();
+    preencherSeletorVendedorOrcamento();
+  });
+  document.getElementById('btn-renomear-vendedor').addEventListener('click', renomearVendedorAtivo);
+  document.getElementById('btn-novo-vendedor').addEventListener('click', criarNovoVendedor);
+  const btnRemover = document.getElementById('btn-remover-vendedor');
+  if (btnRemover) btnRemover.addEventListener('click', removerVendedorAtivo);
+}
+
+async function renomearVendedorAtivo() {
+  const v = vendedorAtivo();
+  if (!v) return;
+  const nome = (prompt('Novo nome do vendedor:', v.nome) || '').trim();
+  if (!nome || nome === v.nome) return;
+  try {
+    const atualizado = await api(`/vendedores/${v.id}`, { method: 'PATCH', body: JSON.stringify({ nome }) });
+    atualizarVendedorCache(atualizado);
+    vendedorAtual.nome = atualizado.nome;
+    renderizarSeletorVendedor();
+    preencherSeletorVendedorOrcamento();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+async function criarNovoVendedor() {
+  const nome = (prompt('Nome do novo vendedor:') || '').trim();
+  if (!nome) return;
+  try {
+    const criado = await api('/vendedores', { method: 'POST', body: JSON.stringify({ nome }) });
+    vendedoresCache.push(criado);
+    vendedorAtivoId = criado.id;
+    localStorage.setItem('vendedorAtivoId', vendedorAtivoId);
+    aplicarVendedorAtivo();
+    renderizarSeletorVendedor();
+    preencherSeletorVendedorOrcamento();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+async function removerVendedorAtivo() {
+  const v = vendedorAtivo();
+  if (!v) return;
+  if (!confirm(`Remover o vendedor "${v.nome}"? Isso não pode ser desfeito.`)) return;
+  try {
+    await api(`/vendedores/${v.id}`, { method: 'DELETE' });
+    vendedoresCache = vendedoresCache.filter((x) => x.id !== v.id);
+    vendedorAtivoId = vendedoresCache[0]?.id || null;
+    if (vendedorAtivoId) localStorage.setItem('vendedorAtivoId', vendedorAtivoId);
+    aplicarVendedorAtivo();
+    renderizarSeletorVendedor();
+    preencherSeletorVendedorOrcamento();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+function atualizarVendedorCache(atualizado) {
+  vendedoresCache = vendedoresCache.map((v) => (v.id === atualizado.id ? atualizado : v));
 }
 
 function renderizarCargo() {
   const wrap = document.getElementById('perfil-cargo-wrap');
   wrap.innerHTML = `
-    <span class="perfil-cargo-texto">${cargoAtual}</span>
+    <span class="perfil-cargo-texto">${cargoAtual || 'Sem cargo definido'}</span>
     <button type="button" class="btn-lapis" id="btn-editar-cargo" title="Editar cargo">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
     </button>
@@ -3496,9 +3631,11 @@ function ativarEdicaoCargo() {
   document.getElementById('btn-cancelar-cargo').addEventListener('click', renderizarCargo);
   document.getElementById('btn-confirmar-cargo').addEventListener('click', async () => {
     const novoValor = input.value.trim();
+    if (!vendedorAtual.id) return;
     try {
-      const config = await api('/config', { method: 'PATCH', body: JSON.stringify({ cargo: novoValor }) });
-      cargoAtual = config.cargo || cargoAtual;
+      const atualizado = await api(`/vendedores/${vendedorAtual.id}`, { method: 'PATCH', body: JSON.stringify({ cargo: novoValor }) });
+      atualizarVendedorCache(atualizado);
+      cargoAtual = atualizado.cargo || '';
       renderizarCargo();
     } catch (err) {
       alert(err.message);
@@ -3512,7 +3649,7 @@ function renderizarRegiao() {
     <div class="pill-icone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></div>
     <div class="pill-corpo">
       <div class="pill-label">Região</div>
-      <div class="pill-valor">${regiaoAtual}</div>
+      <div class="pill-valor">${regiaoAtual || 'Sem região definida'}</div>
     </div>
     <button type="button" class="btn-lapis" id="btn-editar-regiao" title="Editar região">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
@@ -3535,9 +3672,11 @@ function ativarEdicaoRegiao() {
   document.getElementById('btn-cancelar-regiao').addEventListener('click', renderizarRegiao);
   document.getElementById('btn-confirmar-regiao').addEventListener('click', async () => {
     const novoValor = input.value.trim();
+    if (!vendedorAtual.id) return;
     try {
-      const config = await api('/config', { method: 'PATCH', body: JSON.stringify({ regiao: novoValor }) });
-      regiaoAtual = config.regiao || regiaoAtual;
+      const atualizado = await api(`/vendedores/${vendedorAtual.id}`, { method: 'PATCH', body: JSON.stringify({ regiao: novoValor }) });
+      atualizarVendedorCache(atualizado);
+      regiaoAtual = atualizado.regiao || '';
       renderizarRegiao();
     } catch (err) {
       alert(err.message);
@@ -3584,12 +3723,14 @@ function ativarEdicaoVendedor() {
       numero_vendedor: document.getElementById('input-numero-vendedor').value.trim(),
       matricula: document.getElementById('input-matricula').value.trim(),
     };
+    if (!vendedorAtual.id) return;
     try {
-      const config = await api('/config', { method: 'PATCH', body: JSON.stringify(body) });
+      const atualizado = await api(`/vendedores/${vendedorAtual.id}`, { method: 'PATCH', body: JSON.stringify(body) });
+      atualizarVendedorCache(atualizado);
       vendedorAtual = {
-        numero_vendedor: config.numero_vendedor || '',
-        matricula: config.matricula || '',
-        celular: config.celular || '',
+        ...vendedorAtual,
+        numero_vendedor: atualizado.numero_vendedor || '',
+        matricula: atualizado.matricula || '',
       };
       renderizarVendedor();
     } catch (err) {
@@ -3636,13 +3777,14 @@ function ativarEdicaoCelular() {
       celular: document.getElementById('input-celular').value.trim(),
       email: document.getElementById('input-email').value.trim(),
     };
+    if (!vendedorAtual.id) return;
     try {
-      const config = await api('/config', { method: 'PATCH', body: JSON.stringify(body) });
+      const atualizado = await api(`/vendedores/${vendedorAtual.id}`, { method: 'PATCH', body: JSON.stringify(body) });
+      atualizarVendedorCache(atualizado);
       vendedorAtual = {
-        numero_vendedor: config.numero_vendedor || '',
-        matricula: config.matricula || '',
-        celular: config.celular || '',
-        email: config.email || '',
+        ...vendedorAtual,
+        celular: atualizado.celular || '',
+        email: atualizado.email || '',
       };
       renderizarCelular();
     } catch (err) {
@@ -3753,18 +3895,33 @@ document.getElementById('btn-confirmar-recorte').addEventListener('click', () =>
   }, 'image/jpeg', 0.92);
 });
 
-[
-  ['input-icone', 'icone', 1],
-  ['input-foto-perfil', 'foto_perfil', 1],
-].forEach(([inputId, campo, aspectRatio]) => {
-  document.getElementById(inputId).addEventListener('change', (e) => {
-    const arquivo = e.target.files[0];
-    e.target.value = '';
-    if (!arquivo) return;
-    abrirRecorte(arquivo, aspectRatio, async (blob) => {
-      const config = await enviarImagemConfig(campo, blob);
-      aplicarConfig(config);
-    });
+document.getElementById('input-icone').addEventListener('change', (e) => {
+  const arquivo = e.target.files[0];
+  e.target.value = '';
+  if (!arquivo) return;
+  abrirRecorte(arquivo, 1, async (blob) => {
+    const config = await enviarImagemConfig('icone', blob);
+    aplicarConfig(config);
+  });
+});
+
+// Foto de perfil é por vendedor (cada perfil tem a sua), por isso vai pra
+// /vendedores/:id/foto em vez de /config.
+document.getElementById('input-foto-perfil').addEventListener('change', (e) => {
+  const arquivo = e.target.files[0];
+  e.target.value = '';
+  if (!arquivo || !vendedorAtual.id) return;
+  abrirRecorte(arquivo, 1, async (blob) => {
+    const formData = new FormData();
+    formData.append('arquivo', blob, 'imagem.jpg');
+    const res = await fetch(`/api/vendedores/${vendedorAtual.id}/foto`, { method: 'POST', body: formData });
+    if (!res.ok) {
+      const erro = await res.json().catch(() => ({}));
+      throw new Error(erro.error || 'Erro ao enviar imagem');
+    }
+    const atualizado = await res.json();
+    atualizarVendedorCache(atualizado);
+    aplicarVendedorAtivo();
   });
 });
 
@@ -4191,7 +4348,7 @@ async function baixarRelatorioVisita(id) {
   const corpo = {
     emitente: emitenteOrcamento(),
     vendedor: {
-      nome: localStorage.getItem('vendedorNomeOrcamento') || 'Gustavo Ique',
+      nome: localStorage.getItem('vendedorNomeOrcamento') || vendedorAtivo()?.nome || '',
       cargo: cargoAtual,
       celular: vendedorAtual.celular,
     },
@@ -5455,6 +5612,7 @@ document.getElementById('btn-editar-meta-mini').addEventListener('click', async 
 
 (async function iniciar() {
   carregarConfig();
+  await carregarVendedores();
   document.getElementById('input-data-previsao').value = dataISOHoje();
   await Promise.all([carregarEmpresas(), carregarProdutos(), carregarCamposClientes()]);
   await Promise.all([carregarContatos(), carregarClientes()]);

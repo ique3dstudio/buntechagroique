@@ -8,7 +8,7 @@ import { extrairTextoDocx } from '../services/docx-texto.js';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024 } });
-const CAMPOS_CONFIG = ['icone', 'capa', 'foto_perfil'];
+const CAMPOS_CONFIG = ['icone', 'capa'];
 
 // Aceita "lat, lng" (com ou sem espaço/vírgula/ponto-e-vírgula entre os números).
 // Útil pra clientes em área rural, sem endereço reconhecível pelo geocodificador.
@@ -126,8 +126,9 @@ router.get('/config', async (req, res) => {
 router.patch('/config', async (req, res) => {
   // meta_geral e vendido_base continuam fixos (so mudam via SQL direto). meta_valor
   // voltou a ser editavel pelo app, com um lapis dedicado no card "Meta anual".
-  const { cargo, regiao, numero_vendedor, matricula, celular, email, meta_valor,
-    matriz_nome, matriz_endereco, matriz_coordenadas } = req.body;
+  // cargo/regiao/numero_vendedor/matricula/celular/email agora vivem em
+  // "vendedores" (perfis que dá pra trocar) - ver rotas /vendedores abaixo.
+  const { meta_valor, matriz_nome, matriz_endereco, matriz_coordenadas } = req.body;
   const atualizacao = { updated_at: new Date().toISOString() };
 
   if (matriz_nome !== undefined) atualizacao.matriz_nome = matriz_nome || null;
@@ -147,12 +148,6 @@ router.patch('/config', async (req, res) => {
     atualizacao.matriz_longitude = coords.longitude;
   }
 
-  if (cargo !== undefined) atualizacao.cargo = cargo;
-  if (regiao !== undefined) atualizacao.regiao = regiao;
-  if (numero_vendedor !== undefined) atualizacao.numero_vendedor = numero_vendedor;
-  if (matricula !== undefined) atualizacao.matricula = matricula;
-  if (celular !== undefined) atualizacao.celular = celular;
-  if (email !== undefined) atualizacao.email = email;
   if (meta_valor !== undefined) atualizacao.meta_valor = meta_valor;
 
   const { data, error } = await supabase.from('configuracoes').update(atualizacao).eq('id', 1).select().single();
@@ -179,6 +174,79 @@ router.post('/config/:campo', upload.single('arquivo'), async (req, res) => {
     .from('configuracoes')
     .update({ [`${campo}_url`]: urlData.publicUrl, updated_at: new Date().toISOString() })
     .eq('id', 1)
+    .select()
+    .single();
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
+// --- Vendedores (perfis que aparecem no cartão de perfil e no Orçamento) ---
+// Antes só existia um vendedor fixo (em "configuracoes"); agora cada um tem
+// seu próprio registro e o app deixa trocar qual está ativo.
+
+const CAMPOS_VENDEDOR = ['nome', 'cargo', 'regiao', 'numero_vendedor', 'matricula', 'celular', 'email'];
+
+router.get('/vendedores', async (req, res) => {
+  const { data, error } = await supabase.from('vendedores').select('*').order('created_at', { ascending: true });
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
+router.post('/vendedores', async (req, res) => {
+  const nome = (req.body.nome || '').trim();
+  if (!nome) return res.status(400).json({ error: 'nome é obrigatório' });
+
+  const insercao = { nome };
+  for (const campo of CAMPOS_VENDEDOR) {
+    if (campo !== 'nome' && req.body[campo] !== undefined) insercao[campo] = req.body[campo];
+  }
+
+  const { data, error } = await supabase.from('vendedores').insert(insercao).select().single();
+  if (error) return res.status(500).json({ error: error.message });
+  res.status(201).json(data);
+});
+
+router.patch('/vendedores/:id', async (req, res) => {
+  const atualizacao = { updated_at: new Date().toISOString() };
+  for (const campo of CAMPOS_VENDEDOR) {
+    if (req.body[campo] !== undefined) atualizacao[campo] = req.body[campo];
+  }
+  if (atualizacao.nome !== undefined && !atualizacao.nome.trim()) {
+    return res.status(400).json({ error: 'nome é obrigatório' });
+  }
+
+  const { data, error } = await supabase.from('vendedores').update(atualizacao).eq('id', req.params.id).select().single();
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
+router.delete('/vendedores/:id', async (req, res) => {
+  const { count, error: countError } = await supabase.from('vendedores').select('id', { count: 'exact', head: true });
+  if (countError) return res.status(500).json({ error: countError.message });
+  if (count <= 1) return res.status(400).json({ error: 'Não é possível remover o último vendedor.' });
+
+  const { error } = await supabase.from('vendedores').delete().eq('id', req.params.id);
+  if (error) return res.status(500).json({ error: error.message });
+  res.status(204).end();
+});
+
+router.post('/vendedores/:id/foto', upload.single('arquivo'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'arquivo é obrigatório' });
+
+  const extensao = (req.file.originalname.split('.').pop() || 'jpg').toLowerCase();
+  const caminho = `vendedor-${req.params.id}-${Date.now()}.${extensao}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from('app-assets')
+    .upload(caminho, req.file.buffer, { contentType: req.file.mimetype, upsert: true });
+  if (uploadError) return res.status(500).json({ error: uploadError.message });
+
+  const { data: urlData } = supabase.storage.from('app-assets').getPublicUrl(caminho);
+
+  const { data, error } = await supabase
+    .from('vendedores')
+    .update({ foto_perfil_url: urlData.publicUrl, updated_at: new Date().toISOString() })
+    .eq('id', req.params.id)
     .select()
     .single();
   if (error) return res.status(500).json({ error: error.message });
