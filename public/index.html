@@ -2124,7 +2124,7 @@ function mostrarInfoCliente(cliente) {
     <div class="stat" style="background:#f3f7f6;border:1px solid var(--border)"><div class="valor" style="color:var(--ink)">${fmtMoeda(cliente.faturamento)}</div><div class="label" style="color:var(--muted)">Faturamento total</div></div>
     <div class="stat" style="background:#f3f7f6;border:1px solid var(--border)"><div class="valor" style="color:var(--ink);font-size:1rem">${fmtData(cliente.ultimo_pedido)}</div><div class="label" style="color:var(--muted)">Último pedido</div></div>
     <div class="stat" style="background:#f3f7f6;border:1px solid var(--border)"><div class="valor" style="color:var(--ink);font-size:0.9rem">${cliente.cnpj ?? '—'}</div><div class="label" style="color:var(--muted)">CNPJ</div></div>
-    <div class="stat" style="background:#f3f7f6;border:1px solid var(--border)"><div class="valor" style="color:var(--ink);font-size:0.85rem">${cliente.produtos.length ? cliente.produtos.join(', ') : '—'}</div><div class="label" style="color:var(--muted)">Produtos utilizados</div></div>
+    <div class="stat" style="background:#f3f7f6;border:1px solid var(--border)"><div class="valor" style="color:var(--ink);font-size:0.85rem">${cliente.produtos.length ? cliente.produtos.map(nomeComCodigo).join(', ') : '—'}</div><div class="label" style="color:var(--muted)">Produtos utilizados</div></div>
   `;
   document.getElementById('mapa-cliente-info').hidden = false;
 }
@@ -3057,6 +3057,22 @@ const ITENS_PADRAO_ORCAMENTO = [
 let itensOrcamento = [{ produto: '', quantidade: '', preco: '' }];
 let produtosCache = [];
 
+// Acha o código PAN de um produto pelo nome, pra mostrar "PAN01187 - Nome" nas
+// listas/telas do app. O orçamento (preview e PDF) continua só com o nome -
+// é o que vai pro cliente, então o código interno não aparece lá.
+function codigoDoProduto(nome) {
+  const alvo = (nome || '').trim().toUpperCase();
+  if (!alvo) return '';
+  const encontrado = produtosCache.find((p) => (p.nome || '').trim().toUpperCase() === alvo);
+  return encontrado?.codigo || '';
+}
+
+function nomeComCodigo(nome) {
+  if (!nome) return nome;
+  const codigo = codigoDoProduto(nome);
+  return codigo ? `${codigo} - ${nome}` : nome;
+}
+
 function emitenteOrcamento() {
   let salvo = {};
   try { salvo = JSON.parse(localStorage.getItem('emitenteOrcamento') || '{}'); } catch { salvo = {}; }
@@ -3083,7 +3099,7 @@ function registrarNumeroUsado() {
 // Lista de itens do seletor: os produtos da Buntech + o que já foi cadastrado
 // em Produtos (inclusive o que entrar por "Registrar novo item").
 function itensDisponiveisOrcamento() {
-  const lista = ITENS_PADRAO_ORCAMENTO.map((nome) => ({ nome, preco: null }));
+  const lista = ITENS_PADRAO_ORCAMENTO.map((nome) => ({ nome, preco: null, codigo: '' }));
   const indice = new Map(lista.map((item) => [item.nome.toUpperCase(), item]));
 
   for (const produto of produtosCache) {
@@ -3092,9 +3108,10 @@ function itensDisponiveisOrcamento() {
     const existente = indice.get(nome.toUpperCase());
     if (existente) {
       if (produto.preco != null && existente.preco == null) existente.preco = produto.preco;
+      if (produto.codigo && !existente.codigo) existente.codigo = produto.codigo;
       continue;
     }
-    const item = { nome, preco: produto.preco ?? null };
+    const item = { nome, preco: produto.preco ?? null, codigo: produto.codigo || '' };
     indice.set(nome.toUpperCase(), item);
     lista.push(item);
   }
@@ -3110,7 +3127,7 @@ function renderizarItensOrcamento() {
     const escolhido = (item.produto || '').trim();
     const conhecido = disponiveis.some((p) => p.nome.toUpperCase() === escolhido.toUpperCase());
     const opcoes = disponiveis
-      .map((p) => `<option value="${escaparAtributo(p.nome)}"${p.nome.toUpperCase() === escolhido.toUpperCase() ? ' selected' : ''}>${escaparAtributo(p.nome)}</option>`)
+      .map((p) => `<option value="${escaparAtributo(p.nome)}"${p.nome.toUpperCase() === escolhido.toUpperCase() ? ' selected' : ''}>${escaparAtributo(p.codigo ? `${p.codigo} - ${p.nome}` : p.nome)}</option>`)
       .join('');
     const avulso = escolhido && !conhecido
       ? `<option value="${escaparAtributo(escolhido)}" selected>${escaparAtributo(escolhido)}</option>`
@@ -4704,7 +4721,7 @@ function renderizarProdutoPedido(selecionado) {
   const disponiveis = itensDisponiveisOrcamento();
   const conhecido = disponiveis.some((p) => p.nome.toUpperCase() === atual.toUpperCase());
   const opcoes = disponiveis
-    .map((p) => `<option value="${escaparAtributo(p.nome)}" ${p.nome === atual ? 'selected' : ''}>${escaparAtributo(p.nome)}</option>`)
+    .map((p) => `<option value="${escaparAtributo(p.nome)}" ${p.nome === atual ? 'selected' : ''}>${escaparAtributo(p.codigo ? `${p.codigo} - ${p.nome}` : p.nome)}</option>`)
     .join('');
   const avulso = atual && !conhecido ? `<option value="${escaparAtributo(atual)}" selected>${escaparAtributo(atual)}</option>` : '';
   select.innerHTML = `<option value=""${atual ? '' : ' selected'}>Selecionar item…</option>${opcoes}${avulso}<option value="__novo__">+ Registrar novo item</option>`;
@@ -4743,7 +4760,7 @@ async function carregarPedidos() {
         <tr>
           <td>${p.clientes?.nome ?? '—'}</td>
           <td>${new Date(p.data + 'T00:00:00').toLocaleDateString('pt-BR')}</td>
-          <td>${p.produto ?? '—'}</td>
+          <td>${p.produto ? nomeComCodigo(p.produto) : '—'}</td>
           <td>${p.quantidade != null ? Number(p.quantidade).toLocaleString('pt-BR') : '—'}</td>
           <td>${fmtMoeda(p.valor_total)}</td>
         </tr>`).join('')
@@ -4789,7 +4806,7 @@ async function carregarProdutos() {
     : '<tr><td class="vazio" colspan="3">Nenhum produto ainda.</td></tr>';
 
   document.getElementById('select-produto-negociacao').innerHTML =
-    '<option value="">Sem produto</option>' + produtos.map((p) => `<option value="${p.id}">${p.nome}</option>`).join('');
+    '<option value="">Sem produto</option>' + produtos.map((p) => `<option value="${p.id}">${p.codigo ? `${p.codigo} - ${p.nome}` : p.nome}</option>`).join('');
 
   renderizarProdutoPedido();
 }
@@ -4825,7 +4842,7 @@ async function carregarNegociacoes() {
     ? negociacoes.map((n) => `
         <tr>
           <td>${n.clientes?.nome ?? n.contatos?.nome ?? '—'}</td>
-          <td>${n.produtos?.nome ?? '—'}</td>
+          <td>${n.produtos?.nome ? nomeComCodigo(n.produtos.nome) : '—'}</td>
           <td><select class="badge etapa-${n.etapa}" data-id="${n.id}">${opcoesFase(n.etapa)}</select></td>
           <td>${n.observacoes ? escaparAtributo(n.observacoes) : '—'}</td>
           <td><button type="button" class="secundario" data-excluir="${n.id}">Excluir</button></td>
@@ -5355,7 +5372,7 @@ async function carregarHistoricoVendas(clienteId) {
 
   document.getElementById('detalhe-historico-tabela').innerHTML = itens.map((h) => `
     <tr>
-      <td>${h.produto}</td>
+      <td>${nomeComCodigo(h.produto)}</td>
       <td>${fmtMoeda(h.fat_2023)}</td>
       <td>${fmtMoeda(h.fat_2024)}</td>
       <td>${fmtMoeda(h.fat_2025)}</td>
