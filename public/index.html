@@ -843,6 +843,11 @@
   .compromisso-linha.confirmacao-remarcado { border-left-color: var(--blue-dark); }
   .compromisso-linha.confirmacao-cancelado { border-left-color: #e5534b; }
   .compromisso-hora { font-family: 'Poppins', sans-serif; font-weight: 700; color: var(--blue-dark); min-width: 46px; flex-shrink: 0; }
+  .compromisso-grupo {
+    font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 0.78rem;
+    text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted);
+    padding: 0.1rem 0 0.35rem;
+  }
   .compromisso-corpo { flex: 1; min-width: 0; }
   .compromisso-titulo { font-weight: 700; display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
   .compromisso-detalhe { font-size: 0.82rem; color: var(--muted); margin-top: 0.2rem; }
@@ -851,6 +856,7 @@
   .tipo-visita { background: #e7f7ea; color: #1e7e34; }
   .tipo-reuniao { background: #e6f4fb; color: var(--blue-dark); }
   .tipo-ligacao { background: #fff4e0; color: #b45309; }
+  .tipo-viagem { background: #efe9fb; color: #6d28d9; }
   .tipo-outro { background: #f1f1f1; color: #6b7280; }
 
   .matriz-linha {
@@ -1414,6 +1420,7 @@
               <option value="visita">Visita</option>
               <option value="reuniao">Reunião</option>
               <option value="ligacao">Ligação</option>
+              <option value="viagem">Viagem</option>
               <option value="mensagem">Mensagem</option>
               <option value="outro">Outro</option>
             </select>
@@ -1760,7 +1767,7 @@
           <h3 class="detalhe-subtitulo">Histórico e forecast de vendas por produto</h3>
           <div class="tabela-wrap">
             <table>
-              <thead><tr><th>Produto</th><th>2023</th><th>2024</th><th>2025</th><th>2026 (jan-jul)</th><th>Última compra</th></tr></thead>
+              <thead><tr><th>Produto</th><th>CNPJ</th><th>2023</th><th>2024</th><th>2025</th><th>2026 (jan-jul)</th><th>Última compra</th></tr></thead>
               <tbody id="detalhe-historico-tabela"></tbody>
             </table>
           </div>
@@ -2380,7 +2387,7 @@ document.getElementById('btn-calcular-rota').addEventListener('click', async () 
 
 // --- Agenda ---
 
-const ROTULOS_TIPO_COMPROMISSO = { visita: 'Visita', reuniao: 'Reunião', ligacao: 'Ligação', outro: 'Outro' };
+const ROTULOS_TIPO_COMPROMISSO = { visita: 'Visita', reuniao: 'Reunião', ligacao: 'Ligação', viagem: 'Viagem', outro: 'Outro' };
 const ROTULOS_STATUS_CONFIRMACAO = {
   rascunho: 'Rascunho',
   aguardando: 'Aguardando confirmação',
@@ -2890,10 +2897,13 @@ function renderizarDiaAgenda(iso) {
     `${NOMES_DIAS_LONGOS[d.getDay()]}, ${d.getDate()}/${pad2(d.getMonth() + 1)}`;
 
   const listaEl = document.getElementById('agenda-dia-lista');
-  listaEl.innerHTML = itens.length
-    ? itens.map((c) => `
+  // "Dia todo" aparece uma vez só, como cabeçalho do bloco - repetir o rótulo
+  // em cada linha só poluía a lista.
+  const semHora = itens.filter((c) => !c.hora);
+  const comHora = itens.filter((c) => c.hora);
+  const linha = (c) => `
         <div class="compromisso-linha confirmacao-${statusConfirmacaoCompromisso(c)}">
-          <div class="compromisso-hora">${c.hora ? horaLegivel(c.hora) : 'Dia<br>todo'}${c.hora && c.hora_fim ? `<div style="font-weight:600; font-size:0.72rem; color:var(--muted)">${horaLegivel(c.hora_fim)}</div>` : ''}</div>
+          <div class="compromisso-hora">${c.hora ? `${horaLegivel(c.hora)}${c.hora_fim ? `<div style="font-weight:600; font-size:0.72rem; color:var(--muted)">${horaLegivel(c.hora_fim)}</div>` : ''}` : ''}</div>
           <div class="compromisso-corpo">
             <div class="compromisso-titulo">
               <span class="badge tipo-${c.tipo}">${ROTULOS_TIPO_COMPROMISSO[c.tipo] || c.tipo}</span>
@@ -2909,7 +2919,13 @@ function renderizarDiaAgenda(iso) {
             <button type="button" class="btn-lapis" data-excluir-compromisso="${c.id}" title="Excluir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
           </div>
         </div>
-      `).join('')
+      `;
+
+  listaEl.innerHTML = itens.length
+    ? [
+        semHora.length ? `<div class="compromisso-grupo">Dia todo</div>${semHora.map(linha).join('')}` : '',
+        comHora.map(linha).join(''),
+      ].join('')
     : '<p class="vazio">Nenhum compromisso nesse dia.</p>';
 
   listaEl.querySelectorAll('[data-editar-compromisso]').forEach((btn) => {
@@ -5456,6 +5472,7 @@ async function carregarHistoricoVendas(clienteId) {
   document.getElementById('detalhe-historico-tabela').innerHTML = itens.map((h) => `
     <tr>
       <td>${nomeComCodigo(h.produto)}</td>
+      <td>${h.cnpj_origem ? escaparAtributo(h.cnpj_origem) : '—'}</td>
       <td>${fmtMoeda(h.fat_2023)}</td>
       <td>${fmtMoeda(h.fat_2024)}</td>
       <td>${fmtMoeda(h.fat_2025)}</td>
