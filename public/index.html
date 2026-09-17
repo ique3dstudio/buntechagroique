@@ -173,11 +173,21 @@
   .perfil-info-coluna { display: flex; flex-direction: column; gap: 0.3rem; flex: 1; min-width: 220px; }
   .perfil-secao-label { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin-bottom: -0.2rem; }
   .perfil-vendedor-seletor { display: flex; align-items: center; gap: 0.35rem; }
-  .perfil-vendedor-seletor select { padding: 0.3rem 0.5rem; font-size: 0.82rem; font-weight: 700; max-width: 200px; }
   .perfil-vendedor-seletor .btn-lapis { flex-shrink: 0; width: 26px; height: 26px; }
   .perfil-vendedor-seletor .btn-lapis svg { width: 13px; height: 13px; }
   .perfil-cargo-wrap { display: flex; align-items: center; gap: 0.5rem; }
   .perfil-cargo-texto { font-size: 0.92rem; font-weight: 700; color: var(--ink); }
+  .vendedor-orc-linha { display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 0.4rem; border-bottom: 1px solid var(--border); }
+  .vendedor-orc-linha:last-child { border-bottom: none; }
+  .vendedor-orc-radio { display: flex; align-items: center; gap: 0.6rem; flex: 1; min-width: 0; cursor: pointer; }
+  .vendedor-orc-radio input { flex-shrink: 0; width: 16px; height: 16px; }
+  .vendedor-orc-info { display: flex; flex-direction: column; min-width: 0; gap: 0.1rem; }
+  .vendedor-orc-info strong { font-size: 0.9rem; color: var(--ink); }
+  .vendedor-orc-detalhe { font-size: 0.74rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .vendedor-orc-acoes { display: flex; gap: 0.3rem; flex-shrink: 0; }
+  .vendedor-orc-edicao { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+  .vendedor-orc-edicao .field { margin: 0; }
+  .vendedor-orc-edicao-acoes { grid-column: 1 / -1; display: flex; gap: 0.5rem; }
   .perfil-pills-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.35rem; }
   .perfil-pill {
     display: flex;
@@ -579,6 +589,15 @@
      de dias fixo, faixa de "dia todo", grade de 24 horas com 48px por hora e
      os compromissos posicionados por horario/duracao (inclusive lado a lado
      quando se sobrepoem). */
+  .tarefas-form { display: flex; gap: 0.5rem; margin-bottom: 0.9rem; }
+  .tarefas-form input { flex: 1; }
+  .tarefas-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; }
+  .tarefa-item { display: flex; align-items: center; gap: 0.6rem; background: #f3f7f6; border-radius: 10px; padding: 0.55rem 0.7rem; }
+  .tarefa-item input[type="checkbox"] { width: 18px; height: 18px; flex-shrink: 0; cursor: pointer; }
+  .tarefa-item .tarefa-texto { flex: 1; min-width: 0; font-size: 0.9rem; color: var(--ink); word-break: break-word; }
+  .tarefa-item.concluida .tarefa-texto { text-decoration: line-through; color: var(--muted); }
+  .tarefa-item .btn-lapis { flex-shrink: 0; width: 26px; height: 26px; }
+  .tarefa-item .btn-lapis svg { width: 13px; height: 13px; }
   .cal-toolbar { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.9rem; }
   .cal-nav { display: flex; align-items: center; gap: 0.3rem; }
   .cal-btn-hoje { padding: 0.4rem 0.85rem; font-size: 0.8rem; }
@@ -1313,6 +1332,18 @@
     </div>
   </div>
 
+  <div class="modal-overlay" id="modal-vendedor" hidden>
+    <div class="modal-card" style="max-width: 540px; max-height: 85vh; overflow-y: auto;">
+      <div class="modal-header">
+        <h3>Vendedor do orçamento</h3>
+        <button class="fechar-modal" id="btn-fechar-vendedor" type="button" aria-label="Fechar">&times;</button>
+      </div>
+      <p class="vazio" style="margin: 0 0 0.75rem">Escolha quem aparece neste orçamento. Isso não muda o seu perfil — só o que sai neste PDF (útil pra fazer um orçamento a pedido de outro vendedor).</p>
+      <div id="lista-vendedores-orcamento"></div>
+      <button type="button" class="secundario" id="btn-add-vendedor-orcamento" style="margin-top: 0.75rem">+ Adicionar novo vendedor</button>
+    </div>
+  </div>
+
   <div class="modal-overlay" id="modal-novo-item" hidden>
     <div class="modal-card" style="max-width: 420px;">
       <div class="modal-header">
@@ -1478,6 +1509,15 @@
     <!-- ===== ABA AGENDA ===== -->
     <div class="painel" id="painel-agenda" hidden>
       <section class="card">
+        <h2><span class="icone-secao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="m8 15 2 2 4-4"/><path d="M8 2v4M16 2v4M3 10h18"/></svg></span>Tarefas do dia</h2>
+        <form id="form-tarefa" class="tarefas-form">
+          <input type="text" id="input-nova-tarefa" placeholder="Adicionar tarefa…" required />
+          <button type="submit">Adicionar</button>
+        </form>
+        <ul class="tarefas-lista" id="lista-tarefas"></ul>
+      </section>
+
+      <section class="card">
         <h2><span class="icone-secao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></span>Agenda</h2>
         <div class="cal-toolbar">
           <div class="cal-nav">
@@ -1615,6 +1655,7 @@
         <h2><span class="icone-secao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg></span>Produtos</h2>
         <form id="form-produto">
           <div class="form-grid">
+            <div class="field"><label>Código</label><input name="codigo" placeholder="Ex: PAN01187" /></div>
             <div class="field"><label>Nome do produto</label><input name="nome" placeholder="Ex: Fertilizante NPK" required /></div>
             <div class="field"><label>Preço (R$)</label><input name="preco" placeholder="0,00" type="number" step="0.01" min="0" /></div>
             <button type="submit">Adicionar produto</button>
@@ -1622,7 +1663,7 @@
         </form>
         <div class="tabela-wrap">
           <table>
-            <thead><tr><th>Nome</th><th>Preço</th></tr></thead>
+            <thead><tr><th>Código</th><th>Nome</th><th>Preço</th></tr></thead>
             <tbody id="tabela-produtos"></tbody>
           </table>
         </div>
@@ -1897,11 +1938,11 @@
             <div class="field"><label>Prazo de entrega</label><input id="orcamento-entrega" placeholder="Ex: 10 dias úteis" /></div>
             <div class="field"><label>Validade da proposta (dias)</label><input type="number" min="1" id="orcamento-validade" value="15" /></div>
             <div class="field"><label>Nº do orçamento</label><input id="orcamento-numero" /></div>
-            <div class="field"><label>Seu nome (sai no PDF)</label>
-              <select id="orcamento-vendedor-nome-opcao">
-                <option value="__outro__">Outro…</option>
-              </select>
-              <input id="orcamento-vendedor-nome" placeholder="Nome completo" style="margin-top: 0.4rem; display: none" />
+            <div class="field"><label>Vendedor (sai no PDF)</label>
+              <button type="button" class="btn-upload" id="btn-abrir-vendedor-orcamento" style="width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; text-align: left">
+                <span id="orcamento-vendedor-atual-nome">—</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 15px; height: 15px; flex-shrink: 0"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+              </button>
             </div>
             <div class="field" style="grid-column: 1 / -1"><label>Observações</label><textarea id="orcamento-observacoes" placeholder="Impostos inclusos, condições especiais, etc."></textarea></div>
           </div>
@@ -2388,6 +2429,75 @@ function intervaloVisivel() {
   const fimGrade = somarDias(inicioDaSemana(new Date(ano, mes + 1, 0)), 6);
   return { inicio: dataISOde(inicioGrade), fim: dataISOde(fimGrade) };
 }
+
+// --- Tarefas: checklist simples do dia, em cima da Agenda ---
+
+let tarefasCache = [];
+
+async function carregarTarefas() {
+  try {
+    tarefasCache = await api('/tarefas');
+  } catch (err) {
+    document.getElementById('lista-tarefas').innerHTML = `<p class="vazio">Não consegui carregar as tarefas: ${err.message}</p>`;
+    return;
+  }
+  renderizarTarefas();
+}
+
+function renderizarTarefas() {
+  const lista = document.getElementById('lista-tarefas');
+  lista.innerHTML = tarefasCache.length
+    ? tarefasCache.map((t) => `
+      <li class="tarefa-item${t.concluida ? ' concluida' : ''}">
+        <input type="checkbox" data-toggle-tarefa="${t.id}" ${t.concluida ? 'checked' : ''} />
+        <span class="tarefa-texto">${escaparAtributo(t.texto)}</span>
+        <button type="button" class="btn-lapis" data-remover-tarefa="${t.id}" title="Remover">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6h16Z"/></svg>
+        </button>
+      </li>
+    `).join('')
+    : '<p class="vazio">Nenhuma tarefa por aqui ainda.</p>';
+
+  lista.querySelectorAll('[data-toggle-tarefa]').forEach((chk) => {
+    chk.addEventListener('change', async (e) => {
+      const id = chk.dataset.toggleTarefa;
+      try {
+        const atualizado = await api(`/tarefas/${id}`, { method: 'PATCH', body: JSON.stringify({ concluida: e.target.checked }) });
+        tarefasCache = tarefasCache.map((t) => (t.id === id ? atualizado : t));
+        renderizarTarefas();
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+  });
+  lista.querySelectorAll('[data-remover-tarefa]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.removerTarefa;
+      try {
+        await api(`/tarefas/${id}`, { method: 'DELETE' });
+        tarefasCache = tarefasCache.filter((t) => t.id !== id);
+        renderizarTarefas();
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+  });
+}
+
+document.getElementById('form-tarefa').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const input = document.getElementById('input-nova-tarefa');
+  const texto = input.value.trim();
+  if (!texto) return;
+  try {
+    const criada = await api('/tarefas', { method: 'POST', body: JSON.stringify({ texto }) });
+    tarefasCache.push(criada);
+    input.value = '';
+    renderizarTarefas();
+  } catch (err) {
+    alert(err.message);
+  }
+});
 
 async function carregarAgenda() {
   const { inicio, fim } = intervaloVisivel();
@@ -3139,7 +3249,6 @@ function dadosOrcamento() {
 
   return {
     numero: v('orcamento-numero'),
-    vendedorNome: v('orcamento-vendedor-nome'),
     cliente: {
       nome: v('orcamento-cliente-nome'),
       cnpj: v('orcamento-cliente-cnpj'),
@@ -3187,10 +3296,11 @@ function atualizarPreviewOrcamento() {
     d.observacoes,
   ].filter(Boolean).join('\n');
 
+  const vendedorOrc = vendedorOrcamentoAtivo() || {};
   const linhasVendedor = [
-    vendedorAtual.celular || '',
-    vendedorAtual.email || '',
-    regiaoAtual ? `Região: ${regiaoAtual}` : '',
+    vendedorOrc.celular || '',
+    vendedorOrc.email || '',
+    vendedorOrc.regiao ? `Região: ${vendedorOrc.regiao}` : '',
   ];
 
   const condicao = (icone, titulo, valor, nota, destaque) => `
@@ -3231,7 +3341,7 @@ function atualizarPreviewOrcamento() {
         </section>
         <section class="orc-cartao verde">
           <div class="orc-cartao-cab"><span class="orc-avatar">${SVG_ORCAMENTO.pessoa}</span><span class="orc-cartao-rotulo">Vendedor responsável</span></div>
-          <strong class="orc-cartao-nome">${d.vendedorNome || vendedorAtivo()?.nome || 'Vendedor'}</strong>
+          <strong class="orc-cartao-nome">${vendedorOrc.nome || 'Vendedor'}</strong>
           ${linhasVendedor.filter(Boolean).map((linha) => `<div class="orc-cartao-linha">${linha}</div>`).join('')}
         </section>
       </div>
@@ -3275,13 +3385,10 @@ function atualizarPreviewOrcamento() {
 
       <div class="orc-rodape">
         <div>${emitente.nome} · CNPJ ${emitente.cnpj}</div>
-        <div>Vendedor${vendedorAtual.celular ? ` · ${vendedorAtual.celular}` : ''}</div>
+        <div>Vendedor${vendedorOrc.celular ? ` · ${vendedorOrc.celular}` : ''}</div>
       </div>
     </div>
   `;
-
-  // o nome do vendedor fica salvo no aparelho pro próximo orçamento
-  if (d.vendedorNome) localStorage.setItem('vendedorNomeOrcamento', d.vendedorNome);
 }
 
 function preencherClientesOrcamento() {
@@ -3349,16 +3456,16 @@ document.getElementById('btn-baixar-orcamento').addEventListener('click', async 
     emitidaEm: new Date().toLocaleDateString('pt-BR'),
     validadeTexto: d.validadeDias ? `${d.validadeDias} dias (até ${d.validadeData.toLocaleDateString('pt-BR')})` : '',
     emitente: emitenteOrcamento(),
-    vendedor: {
-      nome: d.vendedorNome,
-      cargo: cargoAtual,
-      registro: vendedorAtual.numero_vendedor
-        ? `Nº ${vendedorAtual.numero_vendedor}${vendedorAtual.matricula ? ` · Matrícula ${vendedorAtual.matricula}` : ''}`
-        : '',
-      celular: vendedorAtual.celular,
-      email: vendedorAtual.email,
-      regiao: regiaoAtual,
-    },
+    vendedor: (() => {
+      const vo = vendedorOrcamentoAtivo() || {};
+      return {
+        nome: vo.nome || '',
+        registro: vo.numero_vendedor ? `Nº ${vo.numero_vendedor}` : '',
+        celular: vo.celular || '',
+        email: vo.email || '',
+        regiao: vo.regiao || '',
+      };
+    })(),
   };
 
   try {
@@ -3394,37 +3501,164 @@ document.getElementById('btn-baixar-orcamento').addEventListener('click', async 
   }
 });
 
-// A lista de nomes vem dos vendedores cadastrados (ver carregarVendedores);
-// "Outro…" abre o campo de texto pra digitar um nome avulso.
+// Vendedor que sai no orçamento: independente do meu perfil (aba Início) -
+// dá pra escolher outro vendedor cadastrado, ou cadastrar um novo, sem mexer
+// no meu perfil. A escolha fica salva no aparelho pro próximo orçamento.
+let vendedorOrcamentoId = localStorage.getItem('vendedorOrcamentoId') || null;
+let vendedorOrcamentoEditandoId = null;
+
+function vendedorOrcamentoAtivo() {
+  return vendedoresCache.find((x) => x.id === vendedorOrcamentoId) || vendedorAtivo();
+}
+
+function atualizarBotaoVendedorOrcamento() {
+  const span = document.getElementById('orcamento-vendedor-atual-nome');
+  if (span) span.textContent = vendedorOrcamentoAtivo()?.nome || 'Escolher vendedor…';
+}
+
 function preencherSeletorVendedorOrcamento() {
-  const select = document.getElementById('orcamento-vendedor-nome-opcao');
-  const nomeAtual = select.value && select.value !== '__outro__' ? select.value : null;
-  select.innerHTML = vendedoresCache.map((v) => `<option value="${escaparAtributo(v.nome)}">${escaparAtributo(v.nome)}</option>`).join('')
-    + '<option value="__outro__">Outro…</option>';
-  aplicarNomeVendedorOrcamento(localStorage.getItem('vendedorNomeOrcamento') || nomeAtual || vendedorAtivo()?.nome || '');
-}
-
-function aplicarNomeVendedorOrcamento(nome) {
-  const select = document.getElementById('orcamento-vendedor-nome-opcao');
-  const input = document.getElementById('orcamento-vendedor-nome');
-  const nomeFinal = nome || vendedorAtivo()?.nome || '';
-  const conhecido = vendedoresCache.some((v) => v.nome === nomeFinal);
-  select.value = conhecido ? nomeFinal : '__outro__';
-  input.value = nomeFinal;
-  input.style.display = select.value === '__outro__' ? '' : 'none';
-}
-
-document.getElementById('orcamento-vendedor-nome-opcao').addEventListener('change', (e) => {
-  const input = document.getElementById('orcamento-vendedor-nome');
-  if (e.target.value === '__outro__') {
-    input.style.display = '';
-    input.value = '';
-    input.focus();
-  } else {
-    input.style.display = 'none';
-    input.value = e.target.value;
+  if (!vendedoresCache.some((v) => v.id === vendedorOrcamentoId)) {
+    vendedorOrcamentoId = vendedorAtivo()?.id || null;
+    if (vendedorOrcamentoId) localStorage.setItem('vendedorOrcamentoId', vendedorOrcamentoId);
   }
+  atualizarBotaoVendedorOrcamento();
   atualizarPreviewOrcamento();
+}
+
+function renderizarListaVendedoresOrcamento() {
+  const wrap = document.getElementById('lista-vendedores-orcamento');
+  if (!wrap) return;
+  wrap.innerHTML = vendedoresCache.map((vd) => {
+    if (vd.id === vendedorOrcamentoEditandoId) {
+      return `
+        <div class="vendedor-orc-linha">
+          <div class="vendedor-orc-edicao">
+            <div class="field"><label>Nome</label><input data-campo-vendedor="nome" value="${escaparAtributo(vd.nome)}" /></div>
+            <div class="field"><label>Região</label><input data-campo-vendedor="regiao" value="${escaparAtributo(vd.regiao || '')}" /></div>
+            <div class="field"><label>E-mail</label><input data-campo-vendedor="email" value="${escaparAtributo(vd.email || '')}" /></div>
+            <div class="field"><label>Telefone</label><input data-campo-vendedor="celular" value="${escaparAtributo(vd.celular || '')}" /></div>
+            <div class="field"><label>Número de vendedor</label><input data-campo-vendedor="numero_vendedor" value="${escaparAtributo(vd.numero_vendedor || '')}" /></div>
+            <div class="vendedor-orc-edicao-acoes">
+              <button type="button" data-salvar-vendedor="${vd.id}">Salvar</button>
+              <button type="button" class="secundario" data-cancelar-vendedor="${vd.id}">Cancelar</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    const detalhe = [vd.regiao, vd.numero_vendedor && `Nº ${vd.numero_vendedor}`, vd.celular, vd.email].filter(Boolean).join(' · ');
+    return `
+      <div class="vendedor-orc-linha">
+        <label class="vendedor-orc-radio">
+          <input type="radio" name="vendedor-orc-select" value="${vd.id}" ${vd.id === vendedorOrcamentoId ? 'checked' : ''} />
+          <div class="vendedor-orc-info">
+            <strong>${vd.nome}</strong>
+            <span class="vendedor-orc-detalhe">${detalhe || 'Sem dados adicionais'}</span>
+          </div>
+        </label>
+        <div class="vendedor-orc-acoes">
+          <button type="button" class="btn-lapis" data-editar-vendedor="${vd.id}" title="Editar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+          </button>
+          ${vendedoresCache.length > 1 ? `<button type="button" class="btn-lapis" data-remover-vendedor="${vd.id}" title="Remover">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6h16Z"/></svg>
+          </button>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('') || '<p class="vazio">Nenhum vendedor cadastrado ainda.</p>';
+
+  wrap.querySelectorAll('input[name="vendedor-orc-select"]').forEach((radio) => {
+    radio.addEventListener('change', (e) => {
+      vendedorOrcamentoId = e.target.value;
+      localStorage.setItem('vendedorOrcamentoId', vendedorOrcamentoId);
+      atualizarBotaoVendedorOrcamento();
+      atualizarPreviewOrcamento();
+    });
+  });
+  wrap.querySelectorAll('[data-editar-vendedor]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      vendedorOrcamentoEditandoId = btn.dataset.editarVendedor;
+      renderizarListaVendedoresOrcamento();
+    });
+  });
+  wrap.querySelectorAll('[data-cancelar-vendedor]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      vendedorOrcamentoEditandoId = null;
+      renderizarListaVendedoresOrcamento();
+    });
+  });
+  wrap.querySelectorAll('[data-salvar-vendedor]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.salvarVendedor;
+      const linha = btn.closest('.vendedor-orc-linha');
+      const campos = {};
+      linha.querySelectorAll('[data-campo-vendedor]').forEach((input) => {
+        campos[input.dataset.campoVendedor] = input.value.trim();
+      });
+      if (!campos.nome) { alert('O nome é obrigatório.'); return; }
+      try {
+        const atualizado = await api(`/vendedores/${id}`, { method: 'PATCH', body: JSON.stringify(campos) });
+        atualizarVendedorCache(atualizado);
+        vendedorOrcamentoEditandoId = null;
+        renderizarListaVendedoresOrcamento();
+        atualizarBotaoVendedorOrcamento();
+        atualizarPreviewOrcamento();
+        if (atualizado.id === vendedorAtivo()?.id) aplicarVendedorAtivo();
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+  });
+  wrap.querySelectorAll('[data-remover-vendedor]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.removerVendedor;
+      const alvo = vendedoresCache.find((x) => x.id === id);
+      if (!confirm(`Remover o vendedor "${alvo?.nome}"? Isso não pode ser desfeito.`)) return;
+      try {
+        await api(`/vendedores/${id}`, { method: 'DELETE' });
+        vendedoresCache = vendedoresCache.filter((x) => x.id !== id);
+        if (vendedorOrcamentoId === id) {
+          vendedorOrcamentoId = vendedoresCache[0]?.id || null;
+          localStorage.setItem('vendedorOrcamentoId', vendedorOrcamentoId || '');
+        }
+        renderizarListaVendedoresOrcamento();
+        atualizarBotaoVendedorOrcamento();
+        atualizarPreviewOrcamento();
+        renderizarNomePerfil();
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+  });
+}
+
+document.getElementById('btn-abrir-vendedor-orcamento').addEventListener('click', () => {
+  vendedorOrcamentoEditandoId = null;
+  renderizarListaVendedoresOrcamento();
+  document.getElementById('modal-vendedor').hidden = false;
+});
+document.getElementById('btn-fechar-vendedor').addEventListener('click', () => {
+  document.getElementById('modal-vendedor').hidden = true;
+});
+document.getElementById('modal-vendedor').addEventListener('click', (e) => {
+  if (e.target.id === 'modal-vendedor') document.getElementById('modal-vendedor').hidden = true;
+});
+document.getElementById('btn-add-vendedor-orcamento').addEventListener('click', async () => {
+  const nome = (prompt('Nome do novo vendedor:') || '').trim();
+  if (!nome) return;
+  try {
+    const criado = await api('/vendedores', { method: 'POST', body: JSON.stringify({ nome }) });
+    vendedoresCache.push(criado);
+    vendedorOrcamentoId = criado.id;
+    localStorage.setItem('vendedorOrcamentoId', vendedorOrcamentoId);
+    vendedorOrcamentoEditandoId = criado.id;
+    renderizarListaVendedoresOrcamento();
+    atualizarBotaoVendedorOrcamento();
+    atualizarPreviewOrcamento();
+  } catch (err) {
+    alert(err.message);
+  }
 });
 
 function iniciarOrcamento() {
@@ -3463,15 +3697,15 @@ async function carregarConfig() {
   }
 }
 
-// --- Vendedores: perfis com nome/cargo/região/contato próprios, com um
-// seletor pra trocar qual está "ativo" no aparelho (guardado no localStorage -
-// cada vendedor vê o app com o próprio perfil, sem depender de login). ---
+// --- Vendedores: o meu perfil (aba Início) é sempre o primeiro cadastrado -
+// não dá pra trocar por aqui. Outros vendedores só existem pra escolher quem
+// sai no orçamento (ver preencherSeletorVendedorOrcamento), sem afetar o
+// meu perfil. ---
 
 let vendedoresCache = [];
-let vendedorAtivoId = localStorage.getItem('vendedorAtivoId') || null;
 
 function vendedorAtivo() {
-  return vendedoresCache.find((v) => v.id === vendedorAtivoId) || vendedoresCache[0] || null;
+  return vendedoresCache[0] || null;
 }
 
 async function carregarVendedores() {
@@ -3480,12 +3714,9 @@ async function carregarVendedores() {
   } catch {
     vendedoresCache = [];
   }
-  if (!vendedoresCache.some((v) => v.id === vendedorAtivoId)) {
-    vendedorAtivoId = vendedoresCache[0]?.id || null;
-  }
-  if (vendedorAtivoId) localStorage.setItem('vendedorAtivoId', vendedorAtivoId);
   aplicarVendedorAtivo();
-  renderizarSeletorVendedor();
+  renderizarNomePerfil();
+  preencherSeletorVendedorOrcamento();
 }
 
 function aplicarVendedorAtivo() {
@@ -3519,87 +3750,45 @@ function aplicarVendedorAtivo() {
   renderizarCelular();
 }
 
-function renderizarSeletorVendedor() {
+function renderizarNomePerfil() {
   const wrap = document.getElementById('perfil-vendedor-seletor');
-  if (!vendedoresCache.length) {
-    wrap.innerHTML = `<button type="button" class="btn-upload" id="btn-novo-vendedor">+ Cadastrar vendedor</button>`;
-    document.getElementById('btn-novo-vendedor').addEventListener('click', criarNovoVendedor);
+  const v = vendedorAtivo();
+  if (!v) {
+    wrap.innerHTML = `<button type="button" class="btn-upload" id="btn-criar-meu-perfil">+ Cadastrar meu perfil</button>`;
+    document.getElementById('btn-criar-meu-perfil').addEventListener('click', async () => {
+      const nome = (prompt('Seu nome:') || '').trim();
+      if (!nome) return;
+      try {
+        const criado = await api('/vendedores', { method: 'POST', body: JSON.stringify({ nome }) });
+        vendedoresCache.push(criado);
+        aplicarVendedorAtivo();
+        renderizarNomePerfil();
+        preencherSeletorVendedorOrcamento();
+      } catch (err) {
+        alert(err.message);
+      }
+    });
     return;
   }
   wrap.innerHTML = `
-    <select id="select-vendedor-ativo" title="Trocar de vendedor">
-      ${vendedoresCache.map((v) => `<option value="${v.id}" ${v.id === vendedorAtivoId ? 'selected' : ''}>${escaparAtributo(v.nome)}</option>`).join('')}
-    </select>
-    <button type="button" class="btn-lapis" id="btn-renomear-vendedor" title="Renomear este vendedor">
+    <span class="perfil-cargo-texto">${v.nome}</span>
+    <button type="button" class="btn-lapis" id="btn-renomear-meu-perfil" title="Renomear">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
     </button>
-    <button type="button" class="btn-lapis" id="btn-novo-vendedor" title="Cadastrar novo vendedor">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-    </button>
-    ${vendedoresCache.length > 1 ? `<button type="button" class="btn-lapis" id="btn-remover-vendedor" title="Remover este vendedor">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6h16Z"/></svg>
-    </button>` : ''}
   `;
-  document.getElementById('select-vendedor-ativo').addEventListener('change', (e) => {
-    vendedorAtivoId = e.target.value;
-    localStorage.setItem('vendedorAtivoId', vendedorAtivoId);
-    aplicarVendedorAtivo();
-    renderizarSeletorVendedor();
-    preencherSeletorVendedorOrcamento();
+  document.getElementById('btn-renomear-meu-perfil').addEventListener('click', async () => {
+    const nome = (prompt('Seu nome:', v.nome) || '').trim();
+    if (!nome || nome === v.nome) return;
+    try {
+      const atualizado = await api(`/vendedores/${v.id}`, { method: 'PATCH', body: JSON.stringify({ nome }) });
+      atualizarVendedorCache(atualizado);
+      aplicarVendedorAtivo();
+      renderizarNomePerfil();
+      preencherSeletorVendedorOrcamento();
+    } catch (err) {
+      alert(err.message);
+    }
   });
-  document.getElementById('btn-renomear-vendedor').addEventListener('click', renomearVendedorAtivo);
-  document.getElementById('btn-novo-vendedor').addEventListener('click', criarNovoVendedor);
-  const btnRemover = document.getElementById('btn-remover-vendedor');
-  if (btnRemover) btnRemover.addEventListener('click', removerVendedorAtivo);
-}
-
-async function renomearVendedorAtivo() {
-  const v = vendedorAtivo();
-  if (!v) return;
-  const nome = (prompt('Novo nome do vendedor:', v.nome) || '').trim();
-  if (!nome || nome === v.nome) return;
-  try {
-    const atualizado = await api(`/vendedores/${v.id}`, { method: 'PATCH', body: JSON.stringify({ nome }) });
-    atualizarVendedorCache(atualizado);
-    vendedorAtual.nome = atualizado.nome;
-    renderizarSeletorVendedor();
-    preencherSeletorVendedorOrcamento();
-  } catch (err) {
-    alert(err.message);
-  }
-}
-
-async function criarNovoVendedor() {
-  const nome = (prompt('Nome do novo vendedor:') || '').trim();
-  if (!nome) return;
-  try {
-    const criado = await api('/vendedores', { method: 'POST', body: JSON.stringify({ nome }) });
-    vendedoresCache.push(criado);
-    vendedorAtivoId = criado.id;
-    localStorage.setItem('vendedorAtivoId', vendedorAtivoId);
-    aplicarVendedorAtivo();
-    renderizarSeletorVendedor();
-    preencherSeletorVendedorOrcamento();
-  } catch (err) {
-    alert(err.message);
-  }
-}
-
-async function removerVendedorAtivo() {
-  const v = vendedorAtivo();
-  if (!v) return;
-  if (!confirm(`Remover o vendedor "${v.nome}"? Isso não pode ser desfeito.`)) return;
-  try {
-    await api(`/vendedores/${v.id}`, { method: 'DELETE' });
-    vendedoresCache = vendedoresCache.filter((x) => x.id !== v.id);
-    vendedorAtivoId = vendedoresCache[0]?.id || null;
-    if (vendedorAtivoId) localStorage.setItem('vendedorAtivoId', vendedorAtivoId);
-    aplicarVendedorAtivo();
-    renderizarSeletorVendedor();
-    preencherSeletorVendedorOrcamento();
-  } catch (err) {
-    alert(err.message);
-  }
 }
 
 function atualizarVendedorCache(atualizado) {
@@ -4036,6 +4225,12 @@ async function carregarResumo() {
     </div>
     <div class="stat">
       <div class="stat-corpo">
+        ${icone('<path d="m9 12 2 2 4-4"/><path d="M21 12a9 9 0 1 1-9-9c2.5 0 4.7 1 6.3 2.7"/>')}
+        <div><div class="valor">${r.vendas_mes}</div><div class="label">Vendas no mês</div></div>
+      </div>
+    </div>
+    <div class="stat">
+      <div class="stat-corpo">
         ${icone('<path d="M4 19h16M4 19c0-6 2-13 4-13s2 5 4 5 2-8 4-8 2 9 4 16"/>')}
         <div><div class="valor">${fmtKm(r.km_rodados_mes)}</div><div class="label">Km rodados (mês)</div></div>
       </div>
@@ -4348,7 +4543,7 @@ async function baixarRelatorioVisita(id) {
   const corpo = {
     emitente: emitenteOrcamento(),
     vendedor: {
-      nome: localStorage.getItem('vendedorNomeOrcamento') || vendedorAtivo()?.nome || '',
+      nome: vendedorAtivo()?.nome || '',
       cargo: cargoAtual,
       celular: vendedorAtual.celular,
     },
@@ -4590,8 +4785,8 @@ async function carregarProdutos() {
   produtosCache = produtos;
   const tbody = document.getElementById('tabela-produtos');
   tbody.innerHTML = produtos.length
-    ? produtos.map((p) => `<tr><td>${p.nome}</td><td>${fmtMoeda(p.preco)}</td></tr>`).join('')
-    : '<tr><td class="vazio" colspan="2">Nenhum produto ainda.</td></tr>';
+    ? produtos.map((p) => `<tr><td>${p.codigo || '—'}</td><td>${p.nome}</td><td>${fmtMoeda(p.preco)}</td></tr>`).join('')
+    : '<tr><td class="vazio" colspan="3">Nenhum produto ainda.</td></tr>';
 
   document.getElementById('select-produto-negociacao').innerHTML =
     '<option value="">Sem produto</option>' + produtos.map((p) => `<option value="${p.id}">${p.nome}</option>`).join('');
@@ -5616,7 +5811,7 @@ document.getElementById('btn-editar-meta-mini').addEventListener('click', async 
   document.getElementById('input-data-previsao').value = dataISOHoje();
   await Promise.all([carregarEmpresas(), carregarProdutos(), carregarCamposClientes()]);
   await Promise.all([carregarContatos(), carregarClientes()]);
-  await Promise.all([carregarResumo(), carregarVisitas(), carregarNegociacoes(), carregarPrevisoesPedido(), carregarAtividades(), carregarRdv(), carregarAgenda(), carregarPedidos()]);
+  await Promise.all([carregarResumo(), carregarVisitas(), carregarNegociacoes(), carregarPrevisoesPedido(), carregarAtividades(), carregarRdv(), carregarAgenda(), carregarPedidos(), carregarTarefas()]);
   iniciarOrcamento();
   ajustarAlturaInicio();
 })();

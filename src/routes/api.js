@@ -608,6 +608,39 @@ router.post('/orcamento/pdf', (req, res) => {
   }
 });
 
+// --- Tarefas (checklist simples do dia, em cima da Agenda) ---
+
+router.get('/tarefas', async (req, res) => {
+  const { data, error } = await supabase.from('tarefas').select('*').order('created_at', { ascending: true });
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
+router.post('/tarefas', async (req, res) => {
+  const texto = (req.body.texto || '').trim();
+  if (!texto) return res.status(400).json({ error: 'texto é obrigatório' });
+
+  const { data, error } = await supabase.from('tarefas').insert({ texto }).select().single();
+  if (error) return res.status(500).json({ error: error.message });
+  res.status(201).json(data);
+});
+
+router.patch('/tarefas/:id', async (req, res) => {
+  const atualizacao = {};
+  if (req.body.texto !== undefined) atualizacao.texto = req.body.texto;
+  if (req.body.concluida !== undefined) atualizacao.concluida = req.body.concluida;
+
+  const { data, error } = await supabase.from('tarefas').update(atualizacao).eq('id', req.params.id).select().single();
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
+router.delete('/tarefas/:id', async (req, res) => {
+  const { error } = await supabase.from('tarefas').delete().eq('id', req.params.id);
+  if (error) return res.status(500).json({ error: error.message });
+  res.status(204).end();
+});
+
 // --- Agenda (compromissos/visitas, com cliente vinculado pra montar rota no mapa) ---
 
 const CAMPOS_COMPROMISSO = ['data', 'hora', 'hora_fim', 'tipo', 'titulo', 'cliente_id', 'localizacao', 'motivo', 'etapa_funil', 'descricao', 'status_confirmacao', 'recorrencia', 'recorrencia_ate', 'recorrencia_intervalo_dias'];
@@ -808,12 +841,12 @@ router.get('/produtos', async (req, res) => {
 });
 
 router.post('/produtos', async (req, res) => {
-  const { nome, preco } = req.body;
+  const { nome, preco, codigo } = req.body;
   if (!nome) return res.status(400).json({ error: 'nome é obrigatório' });
 
   const { data, error } = await supabase
     .from('produtos')
-    .insert({ nome, preco })
+    .insert({ nome, preco, codigo: codigo || null })
     .select()
     .single();
   if (error) return res.status(500).json({ error: error.message });
@@ -1241,6 +1274,7 @@ router.get('/resumo', async (req, res) => {
 
   const faturamentoMes = negociacoesGanhas.reduce((soma, n) => soma + Number(n.valor || 0), 0)
     + pedidosMes.reduce((soma, p) => soma + Number(p.valor_total || 0), 0);
+  const vendasMes = negociacoesGanhas.length + pedidosMes.length;
 
   const consultaVisitas = (colunas) => supabase
     .from('visitas')
@@ -1310,6 +1344,7 @@ router.get('/resumo', async (req, res) => {
     meses_restantes: mesesRestantes,
     clientes_visitados_mes: clientesVisitadosMes,
     km_rodados_mes: kmRodadosMes,
+    vendas_mes: vendasMes,
   });
 });
 
