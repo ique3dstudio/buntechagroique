@@ -3045,17 +3045,20 @@ const SVG_ORCAMENTO = {
   calendario: traco('<path d="M8 2v4"/><path d="M16 2v4"/><path d="M3 10h18"/><rect x="3" y="4" width="18" height="18" rx="2"/>', 1.8),
 };
 
-// Itens que a Buntech vende hoje - a lista sai no seletor da aba Orçamento.
-// "Registrar novo item" acrescenta outros, que ficam salvos em Produtos.
-const ITENS_PADRAO_ORCAMENTO = [
-  'SEEDGEL FR SACARIA 25KG',
-  'SEEDGEL FR BIGBAG 1TN',
-  'SEEDGEL FR M BIGBAG 1TN',
-  'SEEDGRAF BIGBAG 500KG',
-];
-
 let itensOrcamento = [{ produto: '', quantidade: '', preco: '' }];
 let produtosCache = [];
+
+// Alguns itens foram cadastrados com o código PAN dentro do próprio nome,
+// entre parênteses (ex: "SEEDCOLOR VERMELHO CAIXA 25KG (PAN01233)"), em vez
+// de usar a coluna código. Extrai o código e devolve o nome limpo pra exibir
+// no mesmo formato "PAN01233 - Nome" dos demais produtos.
+function extrairCodigoEmbutido(nome) {
+  const bruto = String(nome || '');
+  const match = bruto.match(/\(\s*(PAN\d+)\s*\)/i);
+  if (!match) return { codigo: '', nomeLimpo: bruto };
+  const nomeLimpo = bruto.replace(match[0], '').replace(/\s{2,}/g, ' ').trim();
+  return { codigo: match[1].toUpperCase(), nomeLimpo };
+}
 
 // Acha o código PAN de um produto pelo nome, pra mostrar "PAN01187 - Nome" nas
 // listas/telas do app. O orçamento (preview e PDF) continua só com o nome -
@@ -3064,13 +3067,15 @@ function codigoDoProduto(nome) {
   const alvo = (nome || '').trim().toUpperCase();
   if (!alvo) return '';
   const encontrado = produtosCache.find((p) => (p.nome || '').trim().toUpperCase() === alvo);
-  return encontrado?.codigo || '';
+  if (encontrado?.codigo) return encontrado.codigo;
+  return extrairCodigoEmbutido(nome).codigo;
 }
 
 function nomeComCodigo(nome) {
   if (!nome) return nome;
   const codigo = codigoDoProduto(nome);
-  return codigo ? `${codigo} - ${nome}` : nome;
+  const nomeExibido = extrairCodigoEmbutido(nome).nomeLimpo;
+  return codigo ? `${codigo} - ${nomeExibido}` : nome;
 }
 
 function emitenteOrcamento() {
@@ -3096,22 +3101,26 @@ function registrarNumeroUsado() {
   if (partes) localStorage.setItem('sequenciaOrcamento', JSON.stringify({ prefixo: partes[1], seq: Number(partes[2]) }));
 }
 
-// Lista de itens do seletor: os produtos da Buntech + o que já foi cadastrado
-// em Produtos (inclusive o que entrar por "Registrar novo item").
+// Lista de itens do seletor: só produtos com código PAN cadastrados em
+// Produtos (inclusive o que entrar por "Registrar novo item").
 function itensDisponiveisOrcamento() {
-  const lista = ITENS_PADRAO_ORCAMENTO.map((nome) => ({ nome, preco: null, codigo: '' }));
-  const indice = new Map(lista.map((item) => [item.nome.toUpperCase(), item]));
+  const lista = [];
+  const indice = new Map();
 
   for (const produto of produtosCache) {
-    const nome = (produto?.nome || '').trim();
-    if (!nome) continue;
+    const bruto = (produto?.nome || '').trim();
+    if (!bruto) continue;
+    const { codigo: codigoEmbutido, nomeLimpo } = extrairCodigoEmbutido(bruto);
+    const nome = nomeLimpo;
+    const codigo = produto.codigo || codigoEmbutido;
+
     const existente = indice.get(nome.toUpperCase());
     if (existente) {
       if (produto.preco != null && existente.preco == null) existente.preco = produto.preco;
-      if (produto.codigo && !existente.codigo) existente.codigo = produto.codigo;
+      if (codigo && !existente.codigo) existente.codigo = codigo;
       continue;
     }
-    const item = { nome, preco: produto.preco ?? null, codigo: produto.codigo || '' };
+    const item = { nome, preco: produto.preco ?? null, codigo };
     indice.set(nome.toUpperCase(), item);
     lista.push(item);
   }
@@ -4802,11 +4811,14 @@ async function carregarProdutos() {
   produtosCache = produtos;
   const tbody = document.getElementById('tabela-produtos');
   tbody.innerHTML = produtos.length
-    ? produtos.map((p) => `<tr><td>${p.codigo || '—'}</td><td>${p.nome}</td><td>${fmtMoeda(p.preco)}</td></tr>`).join('')
+    ? produtos.map((p) => {
+        const { codigo: codigoEmbutido, nomeLimpo } = extrairCodigoEmbutido(p.nome || '');
+        return `<tr><td>${p.codigo || codigoEmbutido || '—'}</td><td>${nomeLimpo}</td><td>${fmtMoeda(p.preco)}</td></tr>`;
+      }).join('')
     : '<tr><td class="vazio" colspan="3">Nenhum produto ainda.</td></tr>';
 
   document.getElementById('select-produto-negociacao').innerHTML =
-    '<option value="">Sem produto</option>' + produtos.map((p) => `<option value="${p.id}">${p.codigo ? `${p.codigo} - ${p.nome}` : p.nome}</option>`).join('');
+    '<option value="">Sem produto</option>' + produtos.map((p) => `<option value="${p.id}">${nomeComCodigo(p.nome)}</option>`).join('');
 
   renderizarProdutoPedido();
 }
