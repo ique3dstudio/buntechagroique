@@ -1004,12 +1004,15 @@
     margin: 0 auto;
     padding: 0;
     overflow: hidden;
-    background: var(--card);
+    /* A folha é a pré-visualização do PDF: papel branco, independente do
+       tema escuro do resto do app. */
+    background: #ffffff;
     color: #14232a;
-    box-shadow: 0 4px 20px rgba(20, 36, 32, 0.15);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
     font-size: 10pt;
     line-height: 1.45;
   }
+  .folha-a4 input, .folha-a4 select, .folha-a4 textarea { background: #fff; color: #14232a; border-color: #d8e3ea; }
   /* No celular a folha é reduzida pra caber na tela; o PDF sai em A4 real.
      Usa "zoom" em vez de "transform: scale()": o scale só encolhe o
      desenho, não a caixa (ela continua com 210mm de largura no layout),
