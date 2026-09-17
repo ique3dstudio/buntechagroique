@@ -115,6 +115,43 @@ router.post('/empresas', async (req, res) => {
   res.status(201).json({ ...data, aviso: avisoGeocodificacao });
 });
 
+const CAMPOS_EMPRESA = ['nome', 'segmento', 'site', 'telefone', 'cidade', 'cnpj', 'endereco'];
+
+router.patch('/empresas/:id', async (req, res) => {
+  const atualizacao = {};
+  for (const campo of CAMPOS_EMPRESA) {
+    if (req.body[campo] === undefined) continue;
+    if (campo === 'nome' && !String(req.body.nome).trim()) return res.status(400).json({ error: 'nome é obrigatório' });
+    atualizacao[campo] = req.body[campo];
+  }
+
+  // Endereço novo pede pino novo no mapa - sem isso o marcador ficaria no
+  // lugar antigo. Não achar o endereço não impede de salvar o texto.
+  let avisoGeocodificacao;
+  if (atualizacao.endereco !== undefined) {
+    const { data: atual } = await supabase.from('empresas').select('cidade').eq('id', req.params.id).single();
+    const cidade = atualizacao.cidade !== undefined ? atualizacao.cidade : atual?.cidade;
+    const coords = atualizacao.endereco
+      ? await geocodificarEndereco([atualizacao.endereco, cidade, 'Minas Gerais', 'Brasil'].filter(Boolean).join(', ')).catch(() => null)
+      : null;
+    atualizacao.latitude = coords?.latitude ?? null;
+    atualizacao.longitude = coords?.longitude ?? null;
+    if (atualizacao.endereco && !coords) {
+      avisoGeocodificacao = 'Não conseguimos localizar esse endereço no mapa. A empresa foi salva mesmo assim.';
+    }
+  }
+
+  const { data, error } = await supabase.from('empresas').update(atualizacao).eq('id', req.params.id).select().single();
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ ...data, aviso: avisoGeocodificacao });
+});
+
+router.delete('/empresas/:id', async (req, res) => {
+  const { error } = await supabase.from('empresas').delete().eq('id', req.params.id);
+  if (error) return res.status(500).json({ error: error.message });
+  res.status(204).end();
+});
+
 // --- Configurações visuais (icone, capa, foto de perfil) ---
 
 router.get('/config', async (req, res) => {
@@ -861,6 +898,26 @@ router.post('/produtos', async (req, res) => {
   res.status(201).json(data);
 });
 
+router.patch('/produtos/:id', async (req, res) => {
+  const atualizacao = {};
+  if (req.body.nome !== undefined) {
+    if (!String(req.body.nome).trim()) return res.status(400).json({ error: 'nome é obrigatório' });
+    atualizacao.nome = req.body.nome;
+  }
+  if (req.body.codigo !== undefined) atualizacao.codigo = req.body.codigo || null;
+  if (req.body.preco !== undefined) atualizacao.preco = req.body.preco === null || req.body.preco === '' ? null : Number(req.body.preco);
+
+  const { data, error } = await supabase.from('produtos').update(atualizacao).eq('id', req.params.id).select().single();
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
+router.delete('/produtos/:id', async (req, res) => {
+  const { error } = await supabase.from('produtos').delete().eq('id', req.params.id);
+  if (error) return res.status(500).json({ error: error.message });
+  res.status(204).end();
+});
+
 // --- Contatos ---
 
 router.get('/contatos', async (req, res) => {
@@ -883,6 +940,28 @@ router.post('/contatos', async (req, res) => {
     .single();
   if (error) return res.status(500).json({ error: error.message });
   res.status(201).json(data);
+});
+
+const CAMPOS_CONTATO = ['nome', 'empresa_id', 'telefone', 'email', 'cargo', 'origem', 'status', 'observacoes'];
+
+router.patch('/contatos/:id', async (req, res) => {
+  const atualizacao = {};
+  for (const campo of CAMPOS_CONTATO) {
+    if (req.body[campo] === undefined) continue;
+    if (campo === 'nome' && !String(req.body.nome).trim()) return res.status(400).json({ error: 'nome é obrigatório' });
+    atualizacao[campo] = campo === 'empresa_id' ? (req.body[campo] || null) : req.body[campo];
+  }
+
+  const { data, error } = await supabase
+    .from('contatos').update(atualizacao).eq('id', req.params.id).select('*, empresas(nome)').single();
+  if (error) return res.status(500).json({ error: error.message });
+  res.json(data);
+});
+
+router.delete('/contatos/:id', async (req, res) => {
+  const { error } = await supabase.from('contatos').delete().eq('id', req.params.id);
+  if (error) return res.status(500).json({ error: error.message });
+  res.status(204).end();
 });
 
 // --- Negociações ---

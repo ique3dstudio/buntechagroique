@@ -595,6 +595,13 @@
   .tarefas-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; }
   .tarefa-item { display: flex; align-items: center; gap: 0.6rem; background: #f3f7f6; border-radius: 10px; padding: 0.55rem 0.7rem; }
   .tarefa-item input[type="checkbox"] { width: 18px; height: 18px; flex-shrink: 0; cursor: pointer; }
+  td.celula-edit { cursor: text; }
+  td.celula-edit:hover { background: #f3f7f6; }
+  .celula-edit-campo {
+    width: 100%; min-width: 80px; font: inherit; color: var(--ink);
+    padding: 0.2rem 0.4rem; border: 1px solid var(--blue-dark); border-radius: 6px; background: #fff;
+  }
+  select.celula-select { font: inherit; font-size: 0.82rem; padding: 0.2rem 0.4rem; border-radius: 6px; max-width: 160px; }
   .tarefa-item .tarefa-texto { flex: 1; min-width: 0; font-size: 0.9rem; color: var(--ink); word-break: break-word; cursor: text; }
   .tarefa-item .tarefa-texto-editando {
     flex: 1; min-width: 0; font-size: 0.9rem; font-family: inherit; color: var(--ink);
@@ -1635,7 +1642,7 @@
         </form>
         <div class="tabela-wrap">
           <table>
-            <thead><tr><th>Nome</th><th>Segmento</th><th>Cidade</th></tr></thead>
+            <thead><tr><th>Nome</th><th>Segmento</th><th>Cidade</th><th>Telefone</th><th>Site</th><th>CNPJ</th><th>Endereço</th><th></th></tr></thead>
             <tbody id="tabela-empresas"></tbody>
           </table>
         </div>
@@ -1673,7 +1680,7 @@
         </form>
         <div class="tabela-wrap">
           <table>
-            <thead><tr><th>Nome</th><th>Empresa</th><th>Telefone</th><th>Status</th></tr></thead>
+            <thead><tr><th>Nome</th><th>Empresa</th><th>Cargo</th><th>Telefone</th><th>E-mail</th><th>Origem</th><th>Status</th><th></th></tr></thead>
             <tbody id="tabela-contatos"></tbody>
           </table>
         </div>
@@ -1691,7 +1698,7 @@
         </form>
         <div class="tabela-wrap">
           <table>
-            <thead><tr><th>Código</th><th>Nome</th><th>Preço</th></tr></thead>
+            <thead><tr><th>Código</th><th>Nome</th><th>Preço</th><th></th></tr></thead>
             <tbody id="tabela-produtos"></tbody>
           </table>
         </div>
@@ -4889,15 +4896,132 @@ document.getElementById('form-pedido').addEventListener('submit', async (e) => {
 
 // --- Aba CRM ---
 
+const OPCOES_ORIGEM_CONTATO = [
+  { valor: 'indicacao', rotulo: 'Indicação' },
+  { valor: 'site', rotulo: 'Site' },
+  { valor: 'evento', rotulo: 'Evento' },
+  { valor: 'ligacao_fria', rotulo: 'Ligação fria' },
+  { valor: 'outro', rotulo: 'Outro' },
+];
+const OPCOES_STATUS_CONTATO = [
+  { valor: 'desenvolvimento', rotulo: 'Em desenvolvimento' },
+  { valor: 'ativo', rotulo: 'Ativo' },
+  { valor: 'convertido', rotulo: 'Convertido' },
+  { valor: 'inativo', rotulo: 'Inativo' },
+];
+
+// --- Tabelas editáveis do CRM ---
+// Célula de texto: clica, edita, Enter ou sair salva, Esc desiste. Campo que
+// é lista (empresa, status, origem) vira um select que salva na hora.
+
+function celulaTexto(valor, { id, campo, exibicao, tipo = 'text', obrigatorio = false }) {
+  const bruto = valor == null ? '' : String(valor);
+  return `<td class="celula-edit" data-id="${id}" data-campo="${campo}" data-tipo="${tipo}"
+    data-valor="${escaparAtributo(bruto)}"${obrigatorio ? ' data-obrigatorio="1"' : ''}
+    title="Clique pra editar">${exibicao ?? (escaparAtributo(bruto) || '—')}</td>`;
+}
+
+function celulaSelect(valorAtual, { id, campo, opcoes, vazio }) {
+  const lista = vazio ? [{ valor: '', rotulo: vazio }, ...opcoes] : opcoes;
+  return `<td><select class="celula-select" data-id="${id}" data-campo="${campo}">${lista
+    .map((o) => `<option value="${escaparAtributo(o.valor)}"${String(o.valor) === String(valorAtual ?? '') ? ' selected' : ''}>${escaparAtributo(o.rotulo)}</option>`)
+    .join('')}</select></td>`;
+}
+
+function celulaExcluir(id) {
+  return `<td><button type="button" class="btn-lapis" data-excluir-linha="${id}" title="Excluir">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6h16Z"/></svg>
+  </button></td>`;
+}
+
+function ligarTabelaEditavel(tbody, rota, recarregar) {
+  const salvar = async (id, corpo, aoFalhar) => {
+    try {
+      await api(`${rota}/${id}`, { method: 'PATCH', body: JSON.stringify(corpo) });
+      await recarregar();
+    } catch (err) {
+      alert(err.message);
+      if (aoFalhar) aoFalhar();
+    }
+  };
+
+  tbody.querySelectorAll('td.celula-edit').forEach((td) => {
+    td.addEventListener('click', (e) => {
+      // Link dentro da célula (WhatsApp) continua sendo link.
+      if (e.target.closest('a') || td.querySelector('input')) return;
+
+      const original = td.dataset.valor || '';
+      const htmlOriginal = td.innerHTML;
+      const input = document.createElement('input');
+      input.type = td.dataset.tipo;
+      if (input.type === 'number') { input.step = '0.01'; input.min = '0'; }
+      input.className = 'celula-edit-campo';
+      input.value = original;
+      td.innerHTML = '';
+      td.appendChild(input);
+      input.focus();
+      input.select();
+
+      let fechado = false;
+      const fechar = (gravar) => {
+        if (fechado) return;
+        fechado = true;
+        const novo = input.value.trim();
+        // Campo obrigatório vazio desiste em vez de gravar registro sem nome.
+        if (!gravar || novo === original || (!novo && td.dataset.obrigatorio)) {
+          td.innerHTML = htmlOriginal;
+          return;
+        }
+        salvar(td.dataset.id, { [td.dataset.campo]: novo || null }, () => { td.innerHTML = htmlOriginal; });
+      };
+
+      input.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter') { ev.preventDefault(); fechar(true); }
+        if (ev.key === 'Escape') { ev.preventDefault(); fechar(false); }
+      });
+      input.addEventListener('blur', () => fechar(true));
+    });
+  });
+
+  tbody.querySelectorAll('select.celula-select').forEach((select) => {
+    select.addEventListener('change', () => salvar(select.dataset.id, { [select.dataset.campo]: select.value || null }));
+  });
+
+  tbody.querySelectorAll('[data-excluir-linha]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('Excluir esse registro? Não dá pra desfazer.')) return;
+      try {
+        await api(`${rota}/${btn.dataset.excluirLinha}`, { method: 'DELETE' });
+        await recarregar();
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+  });
+}
+
+let empresasCache = [];
+
 async function carregarEmpresas() {
   const empresas = await api('/empresas');
+  empresasCache = empresas;
   const tbody = document.getElementById('tabela-empresas');
   tbody.innerHTML = empresas.length
-    ? empresas.map((e) => `<tr><td>${e.nome}</td><td>${e.segmento ?? '—'}</td><td>${e.cidade ?? '—'}</td></tr>`).join('')
-    : '<tr><td class="vazio" colspan="3">Nenhuma empresa ainda.</td></tr>';
+    ? empresas.map((e) => `<tr>
+        ${celulaTexto(e.nome, { id: e.id, campo: 'nome', obrigatorio: true })}
+        ${celulaTexto(e.segmento, { id: e.id, campo: 'segmento' })}
+        ${celulaTexto(e.cidade, { id: e.id, campo: 'cidade' })}
+        ${celulaTexto(e.telefone, { id: e.id, campo: 'telefone' })}
+        ${celulaTexto(e.site, { id: e.id, campo: 'site' })}
+        ${celulaTexto(e.cnpj, { id: e.id, campo: 'cnpj' })}
+        ${celulaTexto(e.endereco, { id: e.id, campo: 'endereco' })}
+        ${celulaExcluir(e.id)}
+      </tr>`).join('')
+    : '<tr><td class="vazio" colspan="8">Nenhuma empresa ainda.</td></tr>';
+  ligarTabelaEditavel(tbody, '/empresas', () => Promise.all([carregarEmpresas(), carregarContatos()]));
 
   document.getElementById('select-empresa-contato').innerHTML =
-    '<option value="">Sem empresa</option>' + empresas.map((e) => `<option value="${e.id}">${e.nome}</option>`).join('');
+    '<option value="">Sem empresa</option>' + empresas.map((e) => `<option value="${e.id}">${escaparAtributo(e.nome)}</option>`).join('');
 }
 
 async function carregarProdutos() {
@@ -4907,9 +5031,15 @@ async function carregarProdutos() {
   tbody.innerHTML = produtos.length
     ? produtos.map((p) => {
         const { codigo: codigoEmbutido, nomeLimpo } = extrairCodigoEmbutido(p.nome || '');
-        return `<tr><td>${p.codigo || codigoEmbutido || '—'}</td><td>${nomeLimpo}</td><td>${fmtMoeda(p.preco)}</td></tr>`;
+        return `<tr>
+          ${celulaTexto(p.codigo || codigoEmbutido, { id: p.id, campo: 'codigo' })}
+          ${celulaTexto(p.nome, { id: p.id, campo: 'nome', exibicao: escaparAtributo(nomeLimpo), obrigatorio: true })}
+          ${celulaTexto(p.preco, { id: p.id, campo: 'preco', tipo: 'number', exibicao: fmtMoeda(p.preco) })}
+          ${celulaExcluir(p.id)}
+        </tr>`;
       }).join('')
-    : '<tr><td class="vazio" colspan="3">Nenhum produto ainda.</td></tr>';
+    : '<tr><td class="vazio" colspan="4">Nenhum produto ainda.</td></tr>';
+  ligarTabelaEditavel(tbody, '/produtos', carregarProdutos);
 
   document.getElementById('select-produto-negociacao').innerHTML =
     '<option value="">Sem produto</option>' + produtos.map((p) => `<option value="${p.id}">${nomeComCodigo(p.nome)}</option>`).join('');
@@ -4923,14 +5053,26 @@ async function carregarContatos() {
   tbody.innerHTML = contatos.length
     ? contatos.map((c) => `
         <tr>
-          <td>${c.nome}</td>
-          <td>${c.empresas?.nome ?? '—'}</td>
-          <td>${c.telefone ? `<a class="tel-whatsapp" href="${escaparAtributo(linkWhatsapp(c.telefone))}" target="_blank" rel="noopener">${escaparAtributo(c.telefone)}${ICONE_WHATSAPP}</a>` : '—'}</td>
-          <td><span class="badge status-${c.status}">${c.status}</span></td>
+          ${celulaTexto(c.nome, { id: c.id, campo: 'nome', obrigatorio: true })}
+          ${celulaSelect(c.empresa_id, {
+            id: c.id, campo: 'empresa_id', vazio: 'Sem empresa',
+            opcoes: empresasCache.map((e) => ({ valor: e.id, rotulo: e.nome })),
+          })}
+          ${celulaTexto(c.cargo, { id: c.id, campo: 'cargo' })}
+          ${celulaTexto(c.telefone, {
+            id: c.id, campo: 'telefone',
+            exibicao: c.telefone
+              ? `<a class="tel-whatsapp" href="${escaparAtributo(linkWhatsapp(c.telefone))}" target="_blank" rel="noopener">${escaparAtributo(c.telefone)}${ICONE_WHATSAPP}</a>`
+              : '—',
+          })}
+          ${celulaTexto(c.email, { id: c.id, campo: 'email' })}
+          ${celulaSelect(c.origem, { id: c.id, campo: 'origem', vazio: 'Selecionar', opcoes: OPCOES_ORIGEM_CONTATO })}
+          ${celulaSelect(c.status, { id: c.id, campo: 'status', opcoes: OPCOES_STATUS_CONTATO })}
+          ${celulaExcluir(c.id)}
         </tr>
       `).join('')
-    : '<tr><td class="vazio" colspan="4">Nenhum contato ainda.</td></tr>';
-
+    : '<tr><td class="vazio" colspan="8">Nenhum contato ainda.</td></tr>';
+  ligarTabelaEditavel(tbody, '/contatos', carregarContatos);
 }
 
 function opcoesFase(etapaAtual) {
