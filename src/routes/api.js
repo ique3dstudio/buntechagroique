@@ -610,8 +610,11 @@ router.post('/orcamento/pdf', (req, res) => {
 
 // --- Tarefas (checklist simples do dia, em cima da Agenda) ---
 
+const PRIORIDADES_TAREFA = ['alta', 'media', 'baixa'];
+const SELECT_TAREFA = '*, clientes(nome)';
+
 router.get('/tarefas', async (req, res) => {
-  const { data, error } = await supabase.from('tarefas').select('*').order('created_at', { ascending: true });
+  const { data, error } = await supabase.from('tarefas').select(SELECT_TAREFA).order('created_at', { ascending: true });
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);
 });
@@ -620,7 +623,10 @@ router.post('/tarefas', async (req, res) => {
   const texto = (req.body.texto || '').trim();
   if (!texto) return res.status(400).json({ error: 'texto é obrigatório' });
 
-  const { data, error } = await supabase.from('tarefas').insert({ texto }).select().single();
+  const registro = { texto, cliente_id: req.body.cliente_id || null };
+  if (PRIORIDADES_TAREFA.includes(req.body.prioridade)) registro.prioridade = req.body.prioridade;
+
+  const { data, error } = await supabase.from('tarefas').insert(registro).select(SELECT_TAREFA).single();
   if (error) return res.status(500).json({ error: error.message });
   res.status(201).json(data);
 });
@@ -629,8 +635,10 @@ router.patch('/tarefas/:id', async (req, res) => {
   const atualizacao = {};
   if (req.body.texto !== undefined) atualizacao.texto = req.body.texto;
   if (req.body.concluida !== undefined) atualizacao.concluida = req.body.concluida;
+  if (req.body.cliente_id !== undefined) atualizacao.cliente_id = req.body.cliente_id || null;
+  if (PRIORIDADES_TAREFA.includes(req.body.prioridade)) atualizacao.prioridade = req.body.prioridade;
 
-  const { data, error } = await supabase.from('tarefas').update(atualizacao).eq('id', req.params.id).select().single();
+  const { data, error } = await supabase.from('tarefas').update(atualizacao).eq('id', req.params.id).select(SELECT_TAREFA).single();
   if (error) return res.status(500).json({ error: error.message });
   res.json(data);
 });

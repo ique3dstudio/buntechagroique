@@ -589,8 +589,9 @@
      de dias fixo, faixa de "dia todo", grade de 24 horas com 48px por hora e
      os compromissos posicionados por horario/duracao (inclusive lado a lado
      quando se sobrepoem). */
-  .tarefas-form { display: flex; gap: 0.5rem; margin-bottom: 0.9rem; }
-  .tarefas-form input { flex: 1; }
+  .tarefas-form { display: flex; gap: 0.5rem; margin-bottom: 0.9rem; flex-wrap: wrap; }
+  .tarefas-form input { flex: 1; min-width: 170px; }
+  .tarefas-form select { flex: 0 1 auto; width: auto; }
   .tarefas-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; }
   .tarefa-item { display: flex; align-items: center; gap: 0.6rem; background: #f3f7f6; border-radius: 10px; padding: 0.55rem 0.7rem; }
   .tarefa-item input[type="checkbox"] { width: 18px; height: 18px; flex-shrink: 0; cursor: pointer; }
@@ -598,6 +599,17 @@
   .tarefa-item.concluida .tarefa-texto { text-decoration: line-through; color: var(--muted); }
   .tarefa-item .btn-lapis { flex-shrink: 0; width: 26px; height: 26px; }
   .tarefa-item .btn-lapis svg { width: 13px; height: 13px; }
+  .tarefa-prioridade {
+    flex-shrink: 0; background: none; border: 0; padding: 0 0.1rem; cursor: pointer;
+    font-size: 1rem; line-height: 1; filter: saturate(1.1);
+  }
+  .tarefa-cliente {
+    flex-shrink: 0; max-width: 150px; padding: 0.18rem 0.45rem; font-size: 0.75rem;
+    border: 1px solid var(--border); border-radius: 999px; background: #fff;
+    color: var(--muted); cursor: pointer; appearance: none; text-align: center;
+  }
+  .tarefa-cliente.tem-cliente { background: #eaf4fb; border-color: #bcdcef; color: var(--blue-dark); font-weight: 600; }
+  .tarefa-item.concluida .tarefa-prioridade { filter: grayscale(1); opacity: 0.55; }
   .cal-toolbar { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.9rem; }
   .cal-nav { display: flex; align-items: center; gap: 0.3rem; }
   .cal-btn-hoje { padding: 0.4rem 0.85rem; font-size: 0.8rem; }
@@ -1512,6 +1524,12 @@
         <h2><span class="icone-secao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="m8 15 2 2 4-4"/><path d="M8 2v4M16 2v4M3 10h18"/></svg></span>Tarefas do dia</h2>
         <form id="form-tarefa" class="tarefas-form">
           <input type="text" id="input-nova-tarefa" placeholder="Adicionar tarefa…" required />
+          <select id="select-prioridade-tarefa" title="Prioridade">
+            <option value="alta">🔥 Alta</option>
+            <option value="media" selected>💧 Média</option>
+            <option value="baixa">❄️ Baixa</option>
+          </select>
+          <select id="select-cliente-tarefa" title="Cliente"></select>
           <button type="submit">Adicionar</button>
         </form>
         <ul class="tarefas-lista" id="lista-tarefas"></ul>
@@ -2434,6 +2452,29 @@ function intervaloVisivel() {
 
 let tarefasCache = [];
 
+// Prioridade não tem rótulo escrito na lista: o emoji já diz tudo e a ordem
+// segue ele - o que é 🔥 fica sempre no topo.
+const PRIORIDADES_TAREFA = ['alta', 'media', 'baixa'];
+const EMOJI_PRIORIDADE = { alta: '🔥', media: '💧', baixa: '❄️' };
+const ROTULO_PRIORIDADE = { alta: 'alta', media: 'média', baixa: 'baixa' };
+
+function prioridadeDaTarefa(t) {
+  return EMOJI_PRIORIDADE[t.prioridade] ? t.prioridade : 'media';
+}
+
+function tarefasOrdenadas() {
+  return [...tarefasCache].sort((a, b) =>
+    PRIORIDADES_TAREFA.indexOf(prioridadeDaTarefa(a)) - PRIORIDADES_TAREFA.indexOf(prioridadeDaTarefa(b))
+    || String(a.created_at || '').localeCompare(String(b.created_at || ''))
+  );
+}
+
+function opcoesClienteTarefa(selecionadoId) {
+  return `<option value="">+ Cliente</option>` + clientesCache
+    .map((c) => `<option value="${c.id}"${c.id === selecionadoId ? ' selected' : ''}>${escaparAtributo(c.nome)}</option>`)
+    .join('');
+}
+
 async function carregarTarefas() {
   try {
     tarefasCache = await api('/tarefas');
@@ -2441,34 +2482,47 @@ async function carregarTarefas() {
     document.getElementById('lista-tarefas').innerHTML = `<p class="vazio">Não consegui carregar as tarefas: ${err.message}</p>`;
     return;
   }
+  document.getElementById('select-cliente-tarefa').innerHTML = opcoesClienteTarefa('');
   renderizarTarefas();
 }
 
 function renderizarTarefas() {
   const lista = document.getElementById('lista-tarefas');
   lista.innerHTML = tarefasCache.length
-    ? tarefasCache.map((t) => `
+    ? tarefasOrdenadas().map((t) => {
+      const prioridade = prioridadeDaTarefa(t);
+      return `
       <li class="tarefa-item${t.concluida ? ' concluida' : ''}">
         <input type="checkbox" data-toggle-tarefa="${t.id}" ${t.concluida ? 'checked' : ''} />
+        <button type="button" class="tarefa-prioridade" data-prioridade-tarefa="${t.id}"
+          title="Prioridade ${ROTULO_PRIORIDADE[prioridade]} — clique pra trocar">${EMOJI_PRIORIDADE[prioridade]}</button>
         <span class="tarefa-texto">${escaparAtributo(t.texto)}</span>
+        <select class="tarefa-cliente${t.cliente_id ? ' tem-cliente' : ''}" data-cliente-tarefa="${t.id}" title="Cliente da tarefa">
+          ${opcoesClienteTarefa(t.cliente_id)}
+        </select>
         <button type="button" class="btn-lapis" data-remover-tarefa="${t.id}" title="Remover">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6h16Z"/></svg>
         </button>
       </li>
-    `).join('')
+    `;
+    }).join('')
     : '<p class="vazio">Nenhuma tarefa por aqui ainda.</p>';
 
-  lista.querySelectorAll('[data-toggle-tarefa]').forEach((chk) => {
-    chk.addEventListener('change', async (e) => {
-      const id = chk.dataset.toggleTarefa;
-      try {
-        const atualizado = await api(`/tarefas/${id}`, { method: 'PATCH', body: JSON.stringify({ concluida: e.target.checked }) });
-        tarefasCache = tarefasCache.map((t) => (t.id === id ? atualizado : t));
-        renderizarTarefas();
-      } catch (err) {
-        alert(err.message);
-      }
+  lista.querySelectorAll('[data-prioridade-tarefa]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.prioridadeTarefa;
+      const atual = prioridadeDaTarefa(tarefasCache.find((t) => t.id === id) || {});
+      const proxima = PRIORIDADES_TAREFA[(PRIORIDADES_TAREFA.indexOf(atual) + 1) % PRIORIDADES_TAREFA.length];
+      await salvarTarefa(id, { prioridade: proxima });
     });
+  });
+
+  lista.querySelectorAll('[data-cliente-tarefa]').forEach((select) => {
+    select.addEventListener('change', () => salvarTarefa(select.dataset.clienteTarefa, { cliente_id: select.value || null }));
+  });
+
+  lista.querySelectorAll('[data-toggle-tarefa]').forEach((chk) => {
+    chk.addEventListener('change', (e) => salvarTarefa(chk.dataset.toggleTarefa, { concluida: e.target.checked }));
   });
   lista.querySelectorAll('[data-remover-tarefa]').forEach((btn) => {
     btn.addEventListener('click', async () => {
@@ -2484,15 +2538,32 @@ function renderizarTarefas() {
   });
 }
 
+async function salvarTarefa(id, mudanca) {
+  try {
+    const atualizado = await api(`/tarefas/${id}`, { method: 'PATCH', body: JSON.stringify(mudanca) });
+    tarefasCache = tarefasCache.map((t) => (t.id === id ? atualizado : t));
+    renderizarTarefas();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
 document.getElementById('form-tarefa').addEventListener('submit', async (e) => {
   e.preventDefault();
   const input = document.getElementById('input-nova-tarefa');
+  const selectPrioridade = document.getElementById('select-prioridade-tarefa');
+  const selectCliente = document.getElementById('select-cliente-tarefa');
   const texto = input.value.trim();
   if (!texto) return;
   try {
-    const criada = await api('/tarefas', { method: 'POST', body: JSON.stringify({ texto }) });
+    const criada = await api('/tarefas', {
+      method: 'POST',
+      body: JSON.stringify({ texto, prioridade: selectPrioridade.value, cliente_id: selectCliente.value || null }),
+    });
     tarefasCache.push(criada);
     input.value = '';
+    selectPrioridade.value = 'media';
+    selectCliente.value = '';
     renderizarTarefas();
   } catch (err) {
     alert(err.message);
