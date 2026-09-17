@@ -219,6 +219,9 @@
   .avatar-img[hidden], .avatar-fallback[hidden] { display: none; }
   .perfil-info-coluna { display: flex; flex-direction: column; gap: 0.3rem; flex: 1; min-width: 220px; }
   .perfil-secao-label { font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin-bottom: -0.2rem; }
+  /* Perfil e cargo dividem a mesma linha - empilhados gastavam altura à toa. */
+  .perfil-identidade { display: flex; align-items: flex-start; gap: 2.25rem; flex-wrap: wrap; }
+  .perfil-identidade > div { display: flex; flex-direction: column; gap: 0.3rem; min-width: 0; }
   .perfil-vendedor-seletor { display: flex; align-items: center; gap: 0.35rem; }
   .perfil-vendedor-seletor .btn-lapis { flex-shrink: 0; width: 26px; height: 26px; }
   .perfil-vendedor-seletor .btn-lapis svg { width: 13px; height: 13px; }
@@ -1569,10 +1572,16 @@
             </div>
           </div>
           <div class="perfil-info-coluna">
-            <div class="perfil-secao-label">Perfil</div>
-            <div class="perfil-vendedor-seletor" id="perfil-vendedor-seletor"></div>
-            <div class="perfil-secao-label">Cargo</div>
-            <div class="perfil-cargo-wrap" id="perfil-cargo-wrap"></div>
+            <div class="perfil-identidade">
+              <div>
+                <div class="perfil-secao-label">Perfil</div>
+                <div class="perfil-vendedor-seletor" id="perfil-vendedor-seletor"></div>
+              </div>
+              <div>
+                <div class="perfil-secao-label">Cargo</div>
+                <div class="perfil-cargo-wrap" id="perfil-cargo-wrap"></div>
+              </div>
+            </div>
             <div class="perfil-pills-row">
               <div class="perfil-pill" id="perfil-regiao-wrap"></div>
               <div class="perfil-pill" id="perfil-vendedor-wrap"></div>
