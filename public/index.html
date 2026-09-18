@@ -1887,6 +1887,9 @@
           <button type="button" class="secundario" id="btn-novo-campo">+ Adicionar campo</button>
         </div>
         <div class="filtro-grupo">
+          <input type="search" id="busca-clientes" placeholder="Buscar por nome, código, razão social, CNPJ..." style="width:100%; max-width:420px;" />
+        </div>
+        <div class="filtro-grupo">
           <div class="filtro-label">Etapa do funil</div>
           <div class="filtro-clientes" id="filtro-clientes-funil"></div>
         </div>
@@ -5651,6 +5654,24 @@ async function carregarCamposClientes() {
 
 let filtroSituacaoAtual = null;
 let filtroFunilAtual = null;
+let buscaClientesAtual = '';
+
+// Remove acento, espaço e pontuação pra buscar "56998438" e achar
+// "56.998.438/..." ou "sao paulo" e achar "São Paulo" - sem exigir que o
+// usuário digite igual ao que está cadastrado.
+function normalizarBusca(valor) {
+  return String(valor ?? '')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '');
+}
+
+function clienteBateBusca(cliente, termo) {
+  if (!termo) return true;
+  const alvo = normalizarBusca(termo);
+  if (normalizarBusca(cliente.nome).includes(alvo)) return true;
+  return Object.values(cliente.dados || {}).some((valor) => normalizarBusca(valor).includes(alvo));
+}
 
 async function carregarClientes() {
   clientesCache = await api('/clientes');
@@ -5698,10 +5719,11 @@ function renderizarFiltroClientes() {
 
 function renderizarGradeClientes() {
   const grade = document.getElementById('grade-clientes');
-  const filtroAtivo = filtroSituacaoAtual || filtroFunilAtual;
+  const filtroAtivo = filtroSituacaoAtual || filtroFunilAtual || buscaClientesAtual;
   const listaFiltrada = clientesCache.filter((cli) =>
     (!filtroSituacaoAtual || cli.dados?.situacao === filtroSituacaoAtual) &&
-    (!filtroFunilAtual || cli.dados?.funil === filtroFunilAtual)
+    (!filtroFunilAtual || cli.dados?.funil === filtroFunilAtual) &&
+    clienteBateBusca(cli, buscaClientesAtual)
   );
 
   grade.innerHTML = listaFiltrada.length
@@ -6111,6 +6133,10 @@ function abrirModalCliente(cliente) {
 }
 
 document.getElementById('btn-novo-cliente').addEventListener('click', () => abrirModalCliente(null));
+document.getElementById('busca-clientes').addEventListener('input', (e) => {
+  buscaClientesAtual = e.target.value;
+  renderizarGradeClientes();
+});
 document.getElementById('btn-fechar-cliente').addEventListener('click', () => {
   document.getElementById('modal-cliente').hidden = true;
 });
