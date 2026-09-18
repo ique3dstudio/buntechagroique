@@ -5,6 +5,7 @@ import { geocodificarEndereco, NOME_ESTADO } from '../services/geocode.js';
 import { gerarOrcamentoPdf, nomeArquivoOrcamento } from '../services/orcamento-pdf.js';
 import { gerarRelatorioVisitaPdf, nomeArquivoRelatorio } from '../services/visita-pdf.js';
 import { extrairTextoDocx } from '../services/docx-texto.js';
+import * as rdStation from '../services/rdstation.js';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024 } });
@@ -642,6 +643,43 @@ router.post('/orcamento/pdf', (req, res) => {
     gerarOrcamentoPdf(dados).pipe(res);
   } catch (err) {
     res.status(500).json({ error: `Não consegui gerar o PDF: ${err.message}` });
+  }
+});
+
+// --- RD Station CRM ---
+
+// Diz se a integração está de pé, sem nunca devolver o token em si.
+router.get('/rdstation/status', async (req, res) => {
+  if (!rdStation.rdStationConfigurado()) {
+    return res.json({ configurado: false, conectado: false, aviso: 'RD_STATION_TOKEN não está configurado no ambiente.' });
+  }
+  try {
+    const conta = await rdStation.verificarToken();
+    res.json({ configurado: true, conectado: true, conta });
+  } catch (erro) {
+    res.json({ configurado: true, conectado: false, aviso: erro.message });
+  }
+});
+
+// Prévia do que existe hoje no RD Station, pra conferir a conexão e ver o
+// volume antes de decidir o que importar.
+router.get('/rdstation/previa', async (req, res) => {
+  try {
+    const [negociacoes, contatos, empresas] = await Promise.all([
+      rdStation.listarNegociacoes(),
+      rdStation.listarContatos(),
+      rdStation.listarEmpresas(),
+    ]);
+    res.json({
+      totais: { negociacoes: negociacoes.length, contatos: contatos.length, empresas: empresas.length },
+      amostra: {
+        negociacoes: negociacoes.slice(0, 5),
+        contatos: contatos.slice(0, 5),
+        empresas: empresas.slice(0, 5),
+      },
+    });
+  } catch (erro) {
+    res.status(502).json({ error: erro.message });
   }
 });
 
