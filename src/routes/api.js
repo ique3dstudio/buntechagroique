@@ -715,6 +715,16 @@ router.get('/rdstation/previa', async (req, res) => {
   }
 });
 
+// Lista todos os usuários do RD Station (pra descobrir o nome exato do responsável).
+router.get('/rdstation/usuarios', async (req, res) => {
+  try {
+    const usuarios = await rdStation.listarUsuarios();
+    res.json(usuarios.map(u => ({ id: u.id, name: u.name })));
+  } catch (erro) {
+    res.status(502).json({ error: erro.message });
+  }
+});
+
 // --- Tarefas (checklist simples do dia, em cima da Agenda) ---
 
 const PRIORIDADES_TAREFA = ['alta', 'media', 'baixa'];
