@@ -625,6 +625,13 @@
   .cliente-card .nome-cliente { font-size: 0.85rem; font-weight: 600; line-height: 1.25; }
 
   .filtro-grupo { margin-bottom: 0.75rem; }
+  .carteira-toolbar { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.25rem; }
+  .carteira-toolbar-botoes { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  .carteira-busca { width: 100%; }
+  @media (min-width: 1025px) {
+    .carteira-toolbar { flex-direction: row; align-items: center; justify-content: space-between; }
+    .carteira-busca { width: 320px; flex: none; }
+  }
   .filtro-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); margin-bottom: 0.35rem; }
   .filtro-clientes { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.35rem; }
   .filtro-pill {
@@ -1882,12 +1889,12 @@
       <section class="card" id="clientes-lista-view">
         <h2><span class="icone-secao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>Carteira</h2>
         <p class="vazio" style="margin: -0.5rem 0 1rem">Clique num cliente pra ver e editar as informações.</p>
-        <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:1.25rem;">
-          <button type="button" id="btn-novo-cliente">Adicionar novo cliente</button>
-          <button type="button" class="secundario" id="btn-novo-campo">+ Adicionar campo</button>
-        </div>
-        <div class="filtro-grupo">
-          <input type="search" id="busca-clientes" placeholder="Buscar por nome, código, razão social, CNPJ..." style="width:100%; max-width:420px;" />
+        <div class="carteira-toolbar">
+          <div class="carteira-toolbar-botoes">
+            <button type="button" id="btn-novo-cliente">Adicionar novo cliente</button>
+            <button type="button" class="secundario" id="btn-novo-campo">+ Adicionar campo</button>
+          </div>
+          <input type="search" id="busca-clientes" class="carteira-busca" placeholder="Buscar por nome, código, razão social, CNPJ..." />
         </div>
         <div class="filtro-grupo">
           <div class="filtro-label">Etapa do funil</div>
@@ -2307,10 +2314,10 @@ function construirIconeCliente(cliente) {
 function mostrarInfoCliente(cliente) {
   document.getElementById('mapa-cliente-nome').textContent = cliente.nome;
   document.getElementById('mapa-cliente-dados').innerHTML = `
-    <div class="stat" style="background:#f3f7f6;border:1px solid var(--border)"><div class="valor" style="color:var(--ink)">${fmtMoeda(cliente.faturamento)}</div><div class="label" style="color:var(--muted)">Faturamento total</div></div>
-    <div class="stat" style="background:#f3f7f6;border:1px solid var(--border)"><div class="valor" style="color:var(--ink);font-size:1rem">${fmtData(cliente.ultimo_pedido)}</div><div class="label" style="color:var(--muted)">Último pedido</div></div>
-    <div class="stat" style="background:#f3f7f6;border:1px solid var(--border)"><div class="valor" style="color:var(--ink);font-size:0.9rem">${cliente.cnpj ?? '—'}</div><div class="label" style="color:var(--muted)">CNPJ</div></div>
-    <div class="stat" style="background:#f3f7f6;border:1px solid var(--border)"><div class="valor" style="color:var(--ink);font-size:0.85rem">${cliente.produtos.length ? cliente.produtos.map(nomeComCodigo).join(', ') : '—'}</div><div class="label" style="color:var(--muted)">Produtos utilizados</div></div>
+    <div class="stat" style="background:#f3f7f6;border:1px solid var(--border)"><div class="valor" style="color:#14232a">${fmtMoeda(cliente.faturamento)}</div><div class="label" style="color:#5b6b76">Faturamento total</div></div>
+    <div class="stat" style="background:#f3f7f6;border:1px solid var(--border)"><div class="valor" style="color:#14232a;font-size:1rem">${fmtData(cliente.ultimo_pedido)}</div><div class="label" style="color:#5b6b76">Último pedido</div></div>
+    <div class="stat" style="background:#f3f7f6;border:1px solid var(--border)"><div class="valor" style="color:#14232a;font-size:0.9rem">${cliente.cnpj ?? '—'}</div><div class="label" style="color:#5b6b76">CNPJ</div></div>
+    <div class="stat" style="background:#f3f7f6;border:1px solid var(--border)"><div class="valor" style="color:#14232a;font-size:0.85rem">${cliente.produtos.length ? cliente.produtos.map(nomeComCodigo).join(', ') : '—'}</div><div class="label" style="color:#5b6b76">Produtos utilizados</div></div>
   `;
   document.getElementById('mapa-cliente-info').hidden = false;
 }
@@ -5666,11 +5673,23 @@ function normalizarBusca(valor) {
     .replace(/[^a-z0-9]/g, '');
 }
 
+function valorBateBusca(valor, alvo) {
+  const valorNorm = normalizarBusca(valor);
+  if (!valorNorm) return false;
+  if (valorNorm.includes(alvo)) return true;
+  // Código com zero à esquerda: busca "006300" deve achar valor guardado como "6300".
+  if (/^\d+$/.test(alvo) && /^\d+$/.test(valorNorm)) {
+    const semZeros = alvo.replace(/^0+(?=\d)/, '');
+    if (semZeros && valorNorm.includes(semZeros)) return true;
+  }
+  return false;
+}
+
 function clienteBateBusca(cliente, termo) {
   if (!termo) return true;
   const alvo = normalizarBusca(termo);
-  if (normalizarBusca(cliente.nome).includes(alvo)) return true;
-  return Object.values(cliente.dados || {}).some((valor) => normalizarBusca(valor).includes(alvo));
+  if (valorBateBusca(cliente.nome, alvo)) return true;
+  return Object.values(cliente.dados || {}).some((valor) => valorBateBusca(valor, alvo));
 }
 
 async function carregarClientes() {
