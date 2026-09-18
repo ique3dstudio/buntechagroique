@@ -78,6 +78,18 @@ function inicioProximoMes(inicioMes) {
   return mes === 12 ? `${ano + 1}-01-01` : `${ano}-${String(mes + 1).padStart(2, '0')}-01`;
 }
 
+// Meses inteiros decorridos desde a data (YYYY-MM-DD) até hoje - usado pra
+// "Meses sem comprar" da Carteira, que precisa aumentar sozinho com o tempo
+// em vez de ficar parado num número digitado uma vez.
+function mesesDesde(dataIso) {
+  const inicio = new Date(`${dataIso}T00:00:00Z`);
+  if (Number.isNaN(inicio.getTime())) return null;
+  const hoje = new Date();
+  let meses = (hoje.getUTCFullYear() - inicio.getUTCFullYear()) * 12 + (hoje.getUTCMonth() - inicio.getUTCMonth());
+  if (hoje.getUTCDate() < inicio.getUTCDate()) meses -= 1;
+  return Math.max(meses, 0);
+}
+
 // --- Empresas ---
 
 router.get('/empresas', async (req, res) => {
@@ -473,7 +485,37 @@ router.post('/campos-clientes', async (req, res) => {
 router.get('/clientes', async (req, res) => {
   const { data, error } = await supabase.from('clientes').select('*').order('nome', { ascending: true });
   if (error) return res.status(500).json({ error: error.message });
-  res.json(data);
+
+  // "Última compra (geral)" e "Meses sem comprar" não ficam mais parados no
+  // que foi digitado uma vez: a data vem do histórico de vendas (quando
+  // existe) e os meses são recalculados a cada carregamento, então o número
+  // sobe sozinho com o tempo em vez de precisar de alguém atualizando.
+  const { data: historico, error: historicoError } = await supabase
+    .from('historico_vendas')
+    .select('cliente_id, ultima_compra')
+    .not('cliente_id', 'is', null)
+    .not('ultima_compra', 'is', null);
+  if (historicoError) return res.status(500).json({ error: historicoError.message });
+
+  const ultimaCompraPorCliente = {};
+  for (const h of historico) {
+    const atual = ultimaCompraPorCliente[h.cliente_id];
+    if (!atual || h.ultima_compra > atual) ultimaCompraPorCliente[h.cliente_id] = h.ultima_compra;
+  }
+
+  const clientes = data.map((cliente) => {
+    const dados = { ...(cliente.dados || {}) };
+    const ultimaCompra = ultimaCompraPorCliente[cliente.id] ?? dados.ultima_compra_geral ?? null;
+    if (ultimaCompra) {
+      dados.ultima_compra_geral = ultimaCompra;
+      dados.meses_sem_comprar = mesesDesde(ultimaCompra);
+    } else {
+      delete dados.meses_sem_comprar;
+    }
+    return { ...cliente, dados };
+  });
+
+  res.json(clientes);
 });
 
 router.post('/clientes', async (req, res) => {

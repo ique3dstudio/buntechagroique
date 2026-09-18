@@ -5618,6 +5618,7 @@ function formatarCidade(valor) {
 
 function valorCampoParaExibicao(campo, valor) {
   if (valor == null || valor === '') return '—';
+  if (campo.chave === 'meses_sem_comprar') return Number(valor) === 1 ? '1 mês' : `${Number(valor)} meses`;
   if (campo.tipo === 'numero') return Number(valor).toLocaleString('pt-BR');
   if (campo.tipo === 'data') {
     const data = new Date(valor + 'T00:00:00');
@@ -5799,16 +5800,17 @@ function renderizarFotoDetalhe(cliente) {
   }
 }
 
-function campoLinhaHtml(rotulo, chave, valorExibicao, tipo, opcoes, valorBruto) {
+function campoLinhaHtml(rotulo, chave, valorExibicao, tipo, opcoes, valorBruto, somenteLeitura) {
   return `
     <div class="campo-linha" data-chave="${chave}" data-tipo="${tipo}" data-opcoes='${escaparAtributo(JSON.stringify(opcoes || []))}'>
       <div class="campo-conteudo">
         <div class="campo-label">${rotulo}</div>
         <div class="campo-valor">${valorExibicao}</div>
       </div>
+      ${somenteLeitura ? '' : `
       <button type="button" class="btn-lapis" data-editar="${chave}" data-valor="${escaparAtributo(valorBruto)}" title="Editar">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
-      </button>
+      </button>`}
     </div>
   `;
 }
@@ -5851,7 +5853,8 @@ function abrirDetalheCliente(id) {
         return [];
       }
       const valor = cliente.dados?.[c.chave];
-      return [campoLinhaHtml(c.rotulo, c.chave, valorCampoParaExibicao(c, valor), c.tipo, c.opcoes, valor ?? '')];
+      const somenteLeitura = c.chave === 'meses_sem_comprar';
+      return [campoLinhaHtml(c.rotulo, c.chave, valorCampoParaExibicao(c, valor), c.tipo, c.opcoes, valor ?? '', somenteLeitura)];
     }),
   ];
   document.getElementById('detalhe-campos').innerHTML = linhas.join('');
