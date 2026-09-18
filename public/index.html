@@ -650,7 +650,22 @@
   .tarefas-form { display: flex; gap: 0.5rem; margin-bottom: 0.9rem; flex-wrap: wrap; }
   .tarefas-form input { flex: 1; min-width: 170px; }
   .tarefas-form select { flex: 0 1 auto; width: auto; }
-  .tarefas-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; }
+  /* A lista não cresce sem fim: passa de ~6 tarefas, rola dentro da caixa. */
+  .tarefas-lista {
+    list-style: none; margin: 0; padding: 0 0.3rem 0 0;
+    display: flex; flex-direction: column; gap: 0.4rem;
+    max-height: 310px; overflow-y: auto;
+  }
+  .tarefas-lista-historico { max-height: 46vh; }
+  .btn-historico {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    margin-left: auto; padding: 0.4rem 0.85rem; font-size: 0.78rem;
+  }
+  .btn-historico svg { width: 15px; height: 15px; color: currentColor; }
+  .tarefas-filtros { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.7rem; }
+  .tarefas-filtros-rotulo { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+  .tarefas-filtros select { font-size: 0.78rem; padding: 0.3rem 0.5rem; max-width: 190px; }
+  .tarefas-contagem { margin-left: auto; font-size: 0.75rem; color: var(--muted); }
   .tarefa-item { display: flex; align-items: center; gap: 0.6rem; background: var(--card-2); border-radius: 10px; padding: 0.55rem 0.7rem; }
   .tarefa-item input[type="checkbox"] { width: 18px; height: 18px; flex-shrink: 0; cursor: pointer; }
   td.celula-edit { cursor: text; }
@@ -1519,6 +1534,27 @@
     </div>
   </div>
 
+  <div class="modal-overlay" id="modal-historico-tarefas" hidden>
+    <div class="modal-card" style="max-width: 640px;">
+      <div class="modal-header">
+        <h3>Histórico de tarefas</h3>
+        <button class="fechar-modal" id="btn-fechar-historico" type="button" aria-label="Fechar">&times;</button>
+      </div>
+      <p class="vazio" style="margin: 0 0 0.75rem">Tarefas concluídas. Desmarque pra devolver à lista do dia, ou exclua de vez.</p>
+      <div class="tarefas-filtros">
+        <span class="tarefas-filtros-rotulo">Filtrar</span>
+        <select id="filtro-prioridade-historico" title="Filtrar por prioridade">
+          <option value="">Toda prioridade</option>
+          <option value="alta">🔥 Alta</option>
+          <option value="media">💧 Média</option>
+          <option value="baixa">❄️ Baixa</option>
+        </select>
+        <select id="filtro-cliente-historico" title="Filtrar por cliente"></select>
+      </div>
+      <ul class="tarefas-lista tarefas-lista-historico" id="lista-historico-tarefas"></ul>
+    </div>
+  </div>
+
   <div class="modal-overlay" id="modal-novo-item" hidden>
     <div class="modal-card" style="max-width: 420px;">
       <div class="modal-header">
@@ -1691,7 +1727,12 @@
     <!-- ===== ABA AGENDA ===== -->
     <div class="painel" id="painel-agenda" hidden>
       <section class="card">
-        <h2><span class="icone-secao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="m8 15 2 2 4-4"/><path d="M8 2v4M16 2v4M3 10h18"/></svg></span>Tarefas do dia</h2>
+        <h2><span class="icone-secao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="m8 15 2 2 4-4"/><path d="M8 2v4M16 2v4M3 10h18"/></svg></span>Tarefas do dia
+          <button type="button" class="secundario btn-historico" id="btn-historico-tarefas">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg>
+            Histórico <span id="contagem-historico"></span>
+          </button>
+        </h2>
         <form id="form-tarefa" class="tarefas-form">
           <input type="text" id="input-nova-tarefa" placeholder="Adicionar tarefa…" required />
           <select id="select-prioridade-tarefa" title="Prioridade">
@@ -1702,6 +1743,17 @@
           <select id="select-cliente-tarefa" title="Cliente"></select>
           <button type="submit">Adicionar</button>
         </form>
+        <div class="tarefas-filtros">
+          <span class="tarefas-filtros-rotulo">Filtrar</span>
+          <select id="filtro-prioridade-tarefa" title="Filtrar por prioridade">
+            <option value="">Toda prioridade</option>
+            <option value="alta">🔥 Alta</option>
+            <option value="media">💧 Média</option>
+            <option value="baixa">❄️ Baixa</option>
+          </select>
+          <select id="filtro-cliente-tarefa" title="Filtrar por cliente"></select>
+          <span class="tarefas-contagem" id="tarefas-contagem"></span>
+        </div>
         <ul class="tarefas-lista" id="lista-tarefas"></ul>
       </section>
 
@@ -2624,11 +2676,40 @@ async function fecharEdicaoTarefa(input, salvar) {
   else renderizarTarefas();
 }
 
-function tarefasOrdenadas() {
-  return [...tarefasCache].sort((a, b) =>
-    PRIORIDADES_TAREFA.indexOf(prioridadeDaTarefa(a)) - PRIORIDADES_TAREFA.indexOf(prioridadeDaTarefa(b))
-    || String(a.created_at || '').localeCompare(String(b.created_at || ''))
-  );
+// Tarefa concluída sai da lista do dia e passa a viver no histórico - senão a
+// lista só cresce. Os filtros valem pros dois lados.
+function tarefasOrdenadas(concluidas, filtros) {
+  return tarefasCache
+    .filter((t) => !!t.concluida === concluidas)
+    .filter((t) => !filtros.prioridade || prioridadeDaTarefa(t) === filtros.prioridade)
+    .filter((t) => !filtros.cliente || t.cliente_id === filtros.cliente)
+    .sort((a, b) =>
+      PRIORIDADES_TAREFA.indexOf(prioridadeDaTarefa(a)) - PRIORIDADES_TAREFA.indexOf(prioridadeDaTarefa(b))
+      || String(a.created_at || '').localeCompare(String(b.created_at || ''))
+    );
+}
+
+function filtrosDe(sufixo) {
+  return {
+    prioridade: document.getElementById(`filtro-prioridade-${sufixo}`).value,
+    cliente: document.getElementById(`filtro-cliente-${sufixo}`).value,
+  };
+}
+
+// Só entram no filtro de cliente os que realmente aparecem em alguma tarefa -
+// a carteira inteira num select de filtro não ajuda ninguém.
+function preencherFiltrosCliente() {
+  const idsUsados = new Set(tarefasCache.map((t) => t.cliente_id).filter(Boolean));
+  const opcoes = '<option value="">Todo cliente</option>' + clientesCache
+    .filter((c) => idsUsados.has(c.id))
+    .map((c) => `<option value="${c.id}">${escaparAtributo(c.nome)}</option>`)
+    .join('');
+  for (const id of ['filtro-cliente-tarefa', 'filtro-cliente-historico']) {
+    const select = document.getElementById(id);
+    const anterior = select.value;
+    select.innerHTML = opcoes;
+    if (anterior && select.querySelector(`option[value="${anterior}"]`)) select.value = anterior;
+  }
 }
 
 function opcoesClienteTarefa(selecionadoId) {
@@ -2649,9 +2730,22 @@ async function carregarTarefas() {
 }
 
 function renderizarTarefas() {
-  const lista = document.getElementById('lista-tarefas');
-  lista.innerHTML = tarefasCache.length
-    ? tarefasOrdenadas().map((t) => {
+  preencherFiltrosCliente();
+  renderizarListaTarefas('lista-tarefas', tarefasOrdenadas(false, filtrosDe('tarefa')));
+  renderizarListaTarefas('lista-historico-tarefas', tarefasOrdenadas(true, filtrosDe('historico')));
+
+  const abertas = tarefasCache.filter((t) => !t.concluida).length;
+  const feitas = tarefasCache.length - abertas;
+  document.getElementById('tarefas-contagem').textContent =
+    abertas ? `${abertas} ${abertas === 1 ? 'tarefa aberta' : 'tarefas abertas'}` : '';
+  document.getElementById('contagem-historico').textContent = feitas ? `(${feitas})` : '';
+}
+
+function renderizarListaTarefas(idLista, itens) {
+  const lista = document.getElementById(idLista);
+  const historico = idLista === 'lista-historico-tarefas';
+  lista.innerHTML = itens.length
+    ? itens.map((t) => {
       const prioridade = prioridadeDaTarefa(t);
       return `
       <li class="tarefa-item${t.concluida ? ' concluida' : ''}">
@@ -2670,7 +2764,9 @@ function renderizarTarefas() {
       </li>
     `;
     }).join('')
-    : '<p class="vazio">Nenhuma tarefa por aqui ainda.</p>';
+    : `<p class="vazio">${historico
+        ? 'Nenhuma tarefa concluída por aqui.'
+        : 'Nenhuma tarefa por aqui ainda.'}</p>`;
 
   lista.querySelectorAll('[data-abrir-edicao]').forEach((span) => {
     span.addEventListener('click', () => {
@@ -2722,6 +2818,20 @@ function renderizarTarefas() {
     });
   });
 }
+
+['filtro-prioridade-tarefa', 'filtro-cliente-tarefa', 'filtro-prioridade-historico', 'filtro-cliente-historico']
+  .forEach((id) => document.getElementById(id).addEventListener('change', renderizarTarefas));
+
+document.getElementById('btn-historico-tarefas').addEventListener('click', () => {
+  renderizarTarefas();
+  document.getElementById('modal-historico-tarefas').hidden = false;
+});
+document.getElementById('btn-fechar-historico').addEventListener('click', () => {
+  document.getElementById('modal-historico-tarefas').hidden = true;
+});
+document.getElementById('modal-historico-tarefas').addEventListener('click', (e) => {
+  if (e.target.id === 'modal-historico-tarefas') e.target.hidden = true;
+});
 
 async function salvarTarefa(id, mudanca) {
   try {
