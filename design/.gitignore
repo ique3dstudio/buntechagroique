@@ -1,1 +1,4 @@
+# Capturas geradas por design/screenshot.cjs e screenshot-mobile.cjs.
+# São artefato de comparação visual, refeitas a cada rodada.
 atual-*.png
+mobile-*.png
