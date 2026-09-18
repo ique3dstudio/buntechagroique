@@ -1832,9 +1832,6 @@
         <a href="#rd-negociacoes">Negociações</a>
         <a href="#rd-contatos">Contatos</a>
         <a href="#rd-empresas">Empresas</a>
-        <a href="#empresas">Empresas (app)</a>
-        <a href="#contatos">Contatos (app)</a>
-        <a href="#produtos">Produtos</a>
       </nav>
 
       <section class="card" id="rd-status-card">
@@ -1873,85 +1870,6 @@
           <table>
             <thead><tr><th>Nome</th><th>Segmento</th><th>Cidade</th><th>Telefone</th><th>Site</th></tr></thead>
             <tbody id="rd-tabela-empresas"></tbody>
-          </table>
-        </div>
-      </section>
-
-
-      <section class="card" id="empresas">
-        <h2><span class="icone-secao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h1M14 9h1M9 13h1M14 13h1M9 17h1M14 17h1"/></svg></span>Empresas</h2>
-        <form id="form-empresa">
-          <div class="form-grid">
-            <div class="field"><label>Nome da empresa</label><input name="nome" placeholder="Ex: Fazenda Boa Vista" required /></div>
-            <div class="field"><label>Segmento</label><input name="segmento" placeholder="Ex: Grãos" /></div>
-            <div class="field"><label>Site</label><input name="site" placeholder="www.exemplo.com" /></div>
-            <div class="field"><label>Telefone</label><input name="telefone" placeholder="(00) 00000-0000" /></div>
-            <div class="field"><label>Cidade</label><input name="cidade" placeholder="Cidade / UF" /></div>
-            <div class="field"><label>CNPJ</label><input name="cnpj" placeholder="00.000.000/0000-00" /></div>
-            <div class="field" style="grid-column: 1 / -1"><label>Endereço (para o mapa)</label><input name="endereco" placeholder="Rua, número, bairro" /></div>
-            <button type="submit">Adicionar empresa</button>
-          </div>
-        </form>
-        <div class="tabela-wrap">
-          <table>
-            <thead><tr><th>Nome</th><th>Segmento</th><th>Cidade</th><th>Telefone</th><th>Site</th><th>CNPJ</th><th>Endereço</th><th></th></tr></thead>
-            <tbody id="tabela-empresas"></tbody>
-          </table>
-        </div>
-      </section>
-
-      <section class="card" id="contatos">
-        <h2><span class="icone-secao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg></span>Contatos</h2>
-        <form id="form-contato">
-          <div class="form-grid">
-            <div class="field"><label>Nome</label><input name="nome" placeholder="Nome completo" required /></div>
-            <div class="field"><label>Empresa</label><select name="empresa_id" id="select-empresa-contato"><option value="">Sem empresa</option></select></div>
-            <div class="field"><label>Cargo</label><input name="cargo" placeholder="Ex: Comprador" /></div>
-            <div class="field"><label>Telefone</label><input name="telefone" placeholder="(00) 00000-0000" /></div>
-            <div class="field"><label>E-mail</label><input name="email" placeholder="nome@empresa.com" type="email" /></div>
-            <div class="field"><label>Origem</label>
-              <select name="origem">
-                <option value="">Selecionar</option>
-                <option value="indicacao">Indicação</option>
-                <option value="site">Site</option>
-                <option value="evento">Evento</option>
-                <option value="ligacao_fria">Ligação fria</option>
-                <option value="outro">Outro</option>
-              </select>
-            </div>
-            <div class="field"><label>Status</label>
-              <select name="status">
-                <option value="desenvolvimento">Em desenvolvimento</option>
-                <option value="ativo">Ativo</option>
-                <option value="convertido">Convertido</option>
-                <option value="inativo">Inativo</option>
-              </select>
-            </div>
-            <button type="submit">Adicionar contato</button>
-          </div>
-        </form>
-        <div class="tabela-wrap">
-          <table>
-            <thead><tr><th>Nome</th><th>Empresa</th><th>Cargo</th><th>Telefone</th><th>E-mail</th><th>Origem</th><th>Status</th><th></th></tr></thead>
-            <tbody id="tabela-contatos"></tbody>
-          </table>
-        </div>
-      </section>
-
-      <section class="card" id="produtos">
-        <h2><span class="icone-secao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg></span>Produtos</h2>
-        <form id="form-produto">
-          <div class="form-grid">
-            <div class="field"><label>Código</label><input name="codigo" placeholder="Ex: PAN01187" /></div>
-            <div class="field"><label>Nome do produto</label><input name="nome" placeholder="Ex: Fertilizante NPK" required /></div>
-            <div class="field"><label>Preço (R$)</label><input name="preco" placeholder="0,00" type="number" step="0.01" min="0" /></div>
-            <button type="submit">Adicionar produto</button>
-          </div>
-        </form>
-        <div class="tabela-wrap">
-          <table>
-            <thead><tr><th>Código</th><th>Nome</th><th>Preço</th><th></th></tr></thead>
-            <tbody id="tabela-produtos"></tbody>
           </table>
         </div>
       </section>
@@ -5388,8 +5306,6 @@ function ligarTabelaEditavel(tbody, rota, recarregar) {
   });
 }
 
-let empresasCache = [];
-
 let rdCarregado = false;
 
 // --- RD Station CRM (somente leitura) ---
@@ -5477,77 +5393,17 @@ async function carregarRdStation() {
 
 document.getElementById('btn-sincronizar-rd').addEventListener('click', carregarRdStation);
 
-async function carregarEmpresas() {
-  const empresas = await api('/empresas');
-  empresasCache = empresas;
-  const tbody = document.getElementById('tabela-empresas');
-  tbody.innerHTML = empresas.length
-    ? empresas.map((e) => `<tr>
-        ${celulaTexto(e.nome, { id: e.id, campo: 'nome', obrigatorio: true })}
-        ${celulaTexto(e.segmento, { id: e.id, campo: 'segmento' })}
-        ${celulaTexto(e.cidade, { id: e.id, campo: 'cidade' })}
-        ${celulaTexto(e.telefone, { id: e.id, campo: 'telefone' })}
-        ${celulaTexto(e.site, { id: e.id, campo: 'site' })}
-        ${celulaTexto(e.cnpj, { id: e.id, campo: 'cnpj' })}
-        ${celulaTexto(e.endereco, { id: e.id, campo: 'endereco' })}
-        ${celulaExcluir(e.id)}
-      </tr>`).join('')
-    : '<tr><td class="vazio" colspan="8">Nenhuma empresa ainda.</td></tr>';
-  ligarTabelaEditavel(tbody, '/empresas', () => Promise.all([carregarEmpresas(), carregarContatos()]));
-
-  document.getElementById('select-empresa-contato').innerHTML =
-    '<option value="">Sem empresa</option>' + empresas.map((e) => `<option value="${e.id}">${escaparAtributo(e.nome)}</option>`).join('');
-}
-
+// Produtos (com código PAN) continuam salvos no banco e alimentam o
+// seletor de Negociações e o Orçamento, mesmo sem tela própria de gestão
+// na aba CRM - essa passou a mostrar só o que vem do RD Station.
 async function carregarProdutos() {
   const produtos = await api('/produtos');
   produtosCache = produtos;
-  const tbody = document.getElementById('tabela-produtos');
-  tbody.innerHTML = produtos.length
-    ? produtos.map((p) => {
-        const { codigo: codigoEmbutido, nomeLimpo } = extrairCodigoEmbutido(p.nome || '');
-        return `<tr>
-          ${celulaTexto(p.codigo || codigoEmbutido, { id: p.id, campo: 'codigo' })}
-          ${celulaTexto(p.nome, { id: p.id, campo: 'nome', exibicao: escaparAtributo(nomeLimpo), obrigatorio: true })}
-          ${celulaTexto(p.preco, { id: p.id, campo: 'preco', tipo: 'number', exibicao: fmtMoeda(p.preco) })}
-          ${celulaExcluir(p.id)}
-        </tr>`;
-      }).join('')
-    : '<tr><td class="vazio" colspan="4">Nenhum produto ainda.</td></tr>';
-  ligarTabelaEditavel(tbody, '/produtos', carregarProdutos);
 
   document.getElementById('select-produto-negociacao').innerHTML =
     '<option value="">Sem produto</option>' + produtos.map((p) => `<option value="${p.id}">${nomeComCodigo(p.nome)}</option>`).join('');
 
   renderizarProdutoPedido();
-}
-
-async function carregarContatos() {
-  const contatos = await api('/contatos');
-  const tbody = document.getElementById('tabela-contatos');
-  tbody.innerHTML = contatos.length
-    ? contatos.map((c) => `
-        <tr>
-          ${celulaTexto(c.nome, { id: c.id, campo: 'nome', obrigatorio: true })}
-          ${celulaSelect(c.empresa_id, {
-            id: c.id, campo: 'empresa_id', vazio: 'Sem empresa',
-            opcoes: empresasCache.map((e) => ({ valor: e.id, rotulo: e.nome })),
-          })}
-          ${celulaTexto(c.cargo, { id: c.id, campo: 'cargo' })}
-          ${celulaTexto(c.telefone, {
-            id: c.id, campo: 'telefone',
-            exibicao: c.telefone
-              ? `<a class="tel-whatsapp" href="${escaparAtributo(linkWhatsapp(c.telefone))}" target="_blank" rel="noopener">${escaparAtributo(c.telefone)}${ICONE_WHATSAPP}</a>`
-              : '—',
-          })}
-          ${celulaTexto(c.email, { id: c.id, campo: 'email' })}
-          ${celulaSelect(c.origem, { id: c.id, campo: 'origem', vazio: 'Selecionar', opcoes: OPCOES_ORIGEM_CONTATO })}
-          ${celulaSelect(c.status, { id: c.id, campo: 'status', opcoes: OPCOES_STATUS_CONTATO })}
-          ${celulaExcluir(c.id)}
-        </tr>
-      `).join('')
-    : '<tr><td class="vazio" colspan="8">Nenhum contato ainda.</td></tr>';
-  ligarTabelaEditavel(tbody, '/contatos', carregarContatos);
 }
 
 function opcoesFase(etapaAtual) {
@@ -6448,9 +6304,6 @@ function formHandler(formId, path, aoTerminar) {
   });
 }
 
-formHandler('form-empresa', '/empresas', carregarEmpresas);
-formHandler('form-produto', '/produtos', carregarProdutos);
-formHandler('form-contato', '/contatos', () => Promise.all([carregarContatos(), carregarResumo()]));
 formHandler('form-negociacao', '/negociacoes', () => Promise.all([carregarNegociacoes(), carregarResumo()]));
 // Formulário próprio (em vez de formHandler): tem um campo de arquivo, que
 // não dá pra mandar dentro do JSON da visita - primeiro cria a visita,
@@ -6520,8 +6373,8 @@ document.getElementById('btn-editar-meta-mini').addEventListener('click', async 
   carregarConfig();
   await carregarVendedores();
   document.getElementById('input-data-previsao').value = dataISOHoje();
-  await Promise.all([carregarEmpresas(), carregarProdutos(), carregarCamposClientes()]);
-  await Promise.all([carregarContatos(), carregarClientes()]);
+  await Promise.all([carregarProdutos(), carregarCamposClientes()]);
+  await carregarClientes();
   await Promise.all([carregarResumo(), carregarVisitas(), carregarNegociacoes(), carregarPrevisoesPedido(), carregarRdv(), carregarAgenda(), carregarPedidos(), carregarTarefas()]);
   sincronizarNavInferior('inicio');
   iniciarOrcamento();
