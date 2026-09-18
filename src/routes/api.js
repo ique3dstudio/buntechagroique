@@ -661,6 +661,38 @@ router.get('/rdstation/status', async (req, res) => {
   }
 });
 
+// Tudo que é do responsável configurado no RD Station, que é o que a aba CRM
+// do app mostra. Só leitura: nada daqui escreve no RD.
+router.get('/rdstation/crm', async (req, res) => {
+  const nomeResponsavel = req.query.responsavel || process.env.RD_STATION_RESPONSAVEL || 'Gustavo Ique';
+  try {
+    const responsavel = await rdStation.acharResponsavel(nomeResponsavel);
+    if (!responsavel) {
+      return res.status(404).json({
+        error: `Não achei o usuário "${nomeResponsavel}" no RD Station. Confira o nome em RD_STATION_RESPONSAVEL.`,
+      });
+    }
+
+    const [negociacoes, contatos, empresas, tarefas] = await Promise.all([
+      rdStation.listarNegociacoes(),
+      rdStation.listarContatos(),
+      rdStation.listarEmpresas(),
+      rdStation.listarTarefas().catch(() => []),
+    ]);
+
+    const meus = (lista) => lista.filter((r) => rdStation.ehDoResponsavel(r, responsavel));
+    res.json({
+      responsavel: { id: responsavel.id, nome: responsavel.name },
+      negociacoes: meus(negociacoes),
+      contatos: meus(contatos),
+      empresas: meus(empresas),
+      tarefas: meus(tarefas),
+    });
+  } catch (erro) {
+    res.status(502).json({ error: erro.message });
+  }
+});
+
 // Prévia do que existe hoje no RD Station, pra conferir a conexão e ver o
 // volume antes de decidir o que importar.
 router.get('/rdstation/previa', async (req, res) => {

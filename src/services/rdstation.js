@@ -100,6 +100,52 @@ async function listarTudo(caminho, chave, params = {}, limitePaginas = 20) {
 export const listarNegociacoes = (params) => listarTudo('/deals', 'deals', params);
 export const listarContatos = (params) => listarTudo('/contacts', 'contacts', params);
 export const listarEmpresas = (params) => listarTudo('/organizations', 'organizations', params);
+export const listarUsuarios = (params) => listarTudo('/users', 'users', params);
+export const listarTarefas = (params) => listarTudo('/tasks', 'tasks', params);
+
+// O responsável vem em formatos diferentes conforme o recurso: às vezes um
+// objeto `user`, às vezes só `user_id`, às vezes uma lista de `deal_users`.
+// Filtrar em memória evita depender do nome exato do parâmetro de cada
+// endpoint, que a documentação não garante ser o mesmo em todos.
+function idsDoResponsavel(registro) {
+  const ids = [];
+  if (registro?.user?.id) ids.push(registro.user.id);
+  if (registro?.user_id) ids.push(registro.user_id);
+  if (Array.isArray(registro?.deal_users)) {
+    for (const du of registro.deal_users) {
+      if (du?.user?.id) ids.push(du.user.id);
+      if (du?.user_id) ids.push(du.user_id);
+    }
+  }
+  return ids.map(String);
+}
+
+function nomesDoResponsavel(registro) {
+  const nomes = [registro?.user?.name, registro?.user?.nome].filter(Boolean);
+  if (Array.isArray(registro?.deal_users)) {
+    for (const du of registro.deal_users) if (du?.user?.name) nomes.push(du.user.name);
+  }
+  return nomes.map((n) => String(n).trim().toLowerCase());
+}
+
+export function ehDoResponsavel(registro, responsavel) {
+  if (!responsavel) return true;
+  const alvoId = responsavel.id ? String(responsavel.id) : null;
+  const alvoNome = String(responsavel.name || '').trim().toLowerCase();
+  if (alvoId && idsDoResponsavel(registro).includes(alvoId)) return true;
+  return !!alvoNome && nomesDoResponsavel(registro).includes(alvoNome);
+}
+
+// Acha o usuário do RD pelo nome configurado. Sem correspondência, devolve
+// null e quem chamou decide - trazer tudo seria pior do que avisar.
+export async function acharResponsavel(nome) {
+  const alvo = String(nome || '').trim().toLowerCase();
+  if (!alvo) return null;
+  const usuarios = await listarUsuarios();
+  return usuarios.find((u) => String(u.name || '').trim().toLowerCase() === alvo)
+    || usuarios.find((u) => String(u.name || '').trim().toLowerCase().includes(alvo))
+    || null;
+}
 
 // --- Escrita ---
 

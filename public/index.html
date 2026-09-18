@@ -665,6 +665,7 @@
   .tarefas-filtros { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.7rem; }
   .tarefas-filtros-rotulo { font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
   .tarefas-filtros select { font-size: 0.78rem; padding: 0.3rem 0.5rem; max-width: 190px; }
+  .rd-contagem { font-size: 0.8rem; font-weight: 600; color: var(--muted); }
   .tarefas-contagem { margin-left: auto; font-size: 0.75rem; color: var(--muted); }
   .tarefa-item { display: flex; align-items: center; gap: 0.6rem; background: var(--card-2); border-radius: 10px; padding: 0.55rem 0.7rem; }
   .tarefa-item input[type="checkbox"] { width: 18px; height: 18px; flex-shrink: 0; cursor: pointer; }
@@ -1378,6 +1379,7 @@
         <button class="ativa" data-aba="inicio"><span class="icone-aba"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10"/></svg></span><span class="rotulo-aba">Início</span></button>
         <button data-aba="agenda"><span class="icone-aba"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg></span><span class="rotulo-aba">Agenda</span></button>
         <button data-aba="crm"><span class="icone-aba"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></span><span class="rotulo-aba">CRM</span></button>
+        <button data-aba="visitas"><span class="icone-aba"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.1 7-11a7 7 0 0 0-14 0c0 4.9 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg></span><span class="rotulo-aba">Visitas</span></button>
         <button data-aba="clientes"><span class="icone-aba"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="rotulo-aba">Carteira</span></button>
         <button data-aba="negociacoes"><span class="icone-aba"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17 9 11 13 15 21 7"/><path d="M15 7h6v6"/></svg></span><span class="rotulo-aba">Negociações</span></button>
         <button data-aba="mapa"><span class="icone-aba"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 20 3 17V4l6 3m0 13 6-3m-6 3V7m6 10 6 3V7l-6-3m0 13V4m0 3L9 4"/></svg></span><span class="rotulo-aba">Mapa</span></button>
@@ -1788,14 +1790,8 @@
     </div>
 
     <!-- ===== ABA CRM ===== -->
-    <div class="painel" id="painel-crm" hidden>
-      <nav class="secoes">
-        <a href="#visitas">Visitas</a>
-        <a href="#empresas">Empresas</a>
-        <a href="#contatos">Contatos</a>
-        <a href="#produtos">Produtos</a>
-      </nav>
-
+    <!-- ===== ABA VISITAS ===== -->
+    <div class="painel" id="painel-visitas" hidden>
       <section class="card" id="visitas">
         <h2><span class="icone-secao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.1 7-11a7 7 0 0 0-14 0c0 4.9 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg></span>Registrar visita</h2>
         <form id="form-visita">
@@ -1829,6 +1825,58 @@
         </div>
         <input type="file" id="input-anexo-visita" accept=".pdf,.doc,.docx,image/*" hidden />
       </section>
+    </div>
+
+    <div class="painel" id="painel-crm" hidden>
+      <nav class="secoes">
+        <a href="#rd-negociacoes">Negociações</a>
+        <a href="#rd-contatos">Contatos</a>
+        <a href="#rd-empresas">Empresas</a>
+        <a href="#empresas">Empresas (app)</a>
+        <a href="#contatos">Contatos (app)</a>
+        <a href="#produtos">Produtos</a>
+      </nav>
+
+      <section class="card" id="rd-status-card">
+        <h2><span class="icone-secao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 1 0 10 10"/><path d="M12 2a10 10 0 0 1 10 10h-10Z"/></svg></span>RD Station CRM
+          <button type="button" class="secundario btn-historico" id="btn-sincronizar-rd">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15.3-6.4L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15.3 6.4L3 16"/><path d="M3 21v-5h5"/></svg>
+            Atualizar
+          </button>
+        </h2>
+        <p class="vazio" id="rd-status">Carregando dados do RD Station…</p>
+      </section>
+
+      <section class="card" id="rd-negociacoes">
+        <h2><span class="icone-secao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17 9 11 13 15 21 7"/><path d="M15 7h6v6"/></svg></span>Negociações <span class="rd-contagem" id="rd-contagem-negociacoes"></span></h2>
+        <div class="tabela-wrap">
+          <table>
+            <thead><tr><th>Negociação</th><th>Empresa</th><th>Fase</th><th>Valor</th><th>Criada em</th></tr></thead>
+            <tbody id="rd-tabela-negociacoes"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card" id="rd-contatos">
+        <h2><span class="icone-secao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg></span>Contatos <span class="rd-contagem" id="rd-contagem-contatos"></span></h2>
+        <div class="tabela-wrap">
+          <table>
+            <thead><tr><th>Nome</th><th>Empresa</th><th>Telefone</th><th>E-mail</th><th>Cargo</th></tr></thead>
+            <tbody id="rd-tabela-contatos"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card" id="rd-empresas">
+        <h2><span class="icone-secao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h1M14 9h1M9 13h1M14 13h1"/></svg></span>Empresas <span class="rd-contagem" id="rd-contagem-empresas"></span></h2>
+        <div class="tabela-wrap">
+          <table>
+            <thead><tr><th>Nome</th><th>Segmento</th><th>Cidade</th><th>Telefone</th><th>Site</th></tr></thead>
+            <tbody id="rd-tabela-empresas"></tbody>
+          </table>
+        </div>
+      </section>
+
 
       <section class="card" id="empresas">
         <h2><span class="icone-secao"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h1M14 9h1M9 13h1M14 13h1M9 17h1M14 17h1"/></svg></span>Empresas</h2>
@@ -4165,7 +4213,8 @@ function renderizarTopbarUsuario() {
 const TITULOS_ABA = {
   inicio: ['Início', 'Aqui está o resumo das suas vendas e atividades.'],
   agenda: ['Agenda', 'Tarefas do dia e seus compromissos.'],
-  crm: ['CRM', 'Gerencie clientes, empresas, contatos e produtos.'],
+  crm: ['CRM', 'Negociações, contatos e empresas do RD Station.'],
+  visitas: ['Visitas', 'Registre a visita e gere o relatório.'],
   clientes: ['Carteira', 'Seus clientes e as informações de cada ficha.'],
   negociacoes: ['Negociações', 'Acompanhe as fases e a previsão de pedidos.'],
   mapa: ['Mapa', 'Localize clientes e monte a rota do dia.'],
@@ -4596,6 +4645,7 @@ document.querySelectorAll('nav.abas button').forEach((btn) => {
     document.getElementById('painel-inicio').hidden = btn.dataset.aba !== 'inicio';
     document.getElementById('painel-agenda').hidden = btn.dataset.aba !== 'agenda';
     document.getElementById('painel-crm').hidden = btn.dataset.aba !== 'crm';
+    document.getElementById('painel-visitas').hidden = btn.dataset.aba !== 'visitas';
     document.getElementById('painel-clientes').hidden = btn.dataset.aba !== 'clientes';
     document.getElementById('painel-negociacoes').hidden = btn.dataset.aba !== 'negociacoes';
     document.getElementById('painel-mapa').hidden = btn.dataset.aba !== 'mapa';
@@ -4610,6 +4660,8 @@ document.querySelectorAll('nav.abas button').forEach((btn) => {
     }
     if (btn.dataset.aba === 'inicio') { window.scrollTo(0, 0); ajustarAlturaInicio(); }
     if (btn.dataset.aba === 'agenda') posicionarScrollGrade();
+    // O RD é uma API externa e lenta: carrega ao abrir a aba, uma vez.
+    if (btn.dataset.aba === 'crm' && !rdCarregado) { rdCarregado = true; carregarRdStation(); }
     if (btn.dataset.aba === 'orcamento') { preencherClientesOrcamento(); atualizarPreviewOrcamento(); }
   });
 });
@@ -5337,6 +5389,93 @@ function ligarTabelaEditavel(tbody, rota, recarregar) {
 }
 
 let empresasCache = [];
+
+let rdCarregado = false;
+
+// --- RD Station CRM (somente leitura) ---
+// Os campos do RD variam de nome conforme o plano e os campos customizados
+// da conta, então cada leitura tenta as variações mais comuns em vez de
+// fixar uma só e mostrar tudo vazio.
+
+function rdValor(obj, ...caminhos) {
+  for (const caminho of caminhos) {
+    const valor = caminho.split('.').reduce((o, k) => (o == null ? o : o[k]), obj);
+    if (valor !== undefined && valor !== null && valor !== '') return valor;
+  }
+  return null;
+}
+
+function rdTexto(obj, ...caminhos) {
+  const v = rdValor(obj, ...caminhos);
+  return v == null ? '—' : escaparAtributo(String(v));
+}
+
+function rdData(obj, ...caminhos) {
+  const v = rdValor(obj, ...caminhos);
+  if (!v) return '—';
+  const d = new Date(v);
+  return Number.isNaN(d.getTime()) ? '—' : d.toLocaleDateString('pt-BR');
+}
+
+async function carregarRdStation() {
+  const status = document.getElementById('rd-status');
+  const vazio = (id, colunas, texto) => {
+    document.getElementById(id).innerHTML = `<tr><td class="vazio" colspan="${colunas}">${texto}</td></tr>`;
+  };
+
+  status.textContent = 'Carregando dados do RD Station…';
+  let dados;
+  try {
+    dados = await api('/rdstation/crm');
+  } catch (err) {
+    status.innerHTML = `Não consegui carregar o RD Station: ${escaparAtributo(err.message)}`;
+    for (const [id, n] of [['rd-tabela-negociacoes', 5], ['rd-tabela-contatos', 5], ['rd-tabela-empresas', 5]]) {
+      vazio(id, n, 'Sem dados — a conexão com o RD Station falhou.');
+    }
+    return;
+  }
+
+  const { negociacoes = [], contatos = [], empresas = [] } = dados;
+  status.innerHTML = `Responsável: <strong>${escaparAtributo(dados.responsavel?.nome || '—')}</strong> · `
+    + `${negociacoes.length} negociações · ${contatos.length} contatos · ${empresas.length} empresas`;
+
+  const contar = (id, n) => { document.getElementById(id).textContent = n ? `(${n})` : ''; };
+  contar('rd-contagem-negociacoes', negociacoes.length);
+  contar('rd-contagem-contatos', contatos.length);
+  contar('rd-contagem-empresas', empresas.length);
+
+  document.getElementById('rd-tabela-negociacoes').innerHTML = negociacoes.length
+    ? negociacoes.map((n) => `<tr>
+        <td>${rdTexto(n, 'name')}</td>
+        <td>${rdTexto(n, 'organization.name')}</td>
+        <td>${rdTexto(n, 'deal_stage.name', 'stage.name')}</td>
+        <td>${fmtMoeda(Number(rdValor(n, 'amount_total', 'amount_unique', 'total')) || 0)}</td>
+        <td>${rdData(n, 'created_at')}</td>
+      </tr>`).join('')
+    : '<tr><td class="vazio" colspan="5">Nenhuma negociação sua no RD Station.</td></tr>';
+
+  document.getElementById('rd-tabela-contatos').innerHTML = contatos.length
+    ? contatos.map((c) => `<tr>
+        <td>${rdTexto(c, 'name')}</td>
+        <td>${rdTexto(c, 'organization.name')}</td>
+        <td>${rdTexto(c, 'phones.0.phone', 'phone')}</td>
+        <td>${rdTexto(c, 'emails.0.email', 'email')}</td>
+        <td>${rdTexto(c, 'title', 'job_title')}</td>
+      </tr>`).join('')
+    : '<tr><td class="vazio" colspan="5">Nenhum contato seu no RD Station.</td></tr>';
+
+  document.getElementById('rd-tabela-empresas').innerHTML = empresas.length
+    ? empresas.map((e) => `<tr>
+        <td>${rdTexto(e, 'name')}</td>
+        <td>${rdTexto(e, 'segment.name', 'segment')}</td>
+        <td>${rdTexto(e, 'address.city', 'city')}</td>
+        <td>${rdTexto(e, 'phones.0.phone', 'phone')}</td>
+        <td>${rdTexto(e, 'url', 'site')}</td>
+      </tr>`).join('')
+    : '<tr><td class="vazio" colspan="5">Nenhuma empresa sua no RD Station.</td></tr>';
+}
+
+document.getElementById('btn-sincronizar-rd').addEventListener('click', carregarRdStation);
 
 async function carregarEmpresas() {
   const empresas = await api('/empresas');
