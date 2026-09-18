@@ -5638,6 +5638,7 @@ function valorCampoParaExibicao(campo, valor) {
     return `<a href="mailto:${escaparAtributo(emailMin)}">${escaparAtributo(emailMin)}</a>`;
   }
   if (campo.tipo === 'cidade') return formatarCidade(valor);
+  if (campo.tipo === 'produto') return nomeComCodigo(valor);
   return String(valor);
 }
 
@@ -5658,6 +5659,16 @@ function escaparAtributo(valor) {
 async function carregarCamposClientes() {
   camposClientes = await api('/campos-clientes');
 }
+
+// Campos do "2º CNPJ" (mesma empresa faturando em dois CNPJs) só existem
+// hoje pro Agromax/Ouro do Cerrado - pra todo o resto da carteira ficam
+// escondidos, sem poluir a ficha de quem tem só um CNPJ.
+const CAMPOS_SEGUNDO_CNPJ = ['codigo_2', 'nome_fantasia_2', 'cnpj_2'];
+function permiteSegundoCnpj(nome) {
+  const alvo = (nome || '').toLowerCase();
+  return alvo.includes('agromax') || alvo.includes('ouro do cerrado');
+}
+let segundoCnpjAberto = false;
 
 let filtroSituacaoAtual = null;
 let filtroFunilAtual = null;
@@ -5805,6 +5816,7 @@ function campoLinhaHtml(rotulo, chave, valorExibicao, tipo, opcoes, valorBruto) 
 function abrirDetalheCliente(id) {
   const cliente = clientesCache.find((c) => c.id === id);
   if (!cliente) return;
+  if (clienteAtualId !== id) segundoCnpjAberto = false;
   clienteAtualId = id;
 
   document.getElementById('clientes-lista-view').hidden = true;
@@ -5817,19 +5829,39 @@ function abrirDetalheCliente(id) {
     ? `${cliente.latitude}, ${cliente.longitude}`
     : '';
 
+  const podeSegundoCnpj = permiteSegundoCnpj(cliente.nome);
+  const temSegundoCnpjPreenchido = CAMPOS_SEGUNDO_CNPJ.some((chave) => cliente.dados?.[chave]);
+  const mostrarSegundoCnpj = temSegundoCnpjPreenchido || segundoCnpjAberto;
+  let botaoAdicionarCnpjInserido = false;
+
   const linhas = [
     campoLinhaHtml('Nome', '_nome', cliente.nome, 'texto', null, cliente.nome),
     campoLinhaHtml('Endereço (para o mapa)', '_endereco', cliente.endereco || '—', 'texto', null, cliente.endereco || ''),
     campoLinhaHtml('Coordenadas (se não tiver endereço)', '_coordenadas', coordenadasAtuais || '—', 'texto', null, coordenadasAtuais),
-    ...camposClientes.map((c) => {
+    ...camposClientes.flatMap((c) => {
+      if (CAMPOS_SEGUNDO_CNPJ.includes(c.chave)) {
+        if (mostrarSegundoCnpj) {
+          const valor = cliente.dados?.[c.chave];
+          return [campoLinhaHtml(c.rotulo, c.chave, valorCampoParaExibicao(c, valor), c.tipo, c.opcoes, valor ?? '')];
+        }
+        if (podeSegundoCnpj && !botaoAdicionarCnpjInserido) {
+          botaoAdicionarCnpjInserido = true;
+          return ['<button type="button" class="secundario" id="btn-add-segundo-cnpj" style="margin:0.35rem 0">+ Adicionar outro CNPJ</button>'];
+        }
+        return [];
+      }
       const valor = cliente.dados?.[c.chave];
-      return campoLinhaHtml(c.rotulo, c.chave, valorCampoParaExibicao(c, valor), c.tipo, c.opcoes, valor ?? '');
+      return [campoLinhaHtml(c.rotulo, c.chave, valorCampoParaExibicao(c, valor), c.tipo, c.opcoes, valor ?? '')];
     }),
   ];
   document.getElementById('detalhe-campos').innerHTML = linhas.join('');
 
   document.querySelectorAll('#detalhe-campos .btn-lapis').forEach((btn) => {
     btn.addEventListener('click', () => ativarEdicaoCampo(btn.dataset.editar));
+  });
+  document.getElementById('btn-add-segundo-cnpj')?.addEventListener('click', () => {
+    segundoCnpjAberto = true;
+    abrirDetalheCliente(clienteAtualId);
   });
 
   document.getElementById('btn-add-contato').hidden = false;
@@ -6012,6 +6044,8 @@ function ativarEdicaoCampo(chave) {
     inputHtml = `<input type="number" step="0.01" value="${escaparAtributo(valorAtual)}" />`;
   } else if (tipo === 'data') {
     inputHtml = `<input type="date" value="${escaparAtributo(valorAtual)}" />`;
+  } else if (tipo === 'produto') {
+    inputHtml = `<select>${opcoesProdutoHtml(valorAtual)}</select>`;
   } else if (tipo === 'selecao') {
     inputHtml = `<select><option value="">Selecionar</option>${opcoes.map((o) => `<option value="${escaparAtributo(o)}" ${o === valorAtual ? 'selected' : ''}>${o}</option>`).join('')}</select>`;
   } else if (tipo === 'link') {
@@ -6107,6 +6141,20 @@ document.getElementById('input-foto-cliente').addEventListener('change', (e) => 
   });
 });
 
+// Opções do <select> de produto: mesmo catálogo (com código PAN) usado no
+// Orçamento e no Criar Pedido. Valor avulso (produto antigo/descontinuado
+// já salvo no cliente) entra como opção extra pra não sumir da tela.
+function opcoesProdutoHtml(valorAtual) {
+  const disponiveis = itensDisponiveisOrcamento();
+  const opcoes = disponiveis
+    .map((p) => `<option value="${escaparAtributo(p.nome)}" ${p.nome === valorAtual ? 'selected' : ''}>${escaparAtributo(p.codigo ? `${p.codigo} - ${p.nome}` : p.nome)}</option>`)
+    .join('');
+  const avulso = valorAtual && !disponiveis.some((p) => p.nome === valorAtual)
+    ? `<option value="${escaparAtributo(valorAtual)}" selected>${escaparAtributo(valorAtual)}</option>`
+    : '';
+  return `<option value="">Selecionar</option>${opcoes}${avulso}`;
+}
+
 function campoInputHtml(campo, valorAtual) {
   const valor = valorAtual ?? '';
   const attr = `data-campo="${campo.chave}"`;
@@ -6118,6 +6166,9 @@ function campoInputHtml(campo, valorAtual) {
   }
   if (campo.tipo === 'data') {
     return `<div class="field"><label>${campo.rotulo}</label><input type="date" ${attr} value="${escaparAtributo(valor)}" /></div>`;
+  }
+  if (campo.tipo === 'produto') {
+    return `<div class="field"><label>${campo.rotulo}</label><select ${attr}>${opcoesProdutoHtml(valor)}</select></div>`;
   }
   if (campo.tipo === 'selecao') {
     const opcoes = campo.opcoes || [];
@@ -6146,7 +6197,10 @@ function abrirModalCliente(cliente) {
     <div class="field"><label>Nome</label><input type="text" data-campo="_nome" value="${escaparAtributo(cliente?.nome)}" required /></div>
     <div class="field"><label>Endereço (para o mapa)</label><input type="text" data-campo="_endereco" placeholder="Rua, número, bairro" value="${escaparAtributo(cliente?.endereco)}" /></div>
     <div class="field"><label>Coordenadas (se não tiver endereço)</label><input type="text" data-campo="_coordenadas" placeholder="Ex: -18.512, -44.328" /></div>
-    ${camposClientes.map((c) => campoInputHtml(c, cliente?.dados?.[c.chave])).join('')}
+    ${camposClientes
+      .filter((c) => !CAMPOS_SEGUNDO_CNPJ.includes(c.chave) || permiteSegundoCnpj(cliente?.nome))
+      .map((c) => campoInputHtml(c, cliente?.dados?.[c.chave]))
+      .join('')}
   `;
   document.getElementById('modal-cliente').hidden = false;
 }
