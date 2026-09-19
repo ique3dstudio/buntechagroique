@@ -5,8 +5,21 @@ import { supabase } from './services/supabase.js';
 
 const app = express();
 const port = process.env.PORT || 3000;
+const somenteLeitura = process.env.SOMENTE_LEITURA === 'true';
 
 app.use(express.json());
+
+// Modo demonstração: bloqueia qualquer gravação (POST/PATCH/PUT/DELETE) antes
+// de chegar nas rotas, pra dar um link "só visualizar" sem risco de alguém
+// mexer nos dados reais. Ativa com a env var SOMENTE_LEITURA=true - pensado
+// pra rodar num segundo serviço de deploy separado do uso real do dia a dia.
+if (somenteLeitura) {
+  app.use('/api', (req, res, next) => {
+    if (req.method === 'GET' || req.method === 'HEAD') return next();
+    res.status(403).json({ error: 'Modo somente leitura — esta é uma cópia de demonstração, sem gravação de dados.' });
+  });
+}
+
 app.use('/api', apiRouter);
 
 app.get('/manifest.json', async (req, res) => {

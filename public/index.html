@@ -119,6 +119,12 @@
     background: #00e1dd; box-shadow: 0 0 16px rgba(0, 225, 221, 0.55);
   }
 
+  .faixa-somente-leitura {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: #f5b400; color: #1a1400; font-weight: 700; font-size: 0.8rem;
+    text-align: center; padding: 0.4rem 1rem;
+  }
+
   /* --- Topbar --- */
   .topbar {
     position: sticky; top: 0; z-index: 30;
@@ -1375,6 +1381,9 @@
 </style>
 </head>
 <body>
+  <div class="faixa-somente-leitura" id="faixa-somente-leitura" hidden>
+    🔒 Cópia de demonstração — só pra visualizar, nada aqui é salvo.
+  </div>
   <aside class="sidebar">
     <div class="sidebar-marca">
       <img src="/logo.png" alt="Buntech Agro" class="logo-img" />
@@ -4058,6 +4067,13 @@ function aplicarConfig(config) {
   if (config.icone_url) {
     document.getElementById('favicon').href = config.icone_url;
     document.getElementById('apple-touch-icon').href = config.icone_url;
+  }
+  if (config.somente_leitura) {
+    const faixa = document.getElementById('faixa-somente-leitura');
+    faixa.hidden = false;
+    const altura = `${faixa.offsetHeight}px`;
+    document.body.style.paddingTop = altura;
+    document.querySelector('.sidebar').style.top = altura;
   }
   metaAtual = config.meta_valor ?? null;
   metaGeralAtual = config.meta_geral ?? null;

@@ -170,7 +170,7 @@ router.delete('/empresas/:id', async (req, res) => {
 router.get('/config', async (req, res) => {
   const { data, error } = await supabase.from('configuracoes').select('*').eq('id', 1).maybeSingle();
   if (error) return res.status(500).json({ error: error.message });
-  res.json(data ?? {});
+  res.json({ ...(data ?? {}), somente_leitura: process.env.SOMENTE_LEITURA === 'true' });
 });
 
 router.patch('/config', async (req, res) => {
